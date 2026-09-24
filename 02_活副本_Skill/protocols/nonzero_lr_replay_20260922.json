@@ -1,0 +1,131 @@
+{
+ "schema": "dsh.protocol.nonzero_lr_replay.v1",
+ "frozen_at": "2026-09-22",
+ "note": "★ 判据**先于运行冻结**（criteria 写在前，results 运行后回填）。本协议补的是『**有效更新**』的正确性试验：原有单步回放跑的是**零学习率空更新**，它**无法验证第 3 项（一次更新后的参数/优化器状态）**——因为 lr≈0 时参数本来就不变，C4 恒等是**空过**（坑 33 同族）。",
+ "why_now": "下一阶段要改算子/布局（热点局部优化），**不能再依赖『前两步打印的 loss 一致』来证明正确**。需要一个能真正检验优化器数学的回放。",
+
+ "root_cause_found_during_recon": {
+  "obstacle": "现有检查点**只有权重、没有优化器状态**，所以回放只能从新初始化的模型起跑；而 `lr_warmup_ratio=0.1`、`train_iters=100` ⇒ warmup=10 步，第 0 步 lr≈0 ⇒ 空更新。",
+  "evidence": [
+   "`/root/ops/AB_AVSB_20260921/00_A/checkpoint/iter_0000100/` 下只有 `model.safetensors` + `config.json` 等**权重件**，**没有任何 optim / distcp 文件**。",
+   "远端配置 `qwen3_5_0_8B_mock_dp2_v3.yaml`：`no_save_optim: true`、`no_load_optim: true`、`no_save_rng: true`、`no_load_rng: true`、`save_interval: 10000`、`lr: 1.0e-05`、`lr_decay_style: cosine`、`lr_warmup_ratio: 0.1`。"
+  ],
+  "framework_facts_read_from_source": {
+   "trainer.py::get_checkpointers": "checkpointer_by_format = {hf: HuggingFaceCheckpointer, dcp: DistributedCheckpointer}；★ 若 `no_save_optim=False` 或 `no_save_rng=False`，则**自动把 save_format 切到 dcp**（原文：『HF format does not support saving optimizer or RNG state; switching save_format to dcp.』）。",
+   "trainer.py::get_checkpointers 守卫": "`if load_format == 'hf' and (not no_load_optim or not no_load_rng): raise ValueError(...)` ⇒ **要载入优化器状态，load_format 必须是 dcp**。",
+   "training_args.py": "`load_format: Literal['auto','hf','dcp']`、`save_format: Literal['auto','hf','dcp']`；`auto` 由 `looks_like_hf_weight_dir(load)` 推断。",
+   "lr_scheduler.py": "`lr_warmup_steps = int(train_steps * lr_warmup_ratio)`；cosine + warmup ⇒ 前 10 步线性升到 lr。"
+  }
+ },
+
+ "question": "从**学习率非零、优化器状态完整**的同一个检查点起，固定输入/参数/buffers/RNG/调度器/分片状态，回放**恰好一次更新**，其 C1/C3/C4 是否可重复？C4 是否**真的有区分力**？",
+
+ "criteria": {
+  "C1_forward": "前向输出（loss / logits）的逐张量摘要 —— 可观测",
+  "C2_pre_comm_grad": "**通信前**局部梯度 —— FSDP2 在 backward 内部 reduce-scatter，用户侧**不可观测** ⇒ 继续记 `UNVERIFIED`，**绝不用 C3 顶替**",
+  "C3_post_comm_grad": "通信**后**梯度（各 param.grad，已是本地分片归约结果）—— 可观测",
+  "C4_after_one_update": "一次更新后的**参数** + **优化器状态**摘要 —— 可观测；**本协议新增**优化器状态（更新前/后各一份）",
+
+  "fail_closed_preconditions": [
+   "★ `lr > 0`：调度器当步 lr 必须严格大于 0，否则判 `REPLAY_INVALID_ZERO_LR`（**不许把空更新当通过**）",
+   "★ 优化器状态**非空**：`optimizer.state_dict()['state']` 必须非空，否则判 `REPLAY_INVALID_NO_OPT_STATE`",
+   "★ **C4 区分力自证**：`params_before_sha != params_after_sha`；若相等 ⇒ 判 `REPLAY_INVALID_NULL_UPDATE`（这就是「空过」），**不得**记作「通过」",
+   "载入检查点失败 / 步号未恢复 ⇒ 判 INVALID",
+   "GBS 必须 = 8（沿用既有红线）"
+  ],
+
+  "decision_rule": [
+   "**A/A 对照优先**：先用**同一个检查点**回放**两次**，C1/C3/C4 必须**逐张量相同**。",
+   "A/A 若不稳定 ⇒ **不得**进入候选对比；按既有结论用确定性路径作诊断参考，先隔离问题。",
+   "A/A 稳定后，才允许拿候选配置做同一回放，并按**预先声明的数值容差**比较 C1/C3/C4 —— **不得**因为候选更快就放宽标准。",
+   "通过单步**不等于**精度闭合：仍须再做完整训练窗口与质量验证。"
+  ],
+  "tolerance_policy": "本协议**只做 A/A 可重复性**（要求逐字节/逐张量相同，不设容差）；候选对比的容差**另立协议**声明，不在本协议内临时决定。"
+ },
+
+ "boundaries": [
+  "本协议**不**解决『通信前梯度』的可观测性（C2 继续 UNVERIFIED）。",
+  "单步回放只能证明『一次更新的数值可重复』，**不能**证明长程精度对齐。",
+  "数据仍为 mock；`official_comparable=false`。",
+  "『打开确定性开关后数值会变』**不等于**『永远不可交付』：该开关可能选择不同实现，是否可作候选应由**独立验收**决定（PyTorch 文档亦明示单独开启不保证整体可复现，NPU 上须实测）。"
+ ],
+
+ "run": {
+  "step1_make_ckpt": "先用 `no_save_optim=false` / `no_save_rng=false` / `save_interval=30` 跑一次到 iter 30 ⇒ 框架自动用 **dcp** 格式落一个**含优化器+RNG 状态**的检查点（iter 30 > warmup 10 ⇒ lr > 0）。",
+  "step2_replay": "以 `load=<该 dcp>`、`load_format=dcp`、`no_load_optim=false`、`no_load_rng=false` 跑 `52_replay.py` **两次**（A/A），各回放恰好一步。",
+  "step3_compare": "本地用 `_replay_compare.py` 比较两份 dump 的 C1/C3/C4 + 优化器状态摘要。"
+ },
+
+ "results": {
+  "status": "P1_PASSED_BRANCH_A",
+  "note": "★ 分支 A 达成：**确定性模式（两侧同开）下 A/A 完整一致且前提有效** ⇒ 建立可复用参考，可进入 P2。默认模式（关）下不一致 ⇒ 分歧为末位浮点非确定性（已刻画）。",
+  "detsc_aa_control": {
+   "mode": "on（★ 两次回放**同一模式**，结构上不可能一边开一边关：tags 由单一来源决定）",
+   "injection": "sitecustomize.py 在解释器启动时只注入 torch.use_deterministic_algorithms(True)，不设 HCCL_DETERMINISTIC / CLOSE_MATMUL_K_SHIFT（坑 213 已把后者单独证伪）",
+   "injection_selfproof": {"detsc_active_lines_a": 3, "detsc_active_lines_b": 3,
+                           "detsc_failed_lines": 0, "markers": "rank_0 / rank_1 / rank_x 各 1 份"},
+   "prerequisites": {"restored_iteration": 30, "lr_param_groups": [8.83022221559489e-06],
+                     "precond_invalid": 0, "params_changed": true},
+   "verdict": "NZREPLAY_VERIFIED（exit 0，failures=[]）",
+   "comparison": {
+    "C1": "loss 与 logits **逐字节相同**",
+    "C3_post_comm_grad": "**逐字节相同**（n_tensors=320）",
+    "C4_after_one_update": "**逐字节相同**（n_tensors=473）",
+    "opt_before": "逐字节相同", "opt_after": "逐字节相同",
+    "fixed_state": "input / params_before / rng / iteration / lr 全同",
+    "marker": "REPLAY_IDENTICAL"
+   },
+   "interpretation": "★ 在**非零 lr + 完整优化器状态**下，确定性开关让**单步更新**逐字节可复现 —— 这比归档的零学习率回放更强：当时 C4 恒等（空更新）无区分力，本轮 `params_changed=True` 已自证有区分力。**仅证明这一步**，不推出全程可复现（见 boundaries）。"
+  },
+  "branch_per_decision_rule": "A（A/A 完整一致且前提有效）⇒ 建立可复用参考，**可进入 P2**（唯一候选原型）。",
+  "batch": "/root/ops/nzreplay_20260922_151513（机器 host 4ac9ca3712ba / boot fe6372a8-974e-481a-9c6a-828b3f4eb3ba）",
+  "a_a_default_mode": {
+   "verdict": "BRANCH_B：A/A **不一致**（保存首次分歧）",
+   "preconditions_all_valid": {
+    "restored_iteration": 30,
+    "lr_param_groups": [8.83022221559489e-06],
+    "lr_sched_last": [8.83022221559489e-06],
+    "lr_consistent": true,
+    "opt_state_tensors": 960,
+    "opt_state_changed": true,
+    "params_changed": true,
+    "note": "★ 前提全部有效 ⇒ **本次更新确有区分力**，这正是旧版零学习率空回放无法证明的第 3 项"
+   },
+   "fixed_state_identical_across_a_b": ["input_sha_all", "params_before_sha_all", "rng_cpu_sha",
+                                        "iteration", "lr", "opt_before_sha_all"],
+   "first_divergence": {"rank0": "C3（C1 loss/logits 逐字节相同）",
+                        "rank1": "C1（logits 相同、loss 不同）"},
+   "C3": "逐张量不同 200/200（两 rank）",
+   "C4": "逐张量不同 164/200（rank0）、165/200（rank1）"
+  },
+  "divergence_characterization_2026_09_22": {
+   "why": "`_replay_diff.py` 报的是**相对差**（如 37.7%），会被**小分母**放大 ⇒ 既不能证明结构性分歧、也不能证明是噪声。故用**全张量** `sum`/`absmax` 与固定种子抽样做量纲感知刻画（工具：`工具_重建/_aa_absdiff.py`，**只刻画、不设通过阈值**）。",
+   "C3_post_comm_grad": {
+    "n_tensors": 200, "byte_identical": 0,
+    "absmax_rel_diff": {"median": 0.0, "max": 0.0202},
+    "sample_elem_abs_diff": {"median": 3.7e-09, "max": 3.05e-05},
+    "sample_elem_scale_ratio": {"median": 1.2e-06, "max": 0.0653},
+    "sum_rel_diff": {"median": 1.5e-03, "max_rank0": 0.138, "max_rank1": 2.84},
+    "reading": "★ 逐元素绝对差在 **1e-9** 量级、`absmax`（稳健尺度量）一致到 ≤2% ⇒ 是**浮点末位级**差异。`sum` 的相对差很大（最高 2.84）是**求和的抵消放大**（正负相消后和很小），**不是**结构性分歧 ⇒ **不得**用 sum 相对差当判据。"
+   },
+   "C4_after_one_update": {
+    "n_tensors": 200, "byte_identical": 36,
+    "sample_elem_abs_diff": {"median": 0.0, "max": 1.19209e-07},
+    "sample_elem_scale_ratio": {"median": 0.0, "max": 8.19e-08},
+    "sum_rel_diff": {"median": 1.7e-08, "max": 5.7e-06},
+    "reading": "★ 参数差 **≤1.19e-07 ≈ float32 在 1.0 附近的 1 ULP** ⇒ 教科书级的末位浮点非确定性，**不是**结构性差异。"
+   },
+   "OPT_before": {"n_tensors": 200, "byte_identical": 200,
+                  "reading": "★ 优化器状态**恢复完全精确** ⇒ 分歧**不是**来自状态恢复"},
+   "OPT_after": {"n_tensors": 200, "byte_identical": 66,
+                 "sample_elem_abs_diff": {"median": 0.0, "max": 3.05e-06}},
+   "conclusion": "A/A 分歧为**末位浮点非确定性**（C4 ≤1 ULP；C3 逐元素 ~1e-9，absmax ≤2%）。结合 `OPT_before` 200/200 逐字节相同、`params_before`/`rng`/`input` 全同 ⇒ **分歧产生于前向/反向/更新过程本身，而不是检查点恢复**（按 decision_rule 的 C 分支：先排查状态恢复与观测实现——**已排除恢复**）。"
+  },
+  "tolerance_policy_refined": "★ 由本段证据得出（**先声明、后用于候选**）：候选对比的容差应当**绝对、量纲感知**，形如 `max|Δ| ≤ k × ULP(尺度)` 或 `max|Δ| / absmax ≤ ε`；**禁止**用 `sum` 的相对差或逐元素相对差做判据（两者都会被小分母放大）。具体 k/ε 需在候选实验**之前**冻结。",
+  "open": [
+   "★ P2 未启动 —— 本协议判据已通过（分支 A），**下一步是选一个热点做最小优化原型**。",
+   "编排器合成坏例套件（零学习率 / 一个 rank 失败 / 缺优化器状态 / 比较器失败）尚未写成自动化测试；本轮只有**运行时真实触发**（tracker 指向错误检查点、比较器失败、优化器恢复 KeyError）。",
+   "候选对比的**绝对/量纲感知容差**（k × ULP 或 max|Δ|/absmax ≤ ε）具体取值尚未冻结。"
+  ]
+ }
+}

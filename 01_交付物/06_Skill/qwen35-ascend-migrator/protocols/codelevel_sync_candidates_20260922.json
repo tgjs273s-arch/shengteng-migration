@@ -1,0 +1,160 @@
+{
+ "schema": "dsh.protocol.codelevel_sync_candidates.v1",
+ "frozen_at": "2026-09-22",
+ "CORRECTIONS_APPLY": {
+  "file": "protocols/codelevel_sync_candidates_CORRECTION_v2_20260922.json",
+  "why": "★ 外部复核用独立复算指出本文件有两处**过度声称 / 口径自相矛盾**。按纪律『改判据要另存新版并说明，不能静默改历史』，**本文件保留不改**，更正一律写在上述更正文件里。引用本文件时**必须一并读更正文件**。",
+  "affected_claims": [
+   "results.decision 里的『端到端 A/B 的结果在数学上已被限定为 NOT_REPORTABLE』⇒ 过度声称（C1 区间上界 7.97% > 5%，不能排除达标）",
+   "results.end_to_end_ab_2026_09_22.interpretation 里以点估计『均 < 5% 阈值』代替区间判定 ⇒ 口径错误",
+   "旧版 62 用 savings_b 正号表示『候选更慢』，与正文『省时』正号含义相反 ⇒ 符号/分母错配"
+  ],
+  "corrected_numbers": "C1 savings_pct=+1.7645%，ci95=[-4.4405, 7.9695]；C2 savings_pct=+0.0194%，ci95=[-1.8965, 1.9353]（均为 `PERFORMANCE_NOT_MET`，退出码 4）",
+  "NOTE": "★ 本文件里『0.87% / 1.31%』这类数字仍有效，但其正确表述是**算子时间占比**，不是端到端省时的置信上界。"
+ },
+ "note": "★ 判据**先于运行冻结**（本轮判据写在 criteria，运行后结果填在 results）。本协议回答『§4-2 那两个代码级同步候选值不值得做端到端 A/B』，而**不是**宣布收益：任何 ≥5% 的收益都必须另立 A/B 协议并在同批次先量噪声。",
+ "discipline_refs": [
+  "交接 §4-2：clip_grad=0.0 时仍每步调用 clip_grad_norm（含梯度范数归约）；average_losses_across_data_parallel_group 每步 all_reduce；先测噪声底噪，预期难过 5%",
+  "交接 §5-1：任何性能实验第一步是同批次重复基线、先量噪声（底噪≈2%，<5% 不可报告）",
+  "先例：protocols/profile_short_20260922.json 明确『profiler 运行只用于**定位/比例**，其步时长不得用于宣布收益』⇒ **归因型 profile 不需要噪声底噪**（它不宣称收益），只有『宣称增益』才需要"
+ ],
+ "question": "§4-2 列出的两个代码级同步候选，是否值得投入卡时做端到端 A/B？",
+ "candidates": {
+  "C1": "clip_grad=0.0 时跳过 clip_grad_norm（省掉每步梯度范数计算 + 一次 fsdp 组 all_reduce）",
+  "C2": "跳过 average_losses_across_data_parallel_group（省掉每步 1 个标量 all_reduce + cat/div）"
+ },
+ "injection_points_read_from_source_2026_09_22": {
+  "note": "★ 以下行号是**实读远端源码**所得，不是凭记忆重建（机器 4ac9ca3712ba / boot fe6372a8-974e-481a-9c6a-828b3f4eb3ba）",
+  "clip_grad_call": "/root/MindSpeed-MM/mindspeed_mm/fsdp/train/train_engine.py:263 —— grad_norm = clip_grad_norm(self.model, max_norm=args.training.clip_grad, foreach=args.training.clip_grad_foreach)",
+  "clip_grad_semantics": "optimizer/clip_grad_norm.py:29 docstring『If 0, only compute norm without clipping』；L62-64 `if max_norm > 0.: clip_grads_with_norm_(...)` ⇒ **clip_grad=0.0 时梯度不被修改，但范数照样算、照样 all_reduce**（L52-56 _fsdp2_reduce_group）",
+  "loss_ar_call": "train_engine.py:183 total_loss = self.average_losses_across_data_parallel_group([total_loss])（L188 另有 mtp 分支）",
+  "loss_ar_impl": "train_engine.py:90-97 —— torch.cat → torch.distributed.all_reduce(..., group=ps.get_dp_group()) → /world_size；**返回值就是 train.log 里打印的 loss**",
+  "mirror_check": "find /root/MindSpeed-MM -name clip_grad_norm.py → 仅 1 个；-path *fsdp/train/train_engine.py → 仅 1 个 ⇒ 无对称副本需同步（tasks/funasr/train_engine.py 是另一任务，不在 VLM 路径上）"
+ },
+ "criteria": {
+  "P1_profile_upper_bound": "归档 profile 的 kernel 明细里，把候选要省掉的算力映射到 kernel：grad-norm 计算 → LpNormV2（属『小算子/拷贝/类型转换簇』16.3%）。该 kernel **不在 top-15 之列**，而 top-15 的**截断值是 1.65%** ⇒ 其单独占比 **< 1.65%**（上界）。",
+  "P2_callsite_attribution": "本次用 `56_profile_run.py --with-stack` 在**同一窗口**重采，把发射归因到 Python 调用点，读出 `clip_grad_norm` 与 `average_losses_across_data_parallel_group` 两处**合计**占 Stage 的比例。",
+  "decision_rule": [
+   "合计 **< 5%**（且 P1 上界 < 5%）⇒ 记『**候选不可报告**』，**不做**端到端 A/B。理由：低于阈值 ⇒ 结果必然是 NOT_REPORTABLE，而做 A/B 还要额外付出『观测链被破坏』的代价（见 P3）。",
+   "合计 **>= 5%** ⇒ 才另立 A/B 协议：同一批次内**先跑重复基线量噪声**，再按 n>=3 配对，用 `62_reportability.py` 判定（阈值 = max(2×底噪, 5%)）。",
+   "两处**任一处归因不到**（stack 里找不到该 Python 调用点）⇒ 记 `INVALID_INPUT`，**不得**用 kernel 名硬凑、**更不得**据其它数据宣布收益。"
+  ],
+  "P3_observability_cost_must_be_recorded": {
+   "why": "★ 这两个候选**不是免费的**：它们省掉的那两个量**正是本项目正确性证据链所依赖的观测量**。判据要求把代价写清楚，而不是只看时间。",
+   "facts": [
+    "`sk04_judge/scripts/fingerprint_observed.py:53` 的正则要求日志行含 `grad norm:`，L209 把 GradNorm 写进**观测指纹** ⇒ 跳过 grad-norm 会**直接打断指纹链**；若改成打印哨兵值 `0.000`，则该维在逐点比较里变成**空过**（与坑 33『vacuous pass』同族）。",
+    "`scripts/59_config_ab.py:40` 的 `PAT` 正则**要求** `grad norm:` 同现，否则计时行**一行都解析不出来** ⇒ 连性能测量本身都会失效。",
+    "`average_losses_across_data_parallel_group` 的返回值就是 train.log 里被打印的 loss ⇒ 跳过它等于把打印的 loss 从『DP 平均』换成『本地 rank 值』，**改变 loss 数值链的语义**（而 C1/C3 分岔定位、逐步 batch 指纹、70_judge 的逐点判据全部建立在这个 loss 之上）。",
+    "`scripts/_batchfp.py` 自述：『deter=false 下两次运行从第几步开始分岔，只能从 loss/grad_norm 的**打印值**去猜』⇒ 这两个观测量是**现有唯一的分岔探针**。"
+   ],
+   "consequence": "即便时间上划算，也必须先回答『用什么替代观测』；否则等于用**毁掉证据链**换取一个 <5%、本来就不允许报告的时间差。"
+  },
+  "fail_closed": [
+   "缺 step_trace_time.csv ⇒ 直接失败，不用 kernel_details 硬凑（沿用 profile_short 协议的规矩）",
+   "缺 stack 归因列 / 归因覆盖率不足 ⇒ INVALID_INPUT，不宣布任何方向",
+   "**禁止**用被 profiling 拖慢的绝对步时长与稳态（432.7 ms）对标；本协议只用**比例**"
+  ]
+ },
+ "run": {
+  "tool": "scripts/56_profile_run.py（委托 50_train.py 启动）",
+  "config": "/root/ops/qwen3_5_0_8B_mock_dp2_v3.yaml（与 profile_short 同一配置，保证可比）",
+  "geometry": "mbs=4 × gas=1 × world=2；GBS=8；official_comparable=false（mock）",
+  "window": "50–55（与 profile_short 同一窗口）",
+  "extra_flag": "--with-stack（本次新增；profile_short 当时 with_stack=false，其 next 明确要求补这一项）",
+  "machine": "199.98.58.213 / host 4ac9ca3712ba / boot fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+  "card_time_note": "1 次 profile 运行 ≈ 150 s；本协议**不**跑 A/B，故卡时开销 ≈ 0.05 卡时"
+ },
+ "boundaries": [
+  "样本仅 5 个步（窗口 50–55）：桶/调用点比例在这 5 步内稳定，但不代表长程行为。",
+  "profiling 会拖慢训练（profiled step 739.5 ms vs 稳态 432.7 ms）⇒ 只用比例，绝对时间不与稳态对标。",
+  "数据是 mock 且每步同一批 ⇒ 不代表官方 COCO 多图数据。",
+  "单机单次运行；机器 A 已关机 ⇒ 无跨机复现。",
+  "kernel/stack 归因**看不到等待**（wait_event 那类）⇒ 若候选的真正成本是『去掉一个同步点』，本协议的归因**可能低估**；这一点在结论里必须显式声明，不得把『归因小』直接等同于『收益不可能大』。"
+ ],
+ "results": {
+  "status": "DONE",
+  "run_dir": "/root/ops/prof62_20260922_140144",
+  "valid": true,
+  "steps_parsed": 100,
+  "wall_seconds": 188,
+  "framework_unmodified": "开工前后 md5 逐字节一致：clip_grad_norm.py = 207f9cbad3da6adba9cd19a00b016b88；train_engine.py = e0e8879ac9c94b9ece48bf18584d3166。★ 本协议**没有改任何框架代码**（候选只做归因，不改文件）⇒ 无需恢复，也没有污染后续批次的风险。",
+  "P1_archived_upper_bound": "LpNormV2 不在旧 profile 的 top-15 之列（截断值 1.65%）⇒ 上界 < 1.65%",
+  "P2_measured_attribution": {
+   "data_source": "kernel_details.csv（35750 行 / 5 步）；total_duration_us = 3161607；total_wait_us = 8218220（wait/dur = 2.60x，说明 wait 是高重叠量、不可直接相加）",
+   "C1_target_LpNormV2": {
+    "calls": 1600,
+    "calls_per_step": 320,
+    "dur_us": 14080,
+    "dur_pct_of_kernel_time": 0.45,
+    "wait_us": 455721,
+    "wait_pct_of_total_wait": 5.55,
+    "wait_over_dur": 32.4,
+    "per_call_dur_us": 8.8
+   },
+   "C2_target_AllReduce_Hccl": {
+    "calls": 40,
+    "calls_per_step": 8.0,
+    "dur_us": 13425,
+    "dur_pct_of_kernel_time": 0.42,
+    "wait_us": 19602,
+    "wait_pct_of_total_wait": 0.24
+   },
+   "combined": {
+    "dur_us": 27505,
+    "pct_of_kernel_time": 0.87,
+    "pct_of_computing_bucket": 0.96,
+    "per_step_us": 5501,
+    "pct_of_steady_420ms_step": 1.31
+   }
+  },
+  "with_stack_side_effect": "★ `--with-stack` 把 Free 从 19.3% 抬到 72.8%（Stage 均值 739.5 → 2226.5 ms）⇒ **本次桶比例与 profile_short 不可比**；但 Computing 均值几乎不变（573635 vs 576949 us，差 0.6%）⇒ **kernel 级比例仍可用**。这正是本协议只允许用比例、禁止绝对时间对标的理由。",
+  "wait_analysis": "LpNormV2 的 wait/dur 高达 32.4x，但这是**小算子排在大算子后面的排队现象，不是可回收成本**：同类小算子 Cast 7.64x、Transpose 5.66x、Add 2.99x，而大算子 MatMulV3 仅 0.64x ⇒ 高 wait 是小算子的通性。且 wait 在 torch_npu 的桶里落在 Free（本身高度重叠、不可直接相加）⇒ 移除一个正在排队的算子，只会把 wait 让给其它算子，**不会等量变成收益**。",
+  "P3_observability_cost_confirmed": [
+   "跳过 grad-norm 会打断 `sk04_judge/scripts/fingerprint_observed.py` 的观测指纹：L53 的正则要求日志含 `grad norm:`，L209 把 GradNorm 写进指纹 ⇒ 改成哨兵值 0.000 则该维在逐点比较里**空过**（与坑 33 同族）。",
+   "`scripts/59_config_ab.py:40` 的 `PAT` 正则**要求** `grad norm:` 同现，否则计时行**一行都解析不出来** ⇒ 连性能测量本身都会失效。",
+   "`average_losses_across_data_parallel_group` 的返回值就是 train.log 打印的 loss ⇒ 跳过它等于把打印值从『DP 平均』换成『本地 rank 值』，**改变整条 loss 数值链的语义**（C1/C3 分岔定位、逐步 batch 指纹、70_judge 逐点判据全部建立在它之上）。"
+  ],
+  "decision": "**按 criteria.decision_rule 记为『候选不可报告』，不触发 A/B 分支。** 实测可省 kernel 时间上界 **0.87%**（≈稳态步的 1.31%），比 5% 阈值**低一个数量级**；且『去掉一个同步点能省更多』这一替代解释**不被数据支持**（见 wait_analysis：真正跨 rank 的 hccl all_reduce 全部 8 次/步合计仅 0.42% dur）。⇒ 端到端 A/B 的结果在数学上已被限定为 NOT_REPORTABLE，故**不投入卡时**。",
+  "net_conclusion": "**不追求这两个候选**：可省 ≤0.87% kernel 时间，代价却是**放弃 grad_norm 与 loss 两条观测链**（P3）⇒ **代价远大于收益**，而非仅仅『没到 5%』。",
+  "redirect": "同一份 profile 指向的真正大头（按证据强度）：**GDN/linear-attn 算子族 28.22%**、**MatMul 族 20.5%**、**小算子/拷贝/cast 簇 16.3%**（近 4000 次发射/步）。若要继续优化，应从这些**族**入手，而不是抠每步一两次的同步点。",
+  "boundaries_kept": "本协议 boundaries 全部保留：样本仅 5 步；只用比例（profiled 绝对时间不与稳态 432.7 ms 对标）；mock 数据；单机单次、无跨机复现。★ 关于『归因看不到等待』这一条：**没有**把『归因小』直接等同于『收益不可能大』，而是用**同类小算子的 wait/dur 对照**证明高 wait 是排队通性；但『同步等待的可回收性』仍**未做端到端实测**，这一点如实保留为残余边界。",
+  "end_to_end_ab_2026_09_22": {
+   "amendment_note": "★ **显式判据扩展，不静默改判据**：本协议 `criteria.decision_rule` 原定『归因上界 < 5% ⇒ 不触发 A/B 分支』，当时据此记为『不可报告』。**后来仍补做了端到端 A/B**，唯一理由是 `boundaries` 里如实保留的那条残余边界——『kernel/wait 归因**测不到**同步等待的可回收性』——只能用端到端测量销掉。按纪律在此说明；原结论**未被推翻，而是被更强的证据确认**。",
+   "run_dir": "/root/ops/ab62_20260922_141427",
+   "design": "3 臂 × 3 轮，**拉丁方平衡顺序**（N,C1,C2 / C1,C2,N / C2,N,C1），同一批次、同一台机器、同一配置；100 步协议、mbs4×gas1×world2、GBS=8、official_comparable=false",
+   "arms": {
+    "N": "MM_CAND 未设 —— 走**上游原路径**（env 门控分支不进入）",
+    "C1": "MM_CAND=C1 —— 跳过 clip_grad_norm 的范数计算与归约",
+    "C2": "MM_CAND=C2 —— 跳过 loss 的 DP all_reduce"
+   },
+   "injection_method": "env 门控注入（未设变量时与上游一致）＋ 被注入分支**首次执行时写 marker 文件**以自证『代码路径真的被走到』；开工与收工各记 md5",
+   "injection_proof": {
+    "markers": {"c1_active": true, "c2_active": true},
+    "gradnorm_head_N": [34.165, 34.186, 27.253],
+    "gradnorm_head_C1": [0.0, 0.0, 0.0],
+    "note": "★ **正对照**：C1 三轮的 grad_norm 全为 0.0，而 N/C2 为 ~34.17 ⇒ 注入**确实改变了执行路径**，排除了『设了环境变量但代码没生效』（纪律 #3：否则『无效』可能是注入失败）"
+   },
+   "noise_floor": {"source": "N 臂 3 轮（同批次）", "medians_ms": [724.25, 723.15, 713.35], "spread_pct": 1.53},
+   "threshold_pct": 5.0,
+   "threshold_breakdown": "max(2 × 1.53, 5.0) = **5.0**（由 5% 下限决定，不是底噪项）",
+   "results": {
+    "C1": {"improvement_a_pct": 1.765, "savings_b_pct": 1.8404, "ci95_savings_b": [-8.3169, 4.6361],
+           "verdict": "NOT_REPORTABLE", "reason": "BELOW_FLOOR", "exit_code": 4},
+    "C2": {"improvement_a_pct": 0.019, "savings_b_pct": 0.0233, "ci95_savings_b": [-1.9334, 1.8867],
+           "verdict": "NOT_REPORTABLE", "reason": "BELOW_FLOOR", "exit_code": 4}
+   },
+   "validity": "9/9 有效：rc=0、train_rc=['0']、步号 1..100 恰好一次（判据用**交付副本**的 `compute_valid`；远端 59 是旧版，故解析与统计全部在本地做）",
+   "interpretation": [
+    "**归因上界被直接测量确认**：C1 端到端实测 **~1.8%**，与先前的 kernel 归因上界（0.87% kernel 时间 ≈ 1.3% 步时）**同量级** ⇒ 两条独立证据一致。",
+    "★ **『去掉同步点能省更多』这条替代解释被排除**：端到端测量**已经包含**了任何因移除同步点而省下的等待，结果仍只有 ~1.8% ⇒ **残余边界就此销掉**（本协议 `boundaries` 最后一条不再悬置）。",
+    "**C2 实质为零**（0.02%，CI [-1.93, 1.89]）：每步 1 个标量 all_reduce 在这条配置上**没有可测成本**。",
+    "两臂 95% 区间都跨 0 ⇒ 在本样本量下**不显著**；即便只看点估计（~1.8% / ~0.02%）也**均 < 5% 阈值**。",
+    "⇒ 与 `net_conclusion` 一致：**不追求这两个候选**；且 C1 的观测代价（打断 grad_norm 指纹链）依旧成立，**代价 > 收益**的结论加强。"
+   ],
+   "framework_restored": "★ 收工**已还原并逐字节核对**：clip_grad_norm.py md5 `9a2db622…` → **`207f9cbad3da6adba9cd19a00b016b88`**（= 原值）；train_engine.py md5 `961945c1…` → **`e0e8879ac9c94b9ece48bf18584d3166`**（= 原值）；两文件 `py_compile` rc=0；**注入标记残留 = 0**；`grep -rl '§4-2 INJECT' /root/MindSpeed-MM` 命中 **0 个文件**。",
+   "card_time": "9 轮 × ~135 s ≈ **0.34 卡时**（批次墙钟约 21 min）",
+   "evidence": "远端证据_20260922/ab62/（9 份 train.log + 9 份 driver.log + runs_index + 本地解析/判定产物）"
+  },
+  "card_time_used": "归因 phase：1 次 profile 运行（wall 188 s）≈ 0.05 卡时；端到端 A/B phase：9 轮 × ~135 s ≈ 0.34 卡时。**合计 ≈ 0.39 卡时**"
+ }
+}

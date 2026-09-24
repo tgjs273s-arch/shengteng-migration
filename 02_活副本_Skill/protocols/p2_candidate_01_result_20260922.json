@@ -1,0 +1,70 @@
+{
+ "schema": "dsh.protocol.p2_candidate_result.v1",
+ "frozen_at": "2026-09-22",
+ "note": "★ 判据（设计/区组/容差）**先于运行冻结**，结果为负；**负结果留档，不调阈值、不换分母**。",
+
+ "candidate": {
+  "id": "P2-CAND-01",
+  "title": "chunk_o.py 里每次调用的主机→设备常量搬运改为设备上直接构造",
+  "file": "/root/MindSpeed-MM/mindspeed_mm/fsdp/ops/gdn/triton/chunk_o.py",
+  "edits": [
+   "torch.tril(torch.ones(BT, BT), diagonal=0).to(g.device) -> torch.tril(torch.ones(BT, BT, device=g.device), diagonal=0)  [2 处]",
+   "torch.zeros(B, H, diff).to(g.device) -> torch.zeros(B, H, diff, device=g.device)  [1 处]",
+   "torch.arange(0, BT).to(g.device) -> torch.arange(0, BT, device=g.device)  [1 处]"
+  ],
+  "why_it_might_help": "归因显示 chunk_o.py:443 的 aten::copy_ 每步 18 次、**设备耗时 0**、主机侧阻塞；这些常量张量每次调用都在主机新建再 H2D 搬运。",
+  "why_it_was_expected_to_fail": "★ **设计时已写下预期**：该 `aten::copy_` 的 `dev_self = 0` ⇒ **设备侧增量为 0**，收益只在主机侧，**不得**据此宣称加速。"
+ },
+
+ "criteria_frozen_before_run": {
+  "roles": {"N": "baseline（chunk_o.py 原文件）", "C1": "candidate（打补丁）"},
+  "block_design": "区组/顺序**预先固定**：N, C1, C1, N, N, C1（拉丁方，抵消单调漂移）",
+  "per_run": "100 步、GBS=8、dp2、同配置、同批次、**串行**（一次只跑一个训练任务）",
+  "noise": "由同批次 3 个 N 轮算出（不是事后补）",
+  "arm_state_binding": "每轮**显式设置文件状态**并记 sha256；**并断言**（候选臂 sha != 原文件 sha，否则拒绝该轮）",
+  "judge": "交付副本的 `59`（解析/成对统计）+ `62`（**区间下界 ≥ 阈值**才算达标）",
+  "tolerance": "数值等价判据见 protocols/candidate_tolerance_20260922.json（rtol=1e-5 × absmax）"
+ },
+
+ "correctness_check_before_perf": {
+  "method": "同一检查点 iter_0000030、确定性模式**两侧同开**、单步回放，候选 vs 既有确定性基线（`a_detsc`）",
+  "result": "**逐字节相同**（两 rank `REPLAY_IDENTICAL`：C1 loss+logits、C3 320 张量、C4 473 张量、optimizer before/after 全同）",
+  "reading": "强于冻结容差 rtol=1e-5 —— 是**完全保数值**。数值关通过。"
+ },
+
+ "end_to_end_result": {
+  "batch": "/root/ops/p2ab_20260922_164204（**有效批次**；两臂 sha 正确区分）",
+  "void_batch": "/root/ops/p2ab_20260922_162640（**作废**：6 轮全跑原文件 ⇒ 基线 vs 基线；见坑 217）",
+  "arms": {
+   "N": {"wall_s": [131.9, 130.2, 130.1], "window_median_ms": [705.55, 715.3, 708.45]},
+   "C1": {"wall_s": [130.3, 133.0, 129.6], "window_median_ms": [716.25, 700.65, 695.8]}
+  },
+  "noise_floor_pct": 1.38,
+  "threshold_pct": 5.0,
+  "threshold_breakdown": "max(2 × 1.38, 5.0) = 5.0（由 5% 下限决定）",
+  "savings_pct": 0.7724,
+  "ci95_savings_pct": [-4.163, 5.7078],
+  "ci_lower_ge_threshold": false,
+  "verdict": "PERFORMANCE_NOT_MET",
+  "reason": "CI_LOWER_BELOW_THRESHOLD",
+  "exit_code": 4,
+  "run_validity": "OK（6/6 rc=0、步号 1..100 恰好一次）",
+  "accuracy_validity": "UNVERIFIED"
+ },
+
+ "decision": "**停止这一候选**：点估计 +0.77%、区间跨零、区间下界远低于 5% ⇒ 无收益。**按规矩保留负结果、恢复基线**（框架已逐字节还原，sha == 备份），**不调阈值、不换分母、不包装成加速**。",
+
+ "why_this_was_the_expected_outcome": "证据在动手前就指向这个结论：该算子的**设备耗时为 0**，改动只减少主机侧工作，而主机侧工作与设备重叠 ⇒ 不产生墙钟收益。★ 这条应当成为方法论：**当候选的收益只存在于与设备重叠的主机侧时，默认预期为「不可报告」**。",
+
+ "boundaries": [
+  "本协议只覆盖**这一个**候选；不推论其它布局/拷贝类改动同样无收益。",
+  "`official_comparable=false`（mock 数据）；11–100 步为**本批诊断窗口**，不冒充官方唯一窗口。",
+  "单步数值保真**不等于**整体精度闭合。",
+  "全部为同机同批次比较；跨机/跨批次绝对时间作废。"
+ ],
+
+ "open_after_this": [
+  "路线 1（主机侧布局/拷贝）已证**无收益**并停止；若要继续需转**路线 2**：在你限定的范围内动**单个真实设备 kernel**（证据指向 GDN/linear-attn 族 28.22%，如 prepare_wy_repr_bwd / causal_conv1d_bwd）。",
+  "作废批次待标注 VOID（改名 + VOID_REASON.txt，不删除）。"
+ ]
+}

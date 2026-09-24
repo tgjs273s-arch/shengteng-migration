@@ -1,0 +1,60 @@
+{
+ "schema": "sk04_registry.v1",
+ "entries": [
+  {
+   "seq": 1,
+   "tag": "a3_dp2_officialgeom_100",
+   "run_dir": "/root/skills_R2/a3_dp2_100_verdict",
+   "manifest_sha256": "14a33acc4a6616bfe5d6da5600d301cf0e8a9244bc0d34c0aa3340bff935eb64",
+   "fingerprint_digest": "9879be4621d47784615c133c728cc1dc0ee14fb9656ef435f9af525b86bb204e",
+   "observed_digest": "b7e32319c039633a5ff179839e68f4f6d088938286514c043497b60feb5e50ff",
+   "prev_hash": "GENESIS",
+   "ts": "2026-09-07T13:41:00Z",
+   "entry_hash": "30d9c570f605bef3df4aaf31f2d44584d92a9edc7bb8d2359c9410a851cf1874"
+  },
+  {
+   "seq": 2,
+   "tag": "a3_dp2_full157k_officialgeom",
+   "run_dir": "/root/skills_R2/a3_dp2_full100_verdict",
+   "manifest_sha256": "7e622e0b2c16741bb00934cd48605aaef285020b609233872a19851ef7b96bb0",
+   "fingerprint_digest": "7baf6dfc5a0db40aac8e496cd4ac71f45cba73ee2f3e114e91e805bf025a8a89",
+   "observed_digest": "fc91e7fc3a05228f75dcffd1d82ee0e9b9bf38ce793480e244f3f4597159fb38",
+   "prev_hash": "30d9c570f605bef3df4aaf31f2d44584d92a9edc7bb8d2359c9410a851cf1874",
+   "ts": "2026-09-07T15:24:30Z",
+   "entry_hash": "b1e1944f8a8b13e9a454a9b437a5c294a22b44f2a002d2fc74811e1eeffcd9bd"
+  },
+  {
+   "seq": 3,
+   "tag": "a3_m8g1_slim_singledie",
+   "run_dir": "/root/skills_R2/a3_m8g1_100_verdict",
+   "manifest_sha256": "9c568ea00fc774cf801f5fd73961a38adc739d6c47d326a2e86a43a0000807b3",
+   "fingerprint_digest": "11f044af57da3a0cfd2d88eca9e19ca48ad60795499d6dcfb62dfeadd2877b17",
+   "observed_digest": "85df20354916fa05fa6ad30ecc6eb044cecfafb637f4a8781df700c9a363941e",
+   "prev_hash": "b1e1944f8a8b13e9a454a9b437a5c294a22b44f2a002d2fc74811e1eeffcd9bd",
+   "ts": "2026-09-07T15:40:55Z",
+   "entry_hash": "e65394cdb2198542ea751f39be239499ce619ecc8acbce768dd7498c2682da65"
+  },
+  {
+   "seq": 4,
+   "tag": "a3_e1_norecomp_officialgeom",
+   "run_dir": "/root/skills_R2/a3_e1_100_verdict",
+   "manifest_sha256": "0951341071b5d8814949dddbaac0ea8c5efa1f6778ad0b76eea76b61a2184481",
+   "fingerprint_digest": "acabd8feda2054635ca3f7733c30111505faa9398988ccc872cf5f8ce30bbbdd",
+   "observed_digest": "a1e7908b324997a702ad0036e8d858071392e95cc449192d2996cfb9fc6b130b",
+   "prev_hash": "e65394cdb2198542ea751f39be239499ce619ecc8acbce768dd7498c2682da65",
+   "ts": "2026-09-10T09:51:51Z",
+   "entry_hash": "003839ce1cf1ec6f9355ab1448678f28bca346180c65576450e2f15f207f157b"
+  },
+  {
+   "seq": 5,
+   "tag": "a3_e4b_final_beat_official",
+   "run_dir": "/root/skills_R2/a3_e4b_100_verdict",
+   "manifest_sha256": "0e36d267b85e8ec44d5e2090366bd6a82b9050f6e8496f9703776bc4f5559c62",
+   "fingerprint_digest": "86aca7234950265e862d2372929fa3385b0d8f69599caf780ec12169594a0364",
+   "observed_digest": "9238c2338246c6720ae443e16321b23bd7fda00fbbdf04d6fc13b5f66eb7bcb2",
+   "prev_hash": "003839ce1cf1ec6f9355ab1448678f28bca346180c65576450e2f15f207f157b",
+   "ts": "2026-09-10T10:09:50Z",
+   "entry_hash": "5d0dc27f854705db89d225070f247811b925d8f20f8c7e813268999045f2b00a"
+  }
+ ]
+}

@@ -1,0 +1,336 @@
+{
+ "schema": "p59ab.v2",
+ "key": "model.skip_gdn_recompute",
+ "official_comparable": false,
+ "comparability": {
+  "reason": "不可比：与计划不一致或必要字段缺失（plan_consistent=False）；数据类别=mock（非官方数据）",
+  "details": {
+   "is_official_geometry": true,
+   "plan_consistent": false,
+   "plan_details": {
+    "plan": "/root/qwen35-ascend-migrator/out/plan/train_config.yaml",
+    "n_compared": 17,
+    "missing_fields": [],
+    "deviations": [
+     {
+      "key": "data.dataset_param.basic_parameters.dataset",
+      "plan": "/root/data/output_llava_coco_data.json",
+      "run": "/root/MindSpeed-MM/data/mocked_vl_data/mock_data_pic_num_1_textlen_512.json",
+      "plan_path": "data.dataset_param.basic_parameters.dataset",
+      "run_path": "data.dataset_param.basic_parameters.dataset"
+     },
+     {
+      "key": "data.dataset_param.basic_parameters.dataset_dir",
+      "plan": "/root/data/coco",
+      "run": "/root/MindSpeed-MM/data/mocked_vl_data",
+      "plan_path": "data.dataset_param.basic_parameters.dataset_dir",
+      "run_path": "data.dataset_param.basic_parameters.dataset_dir"
+     },
+     {
+      "key": "parallel.fsdp_plan.pregather",
+      "plan": true,
+      "run": false,
+      "plan_path": "parallel.fsdp_plan.pregather",
+      "run_path": "parallel.fsdp_plan.pregather"
+     },
+     {
+      "key": "parallel.fsdp_plan.reshard_after_forward",
+      "plan": false,
+      "run": true,
+      "plan_path": "parallel.fsdp_plan.reshard_after_forward",
+      "run_path": "parallel.fsdp_plan.reshard_after_forward"
+     }
+    ],
+    "resolved": {
+     "parallel.data_parallel_size": {
+      "plan_path": "parallel.data_parallel_size",
+      "plan_how": "exact",
+      "run_path": "parallel.data_parallel_size",
+      "run_how": "exact"
+     },
+     "training.micro_batch_size": {
+      "plan_path": "training.micro_batch_size",
+      "plan_how": "exact",
+      "run_path": "training.micro_batch_size",
+      "run_how": "exact"
+     },
+     "training.gradient_accumulation_steps": {
+      "plan_path": "training.gradient_accumulation_steps",
+      "plan_how": "exact",
+      "run_path": "training.gradient_accumulation_steps",
+      "run_how": "exact"
+     },
+     "training.load_rank0_and_broadcast": {
+      "plan_path": "training.load_rank0_and_broadcast",
+      "plan_how": "exact",
+      "run_path": "training.load_rank0_and_broadcast",
+      "run_how": "exact"
+     },
+     "training.save_format": {
+      "plan_path": "training.save_format",
+      "plan_how": "exact",
+      "run_path": "training.save_format",
+      "run_how": "exact"
+     },
+     "data.dataset_param.basic_parameters.dataset": {
+      "plan_path": "data.dataset_param.basic_parameters.dataset",
+      "plan_how": "exact",
+      "run_path": "data.dataset_param.basic_parameters.dataset",
+      "run_how": "exact"
+     },
+     "data.dataset_param.basic_parameters.dataset_dir": {
+      "plan_path": "data.dataset_param.basic_parameters.dataset_dir",
+      "plan_how": "exact",
+      "run_path": "data.dataset_param.basic_parameters.dataset_dir",
+      "run_how": "exact"
+     },
+     "data.dataset_param.basic_parameters.cutoff_len": {
+      "plan_path": "data.dataset_param.basic_parameters.cutoff_len",
+      "plan_how": "exact",
+      "run_path": "data.dataset_param.basic_parameters.cutoff_len",
+      "run_how": "exact"
+     },
+     "data.dataset_param.preprocess_parameters.image_max_pixels": {
+      "plan_path": "data.dataset_param.preprocess_parameters.image_max_pixels",
+      "plan_how": "exact",
+      "run_path": "data.dataset_param.preprocess_parameters.image_max_pixels",
+      "run_how": "exact"
+     },
+     "data.dataloader_param.num_workers": {
+      "plan_path": "data.dataloader_param.num_workers",
+      "plan_how": "exact",
+      "run_path": "data.dataloader_param.num_workers",
+      "run_how": "exact"
+     },
+     "model.gdn_implementation": {
+      "plan_path": "model.gdn_implementation",
+      "plan_how": "exact",
+      "run_path": "model.gdn_implementation",
+      "run_how": "exact"
+     },
+     "model.causal_conv1d_implementation": {
+      "plan_path": "model.causal_conv1d_implementation",
+      "plan_how": "exact",
+      "run_path": "model.causal_conv1d_implementation",
+      "run_how": "exact"
+     },
+     "model.skip_gdn_recompute": {
+      "plan_path": "model.skip_gdn_recompute",
+      "plan_how": "exact",
+      "run_path": "model.skip_gdn_recompute",
+      "run_how": "exact"
+     },
+     "parallel.fsdp_plan.pregather": {
+      "plan_path": "parallel.fsdp_plan.pregather",
+      "plan_how": "exact",
+      "run_path": "parallel.fsdp_plan.pregather",
+      "run_how": "exact"
+     },
+     "parallel.fsdp_plan.reshard_after_forward": {
+      "plan_path": "parallel.fsdp_plan.reshard_after_forward",
+      "plan_how": "exact",
+      "run_path": "parallel.fsdp_plan.reshard_after_forward",
+      "run_how": "exact"
+     },
+     "parallel.fsdp_plan.num_to_forward_prefetch": {
+      "plan_path": "parallel.fsdp_plan.num_to_forward_prefetch",
+      "plan_how": "exact",
+      "run_path": "parallel.fsdp_plan.num_to_forward_prefetch",
+      "run_how": "exact"
+     },
+     "parallel.fsdp_plan.num_to_backward_prefetch": {
+      "plan_path": "parallel.fsdp_plan.num_to_backward_prefetch",
+      "plan_how": "exact",
+      "run_path": "parallel.fsdp_plan.num_to_backward_prefetch",
+      "run_how": "exact"
+     }
+    }
+   },
+   "dataset_kind": "mock",
+   "data_identity": {
+    "path": "/root/MindSpeed-MM/data/mocked_vl_data/mock_data_pic_num_1_textlen_512.json",
+    "kind": "mock",
+    "bytes": 2601984,
+    "sha256_12": "247e7bb48507"
+   },
+   "reasons": [
+    "与计划不一致或必要字段缺失（plan_consistent=False）",
+    "数据类别=mock（非官方数据）"
+   ]
+  },
+  "is_official_geometry": true,
+  "note": "★ 三个独立结论：plan_consistent / ab_comparable / official_comparable（复核意见 2026-09-21）。official_comparable 决定 step1 锚点规则；只看几何会让 mock 实跑的 A/B 被误判为 REJECT_NUMERIC。**absence of official-comparable data ≠ absence of valid same-machine A/B evidence**"
+ },
+ "order_used": [
+  "A",
+  "B",
+  "B",
+  "A"
+ ],
+ "steps": 100,
+ "A_value": true,
+ "B_value": false,
+ "n_A": 2,
+ "n_B": 2,
+ "baseline_A_mean_ms": 524.9,
+ "baseline_drift_pct": 3.25,
+ "paired": {
+  "pairs": 2,
+  "diffs": [
+   {
+    "pair": 1,
+    "A_ms": 516.5,
+    "B_ms": 556.95,
+    "diff_ms": 40.45,
+    "delta_pct": 7.832
+   },
+   {
+    "pair": 2,
+    "A_ms": 533.3,
+    "B_ms": 568.15,
+    "diff_ms": 34.85,
+    "delta_pct": 6.535
+   }
+  ],
+  "mean_delta_pct": 7.184,
+  "sd_pct": 0.917,
+  "t_crit": 12.706,
+  "ci95_delta_pct": [
+   -1.056,
+   15.423
+  ],
+  "improvement_pct": -7.184,
+  "note": "负的 delta 表示 B 更快；改善率 = -mean"
+ },
+ "step1_loss": {
+  "A": 0.1154926,
+  "B": 0.1154926,
+  "official_anchor": 1.924621,
+  "anchor_ok": true,
+  "anchor_rule": "非官方几何（official_comparable=False）：官方锚点不适用，只要求 A/B 两次 step1 彼此一致"
+ },
+ "pointwise_rel_diff_pct": {
+  "loss": {
+   "len_a": 100,
+   "len_b": 100,
+   "length_ok": true,
+   "n": 2,
+   "compared": 2,
+   "undefined_zero_baseline": 0,
+   "max_pct": 0.0,
+   "mean_pct": 0.0
+  },
+  "grad_norm": {
+   "len_a": 100,
+   "len_b": 100,
+   "length_ok": true,
+   "n": 2,
+   "compared": 2,
+   "undefined_zero_baseline": 0,
+   "max_pct": 0.0549,
+   "mean_pct": 0.0285
+  }
+ },
+ "numeric_tol_pct": 2.0,
+ "pointwise_per_pair": [
+  {
+   "loss": {
+    "len_a": 100,
+    "len_b": 100,
+    "length_ok": true,
+    "n": 2,
+    "compared": 2,
+    "undefined_zero_baseline": 0,
+    "max_pct": 0.0,
+    "mean_pct": 0.0
+   },
+   "grad_norm": {
+    "len_a": 100,
+    "len_b": 100,
+    "length_ok": true,
+    "n": 2,
+    "compared": 2,
+    "undefined_zero_baseline": 0,
+    "max_pct": 0.0549,
+    "mean_pct": 0.0285
+   }
+  },
+  {
+   "loss": {
+    "len_a": 100,
+    "len_b": 100,
+    "length_ok": true,
+    "n": 2,
+    "compared": 2,
+    "undefined_zero_baseline": 0,
+    "max_pct": 0.0,
+    "mean_pct": 0.0
+   },
+   "grad_norm": {
+    "len_a": 100,
+    "len_b": 100,
+    "length_ok": true,
+    "n": 2,
+    "compared": 2,
+    "undefined_zero_baseline": 0,
+    "max_pct": 0.0021,
+    "mean_pct": 0.0011
+   }
+  }
+ ],
+ "verdict": "UNCERTAIN",
+ "verdict_reason": "配对差 95% 区间 [-1.056, 15.423] 跨 0（含基线漂移 3.25%）",
+ "runs": [
+  {
+   "tag": "00_A",
+   "variant": "A",
+   "valid": true,
+   "single_variable_ok": true,
+   "window_median_ms": 516.5,
+   "wall_seconds": 140.8,
+   "identity": {
+    "boot": "d3e2cfb0-9169-4c3e-8ff9-3fefdec0f75a",
+    "hostname": "5d7b6b055c02"
+   }
+  },
+  {
+   "tag": "01_B",
+   "variant": "B",
+   "valid": true,
+   "single_variable_ok": true,
+   "window_median_ms": 556.95,
+   "wall_seconds": 145.7,
+   "identity": {
+    "boot": "d3e2cfb0-9169-4c3e-8ff9-3fefdec0f75a",
+    "hostname": "5d7b6b055c02"
+   }
+  },
+  {
+   "tag": "02_B",
+   "variant": "B",
+   "valid": true,
+   "single_variable_ok": true,
+   "window_median_ms": 568.15,
+   "wall_seconds": 147.1,
+   "identity": {
+    "boot": "d3e2cfb0-9169-4c3e-8ff9-3fefdec0f75a",
+    "hostname": "5d7b6b055c02"
+   }
+  },
+  {
+   "tag": "03_A",
+   "variant": "A",
+   "valid": true,
+   "single_variable_ok": true,
+   "window_median_ms": 533.3,
+   "wall_seconds": 143.1,
+   "identity": {
+    "boot": "d3e2cfb0-9169-4c3e-8ff9-3fefdec0f75a",
+    "hostname": "5d7b6b055c02"
+   }
+  }
+ ],
+ "note": "统计单位是**运行**；配对差按索引配对（平衡顺序可抵消线性漂移）；性能结论不得用于宣称精度达标",
+ "official_median_ms": null,
+ "official_ratio_suppressed": "official_comparable=False：**不输出**与官方的比值（几何不同，比值无意义）"
+}

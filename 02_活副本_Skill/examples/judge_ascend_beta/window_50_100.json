@@ -1,0 +1,22 @@
+{
+ "schema": "loss_series_window.v1",
+ "log": "/root/qwen35-ascend-migrator/out/train/train.log",
+ "csv": "/root/qwen35-ascend-migrator/out/bench/loss_series.csv",
+ "window": "50,100",
+ "rows": 100,
+ "iter_first": 1,
+ "iter_last": 100,
+ "unparsed_iteration_lines": 1,
+ "steps_used": 51,
+ "median_ms": 925.4,
+ "mean_ms": 983.2529411764706,
+ "min_ms": 775.1,
+ "max_ms": 4142.4,
+ "samples_per_s": 8.644910309055543,
+ "loss_median": 1.326593,
+ "gn_median": 9.779,
+ "step1_loss": 1.92462,
+ "step1_grad_norm": 134.288,
+ "last_loss": 1.44819,
+ "last_grad_norm": 10.078
+}

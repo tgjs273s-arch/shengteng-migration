@@ -1,0 +1,57 @@
+{
+ "schema": "dsh.evidence.provenance.v1",
+ "dir": "远端证据_20260922/ab62/",
+ "run_dir": "/root/ops/ab62_20260922_141427",
+ "machine": "199.98.58.213 / host 4ac9ca3712ba / boot fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+ "boot_id": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+ "purpose": "§4-2 代码级同步候选的端到端 A/B 证据（3 臂 × 3 轮拉丁方；100 步协议；mbs4×gas1×world2；GBS=8；official_comparable=false）",
+ "WHY_THIS_FILE": "★ 本目录**同时**含「远端原件」与「本地派生件」，两者性质不同，必须显式区分，否则评审会把本地派生件当成远端原件。",
+ "remote_originals_pulled_with_sha256": {
+  "note": "由 `工具_重建/pull_evidence.py` 走会话守护拉回，**逐文件 sha256 校验**后落盘；文件名形如 `<run>__<tag>__<basename>`",
+  "files": [
+   "ab62_20260922_141427__runs_index.json",
+   "ab62_20260922_141427__00_N__train.log", "ab62_20260922_141427__00_N__driver.log",
+   "ab62_20260922_141427__01_C1__train.log", "ab62_20260922_141427__01_C1__driver.log",
+   "ab62_20260922_141427__02_C2__train.log", "ab62_20260922_141427__02_C2__driver.log",
+   "ab62_20260922_141427__03_C1__train.log", "ab62_20260922_141427__03_C1__driver.log",
+   "ab62_20260922_141427__04_C2__train.log", "ab62_20260922_141427__04_C2__driver.log",
+   "ab62_20260922_141427__05_N__train.log", "ab62_20260922_141427__05_N__driver.log",
+   "ab62_20260922_141427__06_C2__train.log", "ab62_20260922_141427__06_C2__driver.log",
+   "ab62_20260922_141427__07_N__train.log", "ab62_20260922_141427__07_N__driver.log",
+   "ab62_20260922_141427__08_C1__train.log", "ab62_20260922_141427__08_C1__driver.log",
+   "_ab62_20260922_141426.launch.log"
+  ],
+  "count": 20
+ },
+ "locally_derived": {
+  "note": "★ **不是**远端原件：由**本地**工具用**交付副本**的 `59`/`62` 实现算出（远端那份 59 是旧版无 `win_ms_of`，故判据一律回本地做）",
+  "producer": "工具_重建/_ab62_analyze.py（用交付副本的 PAT/compute_valid/paired_stats）+ 交付副本 scripts/62_reportability.py",
+  "files": {
+   "ab62_20260922_141427__runs_parsed.json": "9 轮日志经交付副本 PAT 解析后的逐轮记录（含 validity 判定与 gradnorm/loss 头部）",
+   "ab62_20260922_141427__null_summary.json": "N 臂 3 轮的噪声底噪（schema p59null.v1；spread_pct=1.53）",
+   "ab62_20260922_141427__C1_vs_N__summary.json": "C1 vs N 成对统计（schema p59ab.v2）",
+   "ab62_20260922_141427__C2_vs_N__summary.json": "C2 vs N 成对统计（schema p59ab.v2）",
+   "ab62_20260922_141427__C1_reportability.json": "62 对 C1 的可报告性判定产物（NOT_REPORTABLE/BELOW_FLOOR）",
+   "ab62_20260922_141427__C2_reportability.json": "62 对 C2 的可报告性判定产物（NOT_REPORTABLE/BELOW_FLOOR）"
+  },
+  "count": 6
+ },
+ "key_numbers": {
+  "noise_floor_spread_pct": 1.53,
+  "threshold_pct": 5.0,
+  "threshold_breakdown": "max(2 × 1.53, 5.0) = 5.0（由 5% 下限决定）",
+  "C1_savings_b_pct": 1.8404,
+  "C1_ci95_savings_b": [-8.3169, 4.6361],
+  "C1_verdict": "NOT_REPORTABLE / BELOW_FLOOR",
+  "C2_savings_b_pct": 0.0233,
+  "C2_ci95_savings_b": [-1.9334, 1.8867],
+  "C2_verdict": "NOT_REPORTABLE / BELOW_FLOOR",
+  "injection_proof": "C1 三轮日志 grad_norm 全为 0.0，N/C2 为 ~34.17（markers c1/c2 均 true）"
+ },
+ "framework_restored": {
+  "claim": "注入已完全还原、逐字节核对通过；**远端框架当前与开工前一致**",
+  "clip_grad_norm.py": "9a2db622747d6a2c414dad8e54ea9850 -> 207f9cbad3da6adba9cd19a00b016b88 (= 原值)",
+  "train_engine.py": "961945c1508383323230bfc38e4048dc -> e0e8879ac9c94b9ece48bf18584d3166 (= 原值)",
+  "residue_scan": "grep -rl '§4-2 INJECT' /root/MindSpeed-MM -> 0 个文件；两文件内标记残留 = 0；py_compile rc=0"
+ }
+}

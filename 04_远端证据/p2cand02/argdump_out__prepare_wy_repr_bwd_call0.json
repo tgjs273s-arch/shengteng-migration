@@ -1,0 +1,144 @@
+{
+ "fn": "prepare_wy_repr_bwd",
+ "call_index": 0,
+ "args": [],
+ "kwargs": {
+  "k": {
+   "py_type": "Tensor",
+   "shape": [
+    4,
+    1584,
+    16,
+    128
+   ],
+   "dtype": "torch.bfloat16",
+   "stride": [
+    3244032,
+    2048,
+    128,
+    1
+   ],
+   "device": "npu:0",
+   "is_contiguous": true,
+   "requires_grad": true
+  },
+  "v": {
+   "py_type": "Tensor",
+   "shape": [
+    4,
+    1584,
+    16,
+    128
+   ],
+   "dtype": "torch.bfloat16",
+   "stride": [
+    3244032,
+    2048,
+    128,
+    1
+   ],
+   "device": "npu:0",
+   "is_contiguous": true,
+   "requires_grad": false
+  },
+  "beta": {
+   "py_type": "Tensor",
+   "shape": [
+    4,
+    1584,
+    16
+   ],
+   "dtype": "torch.bfloat16",
+   "stride": [
+    25344,
+    16,
+    1
+   ],
+   "device": "npu:0",
+   "is_contiguous": true,
+   "requires_grad": true
+  },
+  "g": {
+   "py_type": "Tensor",
+   "shape": [
+    4,
+    1584,
+    16
+   ],
+   "dtype": "torch.float32",
+   "stride": [
+    25344,
+    16,
+    1
+   ],
+   "device": "npu:0",
+   "is_contiguous": true,
+   "requires_grad": false
+  },
+  "A": {
+   "py_type": "Tensor",
+   "shape": [
+    4,
+    1584,
+    16,
+    64
+   ],
+   "dtype": "torch.bfloat16",
+   "stride": [
+    1622016,
+    1024,
+    64,
+    1
+   ],
+   "device": "npu:0",
+   "is_contiguous": true,
+   "requires_grad": false
+  },
+  "dw": {
+   "py_type": "Tensor",
+   "shape": [
+    4,
+    1584,
+    16,
+    128
+   ],
+   "dtype": "torch.bfloat16",
+   "stride": [
+    3244032,
+    2048,
+    128,
+    1
+   ],
+   "device": "npu:0",
+   "is_contiguous": true,
+   "requires_grad": false
+  },
+  "du": {
+   "py_type": "Tensor",
+   "shape": [
+    4,
+    1584,
+    16,
+    128
+   ],
+   "dtype": "torch.bfloat16",
+   "stride": [
+    3244032,
+    2048,
+    128,
+    1
+   ],
+   "device": "npu:0",
+   "is_contiguous": true,
+   "requires_grad": false
+  },
+  "cu_seqlens": {
+   "py_type": "NoneType",
+   "value": null
+  },
+  "chunk_size": {
+   "py_type": "int",
+   "value": 64
+  }
+ }
+}

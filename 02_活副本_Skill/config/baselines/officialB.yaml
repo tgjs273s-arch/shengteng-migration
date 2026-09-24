@@ -1,0 +1,246 @@
+# =============================================================================
+# officialB.yaml — R2-SK04 目标基准 B 声明指纹（次级对照：预训练续训尺度 100 步）
+# -----------------------------------------------------------------------------
+# 角色：A2 审计"7 项配置偏离清单"的对照目标 = 官方 triton 日志（2026-07-24，
+#       910C 2 卡 dp=2、GBS=8、gdn/causal=triton、预训练 dcp 续训、loss 1.92→1.45）。
+#       数值 CSV：code/skills/skill_round2_SM3/reference_official_100steps.csv。
+# 读取方：scripts/fingerprint_cfg.py / scripts/judge_comparable.py 只读本文件的
+#       schema/baseline_id/officiality/fingerprint/derived 段；extra_observed 仅供人工参考。
+# 出处标注约定：
+#   * evidence[].file 为仓库相对路径，line 为文件内行号（1 起）。
+#   * 主出处 = docs/official/triton精度日志.txt（Configuration Details L46-250 +
+#     迭代行 L602-702；日志内嵌"Loaded configuration file: examples/qwen3_5/
+#     qwen3_5_4B_config.yaml" L6 —— 4B 模板复用、模型实为 0.8B，见 R1-SK02 audit §4）。
+#   * 配置层旁证 = 官方《数据及训练配置、脚本.pdf》§3.3（docs/official_templates_parsed.md
+#     L156-259 逐键摘录，对应官方 Triton 配置原文）。
+#   * A2 审计引用 = docs/audit_round1_v3_A2.md §3.1（7 项偏离表原文）。
+# 诚实标注（officiality）：
+#   A2 审计结论（audit_round1_v3_A2.md §2.2/§7-2 + skill_R1-SK02 frozen_baseline.json）：
+#   **B 数值日志的官方身份未证实** —— chaspark 两帖（训练脚本/Triton 精度日志）均有登录墙、
+#   正文未核；hiascend 官方账号《精度测试日志》全文无 "Triton" 字样；frozen_baseline.json
+#   对 B 的角色 = "次级对照/性能参考"（status=proposed）。故 officiality=proposed，须官方确认
+#   （动作单见下）后才可把 B 写死为"唯一验收基准"；确认前报告一律双基准标注。
+#   注意区分：B 的【配置值】与官方 PDF §3.3 逐项吻合（配置层有官方佐证），未证实的是
+#   【这份 100 步数值日志】是否官方验收口径产物。
+# 官方确认动作单（officiality → confirmed 的路径）：
+#   ① chaspark 登录核对 Triton 帖标题/正文/日期/附件（official_links_20260901.md L106-110）；
+#   ② 邮件 AiContest@huawei.com / 交流圈提问：验收参考日志是哪一份、从零还是预训练续训、
+#      是否要求同卡数/同实现；
+#   ③ 任一答复落地 → 更新本文件 officiality 并全仓库同步（frozen_baseline.json/compare.py 口径）。
+# =============================================================================
+
+schema: sk04_baseline.v1
+baseline_id: officialB
+officiality: proposed            # confirmed | proposed | unverified —— B=proposed（A2 审计结论）
+officiality_note: >-
+  官方身份未证实：chaspark 帖登录墙未核 + hiascend 官方日志无 Triton 字样（A2 审计 §2.2 弱项 2、
+  §7-2）；配置值与官方 PDF §3.3 吻合（旁证）。确认动作见文件头动作单。
+role: 次级对照/性能参考（预训练续训尺度 1.x；2 卡 dp=2 ~0.43s/步）
+declared_by: CA3 (R2-SK04)
+declared_at: "2026-09-02"
+
+source:
+  raw_log: docs/official/triton精度日志.txt          # 2026-07-24（用户提供 + chaspark 未核）
+  raw_log_config_details_lines: "L46-L250（Configuration Details）；迭代行 L602-L702（100 步）"
+  csv: code/skills/skill_round2_SM3/reference_official_100steps.csv
+  csv_sha256: 7db48802775fc45c0b6276ec181394c924cb9e9c3439aa273a93d85c3bc3038a   # 本地实算一致
+  config_file_logged: examples/qwen3_5/qwen3_5_4B_config.yaml   # 4B 模板复用跑 0.8B（audit §4）
+  pdf_corroboration: docs/official_templates_parsed.md          # §3.3 官方 Triton 配置原文 L156-259
+  load_dcp: /home/model/Qwen3.5-0.8B-dcp/release                # 预训练 dcp 续训（加载证据 L602 前）
+  loss_band: B                                                 # step1(lr=0)=1.924621 <5 → B 带（预训练续训尺度）
+  step1_log_line: 602
+  step100_log_line: 702
+
+# ---------------------------------------------------------------------------
+# 7 项偏离维度声明指纹（维度清单/顺序 = A2 审计 §3.1 表；每维带出处行号）
+# value 语义：与 run 侧配置同键比较；dataset_file 比较 file 的 basename（环境路径可不同），
+#            字节/顺序身份见 byte_sha256/order_sha256（本机官方文件不可得 → null → unresolved）。
+# ---------------------------------------------------------------------------
+fingerprint:
+  shuffle:
+    value: false
+    note: 关闭保证 loss 一致 = 精度对比前提（A2 审计 §3.1 #1）
+    evidence:
+      - file: docs/official/triton精度日志.txt
+        line: 167
+        quote: "shuffle: False"
+      - file: docs/official_templates_parsed.md
+        line: 206
+        quote: "shuffle: false          # 关闭保证 loss 一致"
+      - file: docs/audit_round1_v3_A2.md
+        line: 87
+        quote: "官方 B shuffle=False（日志 L167；PDF L206 关闭保证 loss 一致=精度对比前提）"
+
+  freeze:
+    value: [model.visual]
+    note: 微调阶段不对 visual 部分做参数更新（求和域不含视觉塔梯度 —— C4-02 freeze 主因开关）
+    evidence:
+      - file: docs/official/triton精度日志.txt
+        line: 89
+        quote: "freeze: ['model.visual']"
+      - file: docs/official_templates_parsed.md
+        line: 222
+        quote: "freeze: [model.visual]          # 一般微调阶段不对 visual 部分进行参数改变"
+      - file: docs/audit_round1_v3_A2.md
+        line: 88
+        quote: "官方 B freeze=[model.visual]（日志 L89）"
+
+  cutoff_len:
+    value: 1024
+    evidence:
+      - file: docs/official/triton精度日志.txt
+        line: 106
+        quote: "cutoff_len: 1024"
+      - file: docs/official_templates_parsed.md
+        line: 191
+        quote: "cutoff_len: 1024"
+      - file: docs/audit_round1_v3_A2.md
+        line: 89
+        quote: "官方 B cutoff_len=1024（日志 L106）"
+
+  mbs:
+    value: 4
+    note: 2 卡下 mbs4×gas1×dp2 保持 GBS=8（PDF 原文注释"实现较快的训练速度"）
+    evidence:
+      - file: docs/official/triton精度日志.txt
+        line: 217
+        quote: "micro_batch_size: 4"
+      - file: docs/official_templates_parsed.md
+        line: 253
+        quote: "micro_batch_size: 4             # 2 卡状态保持 globalbatchsize=8，实现较快的训练速度"
+      - file: docs/audit_round1_v3_A2.md
+        line: 90
+        quote: "官方 B mbs/gas/dp = 4/1/dp=2（world_size=2，日志 L217-218/L83）"
+
+  gas:
+    value: 1
+    evidence:
+      - file: docs/official/triton精度日志.txt
+        line: 218
+        quote: "gradient_accumulation_steps: 1"
+      - file: docs/official_templates_parsed.md
+        line: 254
+        quote: "gradient_accumulation_steps: 1"
+      - file: docs/audit_round1_v3_A2.md
+        line: 90
+
+  dp:
+    value: 2
+    source: observed_world   # 运行态 world_size（yaml 不写 dp；tp/ulysses=1 时 dp==world）
+    note: data_parallel_size=2 / world_size=2（910C 单卡 2 chip；A2 为单卡 → dp=2 物理不可行）
+    evidence:
+      - file: docs/official/triton精度日志.txt
+        line: 48
+        quote: "data_parallel_size: 2"
+      - file: docs/official/triton精度日志.txt
+        line: 83
+        quote: "world_size: 2"
+      - file: docs/audit_round1_v3_A2.md
+        line: 103
+        quote: "官方 B 为 2 卡（910C 单卡 2 chip，日志 world_size=2）"
+
+  gdn_causal:
+    value: {gdn: triton, causal: triton}
+    note: 官方口径实现 = gdn=triton/causal_conv1d=triton（ascendc 对精度非必要，A2 审计 §3.4）
+    evidence:
+      - file: docs/official/triton精度日志.txt
+        line: 92
+        quote: "gdn_implementation: triton"
+      - file: docs/official/triton精度日志.txt
+        line: 93
+        quote: "causal_conv1d_implementation: triton"
+      - file: docs/official_templates_parsed.md
+        line: 223
+        quote: "gdn_implementation: triton"
+      - file: docs/official_templates_parsed.md
+        line: 224
+        quote: "causal_conv1d_implementation: triton"
+      - file: docs/audit_round1_v3_A2.md
+        line: 91
+        quote: "官方 B gdn/causal=triton（日志 L92-93）"
+
+  dataset_file:
+    value:
+      file: output_llava_coco_data.json          # basename 比较键
+      dataset_dir: /home/dataset/llava_coco/coco/
+      full_path: /data/s00977099/output_llava_coco_data.json
+    byte_sha256: null                            # 官方文件本机不可得 → unresolved（诚实）
+    order_sha256: null
+    identity_note: >-
+      官方 B 数据文件不可得（chaspark 登录墙/未随附）：字节/顺序身份标 unresolved；
+      待拿到官方 json 后用 scripts/data_id.py 输出回填 byte_sha256/order_sha256。
+    evidence:
+      - file: docs/official/triton精度日志.txt
+        line: 105
+        quote: "dataset: ['/data/s00977099/output_llava_coco_data.json']"
+      - file: docs/official/triton精度日志.txt
+        line: 104
+        quote: "dataset_dir: /home/dataset/llava_coco/coco/"
+      - file: docs/audit_round1_v3_A2.md
+        line: 92
+        quote: "官方 B 数据集文件 output_llava_coco_data.json（我方 annotations_slim.json 身份未核对）"
+      - file: docs/official_templates_parsed.md
+        line: 309
+        quote: "数据：LLaVA-COCO（/home/dataset/llava_coco/coco/ + /data/s00977099/output_llava_coco_data.json）"
+
+  num_workers:
+    value: 8
+    note: dataloader num_workers=8；preprocess_num_workers=16（性能项，理论不影响数值）
+    evidence:
+      - file: docs/official/triton精度日志.txt
+        line: 175
+        quote: "num_workers: 8"
+      - file: docs/official/triton精度日志.txt
+        line: 112
+        quote: "preprocessing_num_workers: 16"
+      - file: docs/audit_round1_v3_A2.md
+        line: 93
+        quote: "官方 B num_workers=8（preprocess 16）"
+
+# ---------------------------------------------------------------------------
+# 派生指纹（每步样本数 / 打印语义 / 数值带）
+# ---------------------------------------------------------------------------
+derived:
+  n_eff:
+    value: 8
+    formula: "world(2) × mbs(4) × gas(1)"
+    note: 与 CSV Samples 列每步 +8 一致（R2-C4-01 批量证伪依据：官方每步样本数=8）
+    evidence:
+      - file: docs/official/triton精度日志.txt
+        line: 602
+        quote: "iteration 1/100 | consumed samples: 8 | … | global batch size: 8 | loss: 1.924621E+00 | grad norm: 134.266"
+      - file: code/skills/skill_round2_SM3/reference_official_100steps.csv
+        line: 2
+        quote: "1,8,119405.2,0.0,8,1.924621,134.266"
+  gbs_eff: 8
+  world_size: 2
+  loss_print_semantics: >-
+    dp=2：每步打印 rank0 的本地位 loss（其分片 batch 的均值），非全局 8 样本均值
+    （日志未见打印前 all-reduce 证据）—— 1 卡想逐点复现 2 卡日志须重建 rank0 切片语义
+    （A2 审计 §3.2）
+  loss_band: B
+  step1_lr0: {loss: 1.924621, grad_norm: 134.266, source_csv_line: 2}
+  step100: {loss: 1.448866, grad_norm: 10.077, source_csv_line: 101}
+  kernel_evidence_lines:   # NPU triton 生效标记（本日志无 roll back to CPU）
+    - file: docs/official/triton精度日志.txt
+      line: 365
+      quote: "Qwen3_5 causal_conv1d use NPU triton ops"
+    - file: docs/official/triton精度日志.txt
+      line: 366
+      quote: "Qwen3_5GatedDeltaNet use NPU triton fused ops"
+
+# ---------------------------------------------------------------------------
+# 7 维之外的已知字段（extra_observed —— 不进偏离表，供人工/未来扩展参考）
+# ---------------------------------------------------------------------------
+extra_observed:
+  loss_type: {value: default, evidence: [{file: docs/official/triton精度日志.txt, line: 286}]}
+  enable_chunk_loss: {value: true, evidence: [{file: docs/official/triton精度日志.txt, line: 289}]}
+  enable_activation_offload: {value: true, evidence: [{file: docs/official/triton精度日志.txt, line: 295}]}
+  seed: {value: 42, evidence: [{file: docs/official/triton精度日志.txt, line: 227}]}
+  lr: {value: 1.0e-5, evidence: [{file: docs/official/triton精度日志.txt, line: 201}]}
+  lr_decay_style: {value: cosine, evidence: [{file: docs/official/triton精度日志.txt, line: 220}]}
+  lr_warmup_ratio: {value: 0.1, evidence: [{file: docs/official/triton精度日志.txt, line: 219}]}
+  train_iters: {value: 100, evidence: [{file: docs/official/triton精度日志.txt, line: 230}]}
+  skip_gdn_recompute: {value: true, evidence: [{file: docs/official/triton精度日志.txt, line: 94}]}
+  skip_flash_attn_recompute: {value: true, evidence: [{file: docs/official/triton精度日志.txt, line: 95}]}
+  preprocessing_num_workers: {value: 16, evidence: [{file: docs/official/triton精度日志.txt, line: 112}]}

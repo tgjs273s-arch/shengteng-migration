@@ -1,0 +1,324 @@
+{
+ "n_common_iters": 100,
+ "step1": {
+  "official_loss": 1.924621,
+  "ours_loss": 1.924621,
+  "rel_err_pct": 0.0
+ },
+ "loss_pointwise": {
+  "Mean Error(%)": 0.05462660944509681,
+  "MSE(%^2)": 0.004579285826186553,
+  "Max Error(%)": 0.15915052708142083,
+  "Min Error(%)": 0.0,
+  "Median Error(%)": 0.047169256246738615
+ },
+ "gn_pointwise": {
+  "Mean Error(%)": 0.11823489360713252,
+  "MSE(%^2)": 0.0311123927477516,
+  "Max Error(%)": 0.864348179784412,
+  "Min Error(%)": 0.0,
+  "Median Error(%)": 0.07592660720134026
+ },
+ "loss_over_2pct_iters": [],
+ "gn_over_2pct_iters": [],
+ "window_50_100": {
+  "loss_rel_dev_pct": 0.013093852150613261,
+  "gn_rel_dev_pct": 0.03657622664538269
+ },
+ "perf": {
+  "官方": {
+   "50-100_mean_ms": 649.2921568627451,
+   "50-100_median_ms": 431.3,
+   "50-100_samples_per_s": 12.321109866249522,
+   "50-100_median_samples_per_s": 18.548574078367725,
+   "full_mean_ms": 2502.018,
+   "full_median_ms": 432.95000000000005,
+   "50-100_excl_slow_mean_ms": 438.1857142857143,
+   "50-100_excl_slow_samples_per_s": 18.257099077364455
+  },
+  "我方 E4b": {
+   "50-100_mean_ms": 430.1372549019608,
+   "50-100_median_ms": 419.0,
+   "50-100_samples_per_s": 18.5987145006154,
+   "50-100_median_samples_per_s": 19.09307875894988,
+   "full_mean_ms": 502.23199999999997,
+   "full_median_ms": 424.05,
+   "50-100_excl_slow_mean_ms": 430.1372549019608,
+   "50-100_excl_slow_samples_per_s": 18.5987145006154
+  },
+  "node_dependence": {
+   "schema": "node_dependence.v1",
+   "generated_by": "04_核心资产/交付物生成脚本/build_deliverable_metrics_v2.py",
+   "conclusion": "同一份 Skill 源码、同一官方几何（GBS=8：world2/mbs4/gas1/dp2）、同一官方窗口（50–100 步）下，窗口 50–100 中位随**容器运行时段（epoch）**而变：最慢 946.4 ms vs 最快 417.1 ms = 2.27×。",
+   "how_identified": "每个 T3 记录自带 identity.boot（自证来源）：**时段内部 6 组 boot_id 完全相同**，**时段之间 boot_id 不同** ⇒ 不是改代码、不是换几何、不是换窗口，而是容器被重新调度到了别的宿主会话。",
+   "epochs": [
+    {
+     "label": "2026-09-16 时段",
+     "identity": {
+      "boot": null,
+      "hostname": "3fc7234f6f87",
+      "note": "该批未记录 boot_id（当时脚本还没写 identity）"
+     },
+     "source": "10_交给Codex/06_关键证据/原始日志/train.log",
+     "window": "50,100",
+     "steps_used": 51,
+     "rows": 100,
+     "median_ms": 925.4,
+     "min_ms": 925.4,
+     "max_ms": 925.4,
+     "groups": [
+      {
+       "tag": "single",
+       "median_ms": 925.4
+      }
+     ]
+    },
+    {
+     "label": "2026-09-17 时段A（T3 旧批：2 组中仅 1 组通过成败判据）",
+     "identity": {
+      "boot": "8d1d0a74-ff61-48fa-be62-f987e0c59a2a"
+     },
+     "source": "04_核心资产/…/out/t3_phase_20260917_partial.tar.gz",
+     "window": "50,100",
+     "steps_used": 51,
+     "n_groups": 1,
+     "groups": [
+      {
+       "tag": "00_ompdefault",
+       "omp": "default",
+       "median_ms": 946.4,
+       "steps_used": 51
+      }
+     ],
+     "median_ms": 946.4,
+     "min_ms": 946.4,
+     "max_ms": 946.4,
+     "by_omp": {
+      "default": {
+       "n": 1,
+       "vals": [
+        946.4
+       ],
+       "mean_ms": 946.4,
+       "median_ms": 946.4,
+       "sample_sd_ms": null,
+       "min_ms": 946.4,
+       "max_ms": 946.4
+      }
+     }
+    },
+    {
+     "label": "2026-09-17 时段B（T3 r2，6 组全有效）",
+     "identity": {
+      "boot": "7bcced6f-26df-4169-ae9c-eea0227981dd"
+     },
+     "source": "04_核心资产/…/out/t3_phase_20260917_r2.tar.gz",
+     "window": "50,100",
+     "steps_used": 51,
+     "n_groups": 6,
+     "groups": [
+      {
+       "tag": "00_ompdefault",
+       "omp": "default",
+       "median_ms": 451.7,
+       "steps_used": 51
+      },
+      {
+       "tag": "01_omp32",
+       "omp": "32",
+       "median_ms": 445.0,
+       "steps_used": 51
+      },
+      {
+       "tag": "02_omp32",
+       "omp": "32",
+       "median_ms": 423.4,
+       "steps_used": 51
+      },
+      {
+       "tag": "03_ompdefault",
+       "omp": "default",
+       "median_ms": 426.0,
+       "steps_used": 51
+      },
+      {
+       "tag": "04_ompdefault",
+       "omp": "default",
+       "median_ms": 433.0,
+       "steps_used": 51
+      },
+      {
+       "tag": "05_omp32",
+       "omp": "32",
+       "median_ms": 417.1,
+       "steps_used": 51
+      }
+     ],
+     "median_ms": 429.5,
+     "min_ms": 417.1,
+     "max_ms": 451.7,
+     "by_omp": {
+      "32": {
+       "n": 3,
+       "vals": [
+        445.0,
+        423.4,
+        417.1
+       ],
+       "mean_ms": 428.5,
+       "median_ms": 423.4,
+       "sample_sd_ms": 14.632,
+       "min_ms": 417.1,
+       "max_ms": 445.0,
+       "t95_ci_ms": [
+        392.151,
+        464.849
+       ]
+      },
+      "default": {
+       "n": 3,
+       "vals": [
+        451.7,
+        426.0,
+        433.0
+       ],
+       "mean_ms": 436.9,
+       "median_ms": 433.0,
+       "sample_sd_ms": 13.286,
+       "min_ms": 426.0,
+       "max_ms": 451.7,
+       "t95_ci_ms": [
+        403.895,
+        469.905
+       ]
+      }
+     },
+     "within_spread_pct": 8.3
+    },
+    {
+     "label": "2026-09-10 时段（A3，交付主口径）",
+     "identity": {
+      "boot": null,
+      "note": "该批未记录 boot_id"
+     },
+     "source": "05_交付物成品/00_数据与结论/deliverable_metrics.json（perf.我方 E4b）",
+     "window": "50,100",
+     "steps_used": 51,
+     "median_ms": 419.0,
+     "mean_ms": 430.1372549019608,
+     "min_ms": 419.0,
+     "max_ms": 419.0,
+     "groups": [
+      {
+       "tag": "single",
+       "median_ms": 419.0
+      }
+     ]
+    }
+   ],
+   "cross_epoch_ratio": 2.27,
+   "cross_epoch_ratio_detail": {
+    "slowest": {
+     "median_ms": 946.4,
+     "epoch": "2026-09-17 时段A（T3 旧批：2 组中仅 1 组通过成败判据）",
+     "group": "00_ompdefault"
+    },
+    "fastest": {
+     "median_ms": 417.1,
+     "epoch": "2026-09-17 时段B（T3 r2，6 组全有效）",
+     "group": "05_omp32"
+    }
+   },
+   "t1_old_epoch_thread_matrix": {
+    "window": "11,30",
+    "n_groups": 9,
+    "min_ms": 895.2,
+    "max_ms": 928.8,
+    "spread_pct": 3.75,
+    "source": "out/t1_evidence_20260917.tar.gz + out/t1_resume_evidence_20260917.tar.gz",
+    "note": "窗口不同（11–30），仅用于证明'线程配置不是慢时段主因'，不与 50–100 合并统计"
+   },
+   "mechanism_not_separated": [
+    "邻居负载 / CPU 供给（按时段 loadavg 17–20，但配额同为 40 核、节流占比 ~1.2%）",
+    "NPU 频率 / 功耗状态（npu-smi -t aicore 不存在，未采到频率）",
+    "物理机型号 / 拓扑差异（两时段是否同型号未知）",
+    "triton cache 状态（/root/triton_cache 跨重启持久化，但窗口 50–100 早已编译完成）"
+   ],
+   "mechanism_support_only": "新时段 AICore 可冲到 95%、HBM 带宽 15–48%（旧时段 49–64% / 4–6%），与'NPU 被喂不饱'一致；但采样 4 s、步长 ~0.43 s 存在混叠，**不能当稳态利用率**，需 ≤0.5 s 采样或 msprof 才能定论。",
+   "applicability": [
+    "引用任何性能数字必须同时给出当次运行节点的 identity.boot（及 hostname）",
+    "419.0 ms 绑定 2026-09-10 时段；417–452 ms 是 2026-09-17 时段 B 的可重复值（6 组）",
+    "两时段均优于官方 431.3 ms（中位口径）；不得表述为'任意节点都达标'",
+    "存在会慢 2.2× 的时段/宿主：这是需披露的鲁棒性问题，不是可以省略的脚注"
+   ],
+   "reproduce": {
+    "t1_matrix": "10_交给Codex/08_自检脚本/verify_t1_matrix.py → VERIFY_T1_OK",
+    "t3_stats": "10_交给Codex/08_自检脚本/verify_codex_claims.py → VERIFY_CODEX_OK",
+    "narrative": "10_交给Codex/06_关键证据/宿主差异发现_20260917.md",
+    "delivery_report": "05_交付物成品/04_性能测试报告/性能优化报告.md「附：性能的节点依赖性」"
+   }
+  },
+  "headroom": {
+   "schema": "perf_headroom.v1",
+   "epoch_boot": "7bcced6f-26df-4169-ae9c-eea0227981dd",
+   "fit_three_points_ms": {
+    "A_official_gbs8": 432.7,
+    "B_mbs8_gas1": 715.5,
+    "C_mbs4_gas2": 862.4000000000001,
+    "a_per_sample": 70.7,
+    "f_per_microbatch": 146.9,
+    "F_per_step": 3.0
+   },
+   "controlled_contrast_C_over_B": 1.205,
+   "profiler_buckets_ms": {
+    "Stage": 458.93,
+    "Computing": 312.52,
+    "Communication_Not_Overlapped": 40.32,
+    "Free": 106.04
+   },
+   "cross_check": {
+    "fit_f_ms": 146.9,
+    "profiler_free_plus_comm_not_overlapped_ms": 146.36,
+    "diff_pct": 0.37,
+    "same_boot": true
+   },
+   "floor_if_fixed_cost_removed_ms": 286.3,
+   "official_median_ms": 431.3,
+   "upper_bound_speedup_vs_official": 1.51,
+   "free_attribution": {
+    "verdict": "下发为主（小空隙多）→ 图捕获/减少小算子优先",
+    "kernels_per_step": 6994.0,
+    "gap_sum_ms_per_step": 144.65,
+    "gaps_le_50us_share_pct": 87.4,
+    "gaps_gt_1ms_ms_per_step": 54.66,
+    "host_api_per_step_ms": {
+     "host_api_total_ms": 337.5,
+     "launch_ms": 62.9,
+     "launch_with_host_args_ms": 37.7,
+     "sync_ms": 113.5,
+     "inplace_copy_ms": 22.1
+    },
+    "launch_family_vs_free": {
+     "launch_family_ms_per_step_range": [
+      62.9,
+      100.6
+     ],
+     "free_ms_per_step": 106.0,
+     "ratio": 0.95
+    }
+   },
+   "caveats": [
+    "这是**上界**而非承诺：假设 Free 与未重叠通信全部可消除",
+    "只有 A 点（GBS=8）可对标；B/C 点带 --allow-gbs-mismatch",
+    "profiling 会拖慢训练：其 Stage 不得与稳态步时长对标，只用比例",
+    "结论绑定 identity.boot；本项目实测跨时段差 2.27×，不得外推",
+    "利用率采样（54 脚本的 AICore/HBM）因缺正对照已作废（坑 135）"
+   ],
+   "sources": {
+    "fit": "10_交给Codex/06_关键证据/性能余量_20260917/p2fit_results.json",
+    "profiler": "10_交给Codex/06_关键证据/性能余量_20260917/prof_raw/step_trace_time.csv",
+    "method": "04_核心资产/qwen35-ascend-migrator_整合版/docs/性能余量量化.md"
+   }
+  }
+ }
+}

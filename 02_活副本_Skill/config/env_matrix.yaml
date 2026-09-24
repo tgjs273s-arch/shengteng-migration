@@ -1,0 +1,204 @@
+# 环境矩阵 —— 跨环境适配与冗余降级规则（P0 探测结果 → 本表 → P2 配置生成）
+# ============================================================
+# 用途：任何环境组合都能被映射到"可执行路径 + 配置档 + 算子后端"，
+#       无法满足的维度降级并如实标注，绝不中断流水线。
+# 维护：新增芯片/版本时在此表追加一行；P0 探测项见 scripts/00_probe_env.py
+# ============================================================
+
+schema: migrator_env_matrix.v1
+
+# ---------------- 执行路径（由 P0 决定）----------------
+paths:
+  full_npu:
+    condition: "NPU 可见 且 die>=2 且 triton 后端+kernel 实测通过"
+    stages_enabled: [P0, P1, P2, P3, P4, P5, P6, P7]
+    geometric_comparability: pointwise      # 可复刻官方 dp2 几何 → 逐点可比候选
+  single_die:
+    condition: "NPU 可见 但 die==1"
+    stages_enabled: [P0, P1, P2, P3, P4, P5, P6, P7]
+    geometric_comparability: window         # 无法复刻 dp2 → 仅窗口口径
+    degraded: true
+    reason: "仅 1 个 die，每步 batch 组成与官方不同"
+  npu_triton_off:
+    condition: "NPU 可见但 triton 不可用（3.2.x 不匹配 / 缺 python3-dev / 编译失败）"
+    stages_enabled: [P0, P1, P2, P3, P4, P5, P6, P7]
+    operator_backend_chain: [triton, ascendc, eager]   # 依次降级
+    degraded: true
+    reason: "triton 路径不可用，算子后端降级（三实现数值等价已验证 Δ<0.2%）"
+  single_die_triton_off:
+    condition: "仅 1 die 且 triton 不可用"
+    stages_enabled: [P0, P1, P2, P3, P4, P5, P6, P7]
+    degraded: true
+  cpu_only:
+    condition: "无 NPU"
+    stages_enabled: [P0, P1, P2, P3(shape-only), P7]    # P5/P6 跳过
+    skipped: [P5, P6]
+    degraded: true
+    reason: "无 NPU：仅静态分析与契约验证；判定链 P7 仍可完整运行（0-GPU）"
+
+# ---------------- 芯片/显存档位（P2 配置生成依据）----------------
+chip_profiles:
+  910c_dual_die_official_geometry:
+    match: "HBM/chip >= 60GB 且 die >= 2"
+    world_size: 2
+    mbs: 4
+    gas: 1
+    dp: 2
+    recompute: false
+    enable_chunk_loss: false
+    enable_activation_offload: false
+    pregather: true
+    num_to_forward_prefetch: 1
+    num_to_backward_prefetch: 1
+    geometry_matches_official: true
+    measured: "50-100 步中位 419.0ms / 19.09 samples/s（对比官方 431.3ms）"
+  910c_single_die:
+    match: "HBM/chip >= 60GB 且 die == 1"
+    world_size: 1
+    mbs: 8
+    gas: 1
+    dp: 1
+    recompute: false
+    enable_chunk_loss: false
+    enable_activation_offload: false
+    pregather: true
+    geometry_matches_official: false
+    measured: "单 die m8g1 = 752ms（单 micro 上界）"
+  910b4_low_mem:
+    match: "HBM/chip < 60GB"
+    world_size: 1
+    mbs: 2
+    gas: 4
+    dp: 1
+    recompute: true
+    enable_chunk_loss: true
+    enable_activation_offload: true
+    pregather: false
+    geometry_matches_official: false
+    measured: "910B4 32GB：mbs2/gas4；m4g2 必 OOM(iter9, 29.5GB)"
+
+# ---------------- 软件版本矩阵（P0 探测 → 选版本与源）----------------
+version_matrix:
+  - cann: "9.1.0"
+    torch: "2.7.1"
+    python: "3.10"
+    torch_npu: "2.7.1.post10"
+    triton_ascend: "3.2.2"
+    index_url: "https://mirrors.huaweicloud.com/ascend/repos/pypi"
+    extra_index_url: "https://repo.huaweicloud.com/repository/pypi/simple"
+    extra_pkgs: ["attrs==24.2.0"]
+    prereq: ["python3-dev", "build-essential"]
+    verified: true
+    note: "本机实测通过（910C 双 die，triton NPU kernel 通过）"
+  - cann: "9.1.0"
+    torch: "2.7.1"
+    python: "3.11"
+    triton_ascend: "3.2.2"
+    index_url: "https://mirrors.huaweicloud.com/ascend/repos/pypi"
+    verified: false
+    note: "同 CANN/torch 配对，py3.11 未实测"
+  # ★ 2026-09-16 新增：新机器实测组合（CANN 9.1.0-beta.3 devel 镜像 / openEuler 24.03 / py3.12）
+  #    待验证项 = torch_npu 是否有 cp312 wheel、triton-ascend 3.2.2 在 py3.12 下能否编 kernel、
+  #    openEuler 上 python3-dev 的包名（apt / dnf 差异）。P0 探测后回填 verified 与实测值。
+  - cann: "9.1.0-beta.3"
+    torch: "2.7.1"
+    python: "3.12"
+    torch_npu: "待验证（需 cp312 wheel）"
+    triton_ascend: "3.2.2（待验证；py3.12 配对未实测）"
+    index_url: "https://mirrors.huaweicloud.com/ascend/repos/pypi"
+    extra_index_url: "https://repo.huaweicloud.com/repository/pypi/simple"
+    os: "openEuler 24.03 LTS"
+    prereq: ["python3-devel 或 python3-dev（按包管理器）", "gcc/gcc-c++ 或 build-essential"]
+    verified: false
+    note: "★ 新机器组合：β 版 CANN 的 torch_npu 配套可能不同于 GA；py3.12 是全新维度（原配对坐实于 py3.10）"
+    risk: "high —— 三个维度同时变化（CANN β / py3.12 / openEuler），需逐项探测后回填"
+  - cann: "9.0.x"
+    torch: "2.6.x"
+    python: "3.10"
+    triton_ascend: "3.2.0 | 3.2.1"
+    index_url: "https://triton-ascend.osinfra.cn (3.2.1) | pypi (3.2.0)"
+    verified: false
+    note: "旧 CANN 组合；3.2.1 自带 base triton 3.5.0，注意混装"
+known_bad:
+  - combo: "CANN 9.1.0 + 910C(9382) + triton-ascend 3.2.0/3.2.1"
+    symptom: "回退 CPU（log: roll back to CPU）"
+    fix: "升级到 3.2.2"
+  - combo: "任意 CANN + 缺 python3-dev"
+    symptom: "triton 驱动编译失败 Python.h: No such file → backend 初始化中止 → 回落 CPU"
+    fix: "apt install python3-dev build-essential"
+  - combo: "Python 3.12 + triton-ascend（未验证）"
+    symptom: "未知——可能无 cp312 wheel，或 kernel 编译失败后静默回退 CPU"
+    fix: "P0 实测；失败则降级后端 triton→ascendc→eager，并标注 degraded"
+    status: "待验证（2026-09-16 新机器引入的新维度）"
+  - combo: "openEuler 24.03 + apt 装 python3-dev"
+    symptom: "未知——openEuler 原生包管理器通常为 dnf，若镜像仅带 apt 则包名可能不同"
+    fix: "先 `which apt dnf microdnf yum`，再 `apt list python3-dev 2>/dev/null || dnf list python3-devel`"
+    status: "待验证"
+
+# ---------------- 资产获取（P4）----------------
+assets:
+  model:
+    qwen3_5_0_8b:
+      hf: "Qwen/Qwen3.5-0.8B"
+      source_primary: "modelscope"
+      source_fallback: ["hf-mirror（可能 401）"]
+      dcp_convert: "python3 -m checkpoint.convert_cli GenericDCPConverter hf_to_dcp"
+  dataset:
+    llava_instruct_150k:
+      file: "llava_instruct_150k.json"
+      bytes: 228941895          # ★ 校验锚点（与官方一致）
+      source: "modelscope AI-ModelScope/LLaVA-Instruct-150K"
+    coco2017_train2017:
+      source: "modelscope PAI/COCO2017 train2017.zip"
+      zip_bytes_approx: 19336861798
+      images: 118287
+    converted:
+      file: "output_llava_coco_data.json"
+      samples: 157712           # ★ 校验锚点
+      script: "mindspeed_mm/fsdp/tools/data_tool/llava_instruct_2_mllm_demo_format.py"
+      command: "python <script> --llava_json_path <llava> --coco_path <coco> --output_json_path <out>"
+
+# ---------------- 运行环境变量（缺失即失败项）----------------
+required_env:
+  - name: "set_env.sh"
+    how: "source /usr/local/Ascend/ascend-toolkit/set_env.sh"
+    missing_symptom: "libhccl.so: cannot open shared object file"
+  - name: "NON_MEGATRON"
+    value: "true"
+    missing_symptom: "ModuleNotFoundError: No module named 'megatron'（框架误走 Megatron 路径）"
+  - name: "TASK_QUEUE_ENABLE"
+    value: "2"
+    note: "实测 1 会导致慢步回归"
+  - name: "ASCEND_LAUNCH_BLOCKING"
+    value: "0"
+  - name: "PYTORCH_NPU_ALLOC_CONF"
+    value: "expandable_segments:True"
+  - name: "TRITON_CACHE_DIR"
+    value: "/root/triton_cache"
+    note: "官方脚本每次清空；我方持久化以规避重编译（报告需双口径披露）"
+
+# ---------------- 数据可比性等级（P4/P7，诚实标注依据）----------------
+data_comparability:
+  official_same_pipeline:
+    condition: "同源下载 + 官方转换脚本 + 文件名与官方声明一致 + shuffle=false + seed=42"
+    level: "构造性同源"
+    note: "官方数据 sha256 不可得 → data_identity 门保持 open（unresolved），不宣称绿档"
+  subset:
+    condition: "官方子集（如 2000 样本）"
+    level: "窗口口径可比"
+  mock:
+    condition: "生成数据"
+    level: "不可比（仅验证流程连通）"
+
+# ---------------- 判定口径（P7，双轨齐备）----------------
+judge_metrics:
+  pointwise:
+    - "逐步相对误差 = |ours-official|/|official| × 100%"
+    - "四指标：Mean Error / MSE / Max Error / Min Error"
+  window:
+    - "50-100 步均值偏差"
+    - "50-100 步中位数偏差"
+  perf_metrics:              # 官方确认口径 = 50-100 步
+    - "平均每迭代耗时（ms，均值/中位数）"
+    - "每秒样本数 = GBS × 1000 / STEP_TIME"
+  verdict_states: [POINTWISE_OK, WINDOW_OK, NEEDS_EVIDENCE, NOT_COMPARABLE, INVALID_INPUT]

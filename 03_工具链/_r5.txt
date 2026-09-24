@@ -1,0 +1,23 @@
+=== 入口/构造相关行 ===
+54:        self, args: Arguments, model_provider: Optional[Callable] = None, dataloader_provider: Optional[Callable] = None
+61:            model_provider: Optional custom function to provide the model
+62:            dataloader_provider: Optional custom function to provide the dataloader
+66:        self.initialize()
+76:        self.model = self.get_model(model_provider)
+78:        dataloader_result = self.get_dataloader() if dataloader_provider is None else dataloader_provider(args)
+118:                    f"3. Provide a custom dataloader_provider that returns a dataloader with __len__"
+140:    def initialize(self):
+161:        if not torch.distributed.is_initialized():
+176:    def get_model(self, model_provider: Optional[Callable] = None):
+180:            model_provider: Optional custom function to provide the model
+186:        model = self.get_foundation_model() if model_provider is None else model_provider()
+206:                    "Must set `training.load` when `training.load_rank0_and_broadcast` is True, otherwise the model will be initialized with meta device but no weights will be loaded."
+473:if __name__ == "__main__":
+476:    trainer = Trainer(args=arguments)
+=== __main__ 区段（-A 40）===
+473:if __name__ == "__main__":
+474-    # Entry point for training script
+475-    arguments = ConfigManager(config_class=Arguments).load_and_parse()
+476-    trainer = Trainer(args=arguments)
+477-    trainer.train()
+DONE5

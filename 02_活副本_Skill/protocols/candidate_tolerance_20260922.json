@@ -1,0 +1,50 @@
+{
+ "schema": "dsh.protocol.candidate_tolerance.v1",
+ "frozen_at": "2026-09-22",
+ "note": "★ 本文件在**看任何候选结果之前**冻结（纪律：容差先声明后使用）。适用对象=候选 vs 基线 的**单步回放**数值比较（C1 前向 / C3 通信后梯度 / C4 更新后参数+优化器状态）。",
+
+ "why_this_shape": {
+  "evidence": "protocols/nonzero_lr_replay_20260922.json 的 A/A 双模式实测",
+  "default_mode_aa": "不一致，但为**末位浮点**级：C4 逐元素最大绝对差 1.19209e-07（≈ float32 在 1.0 附近 1 ULP）；C3 逐元素中位 3.7e-09、absmax 一致到 ≤2%；**优化器 before 200/200 逐字节相同**（恢复精确）。",
+  "detsc_mode_aa": "确定性模式下 A/A **逐字节相同**（C1/C3/C4/opt before/after 全同，两 rank 产物 sha256 亦相同）",
+  "consequence": "⇒ 比较**必须在与参考相同的确定性模式下进行**；模式一致时 A/A 为精确，因此任何差异都可归因于被测改动，而非噪声。"
+ },
+
+ "mandatory_preconditions": [
+  "★ **模式必须一致**：候选臂与参考臂使用**同一个**确定性模式（同开或同关），禁止一边开一边关（与 A/A 对照同规矩）。",
+  "前提四关必须全过：恢复步号一致、实际 lr（**按 param_group**）> 0、优化器状态非空、`params_changed=True`（区分力自证）。任一不过 ⇒ `INVALID`，不进入候选比较。",
+  "GBS=8；`official_comparable=false`。"
+ ],
+
+ "metrics_allowed": [
+  "逐张量 `max|Δ|`（绝对值）",
+  "逐张量 `|Δ| / absmax_baseline`（以基线该张量的 absmax 作尺度参考——**稳健尺度量**）",
+  "逐字节相同张量计数 / 总数",
+  "`absmax` 相对差（作为辅助）"
+ ],
+
+ "metrics_forbidden": [
+  "★ **`sum` 的相对差** —— 求和的抵消会被小分母放大（本轮实测同一批数据里高达 2.84 / 284%），不具判别力。",
+  "★ **逐元素相对差的最大值** —— 同样被小分母放大（本轮出现 37.7% 而绝对差仅 ~1e-9）。",
+  "★ 用被 profiling 拖慢的绝对时间与稳态对标。"
+ ],
+
+ "declared_tolerance": {
+  "rule": "逐张量判定；张量 t 通过 ⟺ `max|Δ_t| ≤ rtol × absmax_baseline_t`（rtol 见下，atol 取 0——因为尺度参考已由 absmax 提供）。",
+  "rtol": 1e-05,
+  "rtol_justification": "实测 A/A 默认模式噪声为 ~1.19e-07（≈1 ULP，相对 1e-7 量级）⇒ 取 1e-5 约其 **100 倍**作为保守带；确定性模式下 A/A 为 0，故 1e-5 只会放过**数值等价**级差异，不会放过结构性改动。",
+  "escalation": "若候选在 rtol=1e-5 内通过但**超出 1e-6**（即高于实测噪声一个量级），必须在报告里**显式标注**该幅度，并说明原因（例如它改变了归约顺序）。",
+  "hard_fail": "任一关键张量 `max|Δ_t| / absmax_t > 1e-5` ⇒ 判 `NUMERIC_DIVERGED`，该候选**不得**进入性能确认。"
+ },
+
+ "boundaries": [
+  "本容差只覆盖**数值等价**判定，不覆盖精度/收敛（单步通过不等于全程精度对齐）。",
+  "尺度参考取**基线**的 absmax；若某张量基线 absmax≈0（全零），该张量改用绝对判据并单独列出（不得因尺度为 0 而自动通过）。",
+  "本文件不授权任何性能结论；性能另有 62 的区间下界硬门。"
+ ],
+
+ "results": {
+  "status": "FROZEN_NOT_YET_USED",
+  "note": "尚未用于任何候选结果。"
+ }
+}

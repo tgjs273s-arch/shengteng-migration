@@ -1,0 +1,70 @@
+{
+ "source": "new machine (Ascend910_9382, CANN 9.1.0-beta.3)",
+ "files": [
+  {
+   "remote": "out/judge/fp.json",
+   "local": "fp.json",
+   "bytes": 8262
+  },
+  {
+   "remote": "out/judge/obs.json",
+   "local": "obs.json",
+   "bytes": 9730
+  },
+  {
+   "remote": "out/judge/verdict.json",
+   "local": "verdict.json",
+   "bytes": 6929
+  },
+  {
+   "remote": "out/judge/judge_summary.json",
+   "local": "judge_summary.json",
+   "bytes": 1121
+  },
+  {
+   "remote": "out/judge/loss_compare.csv",
+   "local": "loss_compare.csv",
+   "bytes": 5330
+  },
+  {
+   "remote": "out/bench/window_50_100.json",
+   "local": "window_50_100.json",
+   "bytes": 563
+  },
+  {
+   "remote": "out/bench/round_1_baseline.json",
+   "local": "round_1_baseline.json",
+   "bytes": 540
+  },
+  {
+   "remote": "out/train/loss_series.csv",
+   "local": "loss_series.csv",
+   "bytes": 2973
+  },
+  {
+   "remote": "out/probe/env.json",
+   "local": "env.json",
+   "bytes": 2641
+  },
+  {
+   "remote": "out/plan/train_config.yaml",
+   "local": "train_config.yaml",
+   "bytes": 4767
+  },
+  {
+   "remote": "out/logs/_verdicts.tsv",
+   "local": "_verdicts.tsv",
+   "bytes": 456
+  },
+  {
+   "remote": "out/from_zero_report.md",
+   "local": "from_zero_report.md",
+   "bytes": 4410
+  },
+  {
+   "remote": "sk04_judge/evidence/registry.json",
+   "local": "registry.json",
+   "bytes": 3541
+  }
+ ]
+}

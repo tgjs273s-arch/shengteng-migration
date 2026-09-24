@@ -1,0 +1,67 @@
+{
+ "schema": "dsh.protocol.batch_fingerprint.v1",
+ "frozen_at": "2026-09-22",
+ "note": "★ 判据先于结果冻结：本文件同时记录**判据**与**已取得的实测结果**。判据部分在跑之前就定好了（见 criteria），结果部分只填实测值，不改判据。",
+ "question": "两次（或两个配置的）运行，**每一步喂进模型的数据是否同一批**？分岔是否发生在数据侧？",
+ "why": [
+  "此前只有『启动输入 dump 相同』（19 行，四臂 sha256 一致）——那只覆盖**启动那一刻**，不是每步。",
+  "loss/grad_norm 是 4~6 位有效数字的打印值，分岔点若落在打印精度之下就看不见（坑 170：判据分辨率低于现象尺度）。",
+  "改用**逐字段张量字节摘要**（sha256）后，数据侧相同/不同是**逐字节可比**的，不依赖打印精度。"
+ ],
+ "how": {
+  "entry": "scripts/51_train_fp.py（诊断入口：_FPTrainer(Trainer) 只覆写 get_dataloader，super() 之后在最外层套只读代理）",
+  "proxy": "scripts/_batchfp.py（只读转发；记录 step/micro/rank/字段名/dtype/shape/nbytes/sha256；默认关闭，BATCHFP=1 开启，BATCHFP_MAX=N 限前 N 个微批）",
+  "command_source": "启动命令**照 50_train.py 的 --dry-run 原文**，只把入口换成 51_train_fp.py（同一套 env 导出、同一 PYTHONPATH、同一 torchrun 参数）",
+  "env": "BATCHFP=1 BATCHFP_MAX=<N> BATCHFP_LOG=<run 目录>/fp.log（rank1 写 fp.log.rank1，避免多进程写同一文件）"
+ },
+ "criteria": {
+  "identical": "两轮 fp.log（同一 rank）**逐字节相同** ⇒ 数据侧逐步一致；任一字段 sha256 不同 ⇒ 该步数据侧不一致",
+  "sensitivity": "改**一个真实数据元素**（一个 token / 一个 label / 一个像素或一段文本）后，受影响字段的 sha256 **必须**变化，且**未被改动的字段必须不变**",
+  "not_valid_negative_control": "改 seed 或 cutoff_len **不算**负向对照（不保证实际输入变化；实测：改 seed 而数据不变时指纹 0 处不同）",
+  "must_hold": [
+   "代理不得改变数据通路：顺序逐元素不变、底层 __next__ 调用数等于消费微批数、固定种子下 RNG 序列不变（三条都有本机正/负对照，见 _batchfp_selftest.py 的 33 条判据）",
+   "记录本身改变时序 ⇒ 用它的那次运行 **plan_consistent=false**，产物**不得**用作性能收益证据；正式计时走 50_train.py 且 BATCHFP 全关"
+  ],
+  "fail_closed": [
+   "出现 undigestible/unhashable/unstable_repr/cycle 标记的字段 ⇒ 该字段**没有**可信指纹，其『相同』不成立",
+   "只记录了前 N 个微批 ⇒ 结论只能覆盖这 N 步，**不得**外推到整窗口"
+  ]
+ },
+ "runs_2026_09_22": {
+  "machine": "199.98.58.213（跳板 113.47.8.48:2234；注意：**与之前的 199.103.55.150 不是同一 IP**，但 /root 下产物一致 ⇒ 同一份磁盘、换了 IP）",
+  "config": "/root/ops/qwen3_5_0_8B_mock_dp2_v3.yaml（mbs=4 × gas=1 × world=2 = GBS 8，train_iters=100，mock 数据）",
+  "run1": {"dir": "/root/ops/fp51_20260922_105106", "BATCHFP_MAX": 3, "rc": 0, "yields": 3, "fp_log_sha256": "9b8d5edb62a9"},
+  "run2": {"dir": "/root/ops/fp51_20260922_105320", "BATCHFP_MAX": 3, "rc": 0, "yields": 3, "fp_log_sha256": "9b8d5edb62a9",
+           "note": "与 run1 **同哈希** ⇒ 跨运行数据侧一致（这就是本协议要回答的问题）"},
+  "run3_full": {"dir": "/root/ops/fp51full_20260922_105517", "BATCHFP_MAX": 100, "rc": 0, "yields": 100,
+                "fp_log_sha256": "aecffd0d2cbf", "fp_log_rank1_sha256": "a15091284812"},
+  "run4_negative": {"dir": "/root/ops/fp51neg_20260922_105741", "BATCHFP_MAX": 100, "rc": 0, "yields": 100,
+                    "fp_log_sha256": "393a0e4da19d",
+                    "perturbation": "复制 mock 数据集，在第一个样本的**第一段文本末尾追加一个字符**（改的是真实数据内容）；派生配置与基线**只差 1 个键**（data.dataset_param.basic_parameters.dataset，已用 yaml 逐键比对确认）",
+                    "data_sha_before": "90fc45240b7f8280", "data_sha_after": "042b9fd47dbeaae2"}
+ },
+ "results_2026_09_22": {
+  "cross_run_identical": "**是**：run1 与 run2 的 fp.log sha256=9b8d5edb62a9 **完全相同**（rank0；rank1 亦相同）",
+  "full_window": "run3 覆盖 1..100 步（100 个 yield，rc=0）",
+  "same_batch_every_step": "★ run3 全窗口内 **不同 micro sha 的个数 = 1** ⇒ 100 步喂的是**同一批数据**（mock 数据集的特性：样本数远少于 100 步 × dp2，反复用同一批）",
+  "ranks_same_batch": "★ RANKS_SAME_BATCH=True：rank0 与 rank1 的 micro sha 序列**逐位相同** ⇒ dp2 两个 rank 拿到的是**同一批**数据",
+  "negative_control": {
+   "field_level": "yield=1 逐字段比对：input_ids / labels / attention_mask / position_ids / rope_deltas **全变**；pixel_values / image_grid_thw **不变**（我只改了文本，没动图像）⇒ 判据灵敏且归因正确",
+   "line_level": "两轮 fp.log 相差 262 行字段行；micro sha 的不同取值个数 1 → 2",
+   "verdict": "**灵敏度成立**（改一个真实数据元素 ⇒ 指纹必变，且变化精确落在受影响字段上）"
+  },
+  "un_digestible_markers": 0
+ },
+ "implications": [
+  "在**本 mock 数据集**上，数据侧**每一步都是同一批、且两个 rank 也相同** ⇒ 观察到的 A/A 数值分歧（P0：超阈 90–93/100）**不能**归因于『数据随步变化』或『rank 间数据不同』。",
+  "这同时**收紧**了此前的一条假设：P1 实验（num_workers=1）想检验『数据顺序 / worker 影响』，而该数据上每步输入根本不变 ⇒ **该臂在这份数据上无法检验它声称要检验的东西**（判据缺乏区分力，必须写明，不能当作『已排除』）。",
+  "『启动输入 dump 相同』的说法现在可以**升级**为『100 步的每个微批在两次运行间逐字节相同』（有 run1/run2 与 run3 两份证据），但**仍限于本 mock 数据**：换成真实 COCO 多图数据后每步输入会变，必须重跑本协议。"
+ ],
+ "boundaries": [
+  "只覆盖『进入模型之前』的 batch：模型内部算子归约顺序、通信、优化器**不在覆盖内**（BATCHFP 逐行相同**不能**推出『两次运行结果应逐位相同』）。",
+  "run1/run2 只记录前 3 个微批（BATCHFP_MAX=3）⇒ 它们的『一致』只覆盖第 1–3 步；全窗口结论由 run3 给出。",
+  "代理不碰 RNG ⇒ **看不见**随机性来源（如随机增强、dropout 采样）的差异；『RNG 是否相同』需另立实验。",
+  "本协议的运行均为**诊断运行**（plan_consistent=false），不得用于性能收益结论。"
+ ],
+ "status": "criteria_frozen_and_executed（跨运行一致 + 全窗口覆盖 + 负向对照 三项均已实测）"
+}

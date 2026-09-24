@@ -1,0 +1,23 @@
+{
+  "round": 1,
+  "tag": "baseline",
+  "date": "2026-09-16T20:12:45",
+  "backend": "Ascend NPU (torch_npu OK)",
+  "device": "npu:0",
+  "scope": "operator-micro(v0); end-to-end 由 MindSpeed-MM 侧执行, 结果回填到 04_性能测试报告 登记表",
+  "note": "from_zero quick",
+  "micro_rows": [
+    {
+      "op": "sdpa(B=1,H=8,T=128,D=64)",
+      "ms_per_iter": 0.096
+    },
+    {
+      "op": "rmsnorm(8,128,512)",
+      "ms_per_iter": 0.086
+    },
+    {
+      "op": "conv3d_patch(B=2,224x224)",
+      "ms_per_iter": 0.212
+    }
+  ]
+}

@@ -1,0 +1,377 @@
+{
+ "runs": [
+  {
+   "tag": "00_N",
+   "arm": "N",
+   "MM_CAND": null,
+   "variant": "A",
+   "valid": true,
+   "steps_complete": true,
+   "window_median_ms": 724.25,
+   "wall_seconds": 133.4,
+   "rc": 0,
+   "rows": 100,
+   "step_ids_tail": [
+    96,
+    97,
+    98,
+    99,
+    100
+   ],
+   "loss_first": 0.09686005,
+   "gradnorm_first": 34.165,
+   "loss_head": [
+    0.09686005,
+    0.09686005,
+    0.07668044,
+    0.02956149,
+    0.0312562,
+    0.02495757
+   ],
+   "gradnorm_head": [
+    34.165,
+    34.186,
+    27.253,
+    17.298,
+    8.364,
+    9.363
+   ],
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  },
+  {
+   "tag": "01_C1",
+   "arm": "C1",
+   "MM_CAND": "C1",
+   "variant": "B",
+   "valid": true,
+   "steps_complete": true,
+   "window_median_ms": 692.0,
+   "wall_seconds": 129.5,
+   "rc": 0,
+   "rows": 100,
+   "step_ids_tail": [
+    96,
+    97,
+    98,
+    99,
+    100
+   ],
+   "loss_first": 0.09686005,
+   "gradnorm_first": 0.0,
+   "loss_head": [
+    0.09686005,
+    0.09686005,
+    0.07520782,
+    0.02923504,
+    0.03022637,
+    0.02527891
+   ],
+   "gradnorm_head": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  },
+  {
+   "tag": "02_C2",
+   "arm": "C2",
+   "MM_CAND": "C2",
+   "variant": "B",
+   "valid": true,
+   "steps_complete": true,
+   "window_median_ms": 730.4000000000001,
+   "wall_seconds": 139.9,
+   "rc": 0,
+   "rows": 100,
+   "step_ids_tail": [
+    96,
+    97,
+    98,
+    99,
+    100
+   ],
+   "loss_first": 0.09686005,
+   "gradnorm_first": 34.188,
+   "loss_head": [
+    0.09686005,
+    0.09686005,
+    0.07540946,
+    0.02954589,
+    0.03123668,
+    0.02581872
+   ],
+   "gradnorm_head": [
+    34.188,
+    34.182,
+    27.526,
+    17.446,
+    8.338,
+    9.676
+   ],
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  },
+  {
+   "tag": "03_C1",
+   "arm": "C1",
+   "MM_CAND": "C1",
+   "variant": "B",
+   "valid": true,
+   "steps_complete": true,
+   "window_median_ms": 726.6500000000001,
+   "wall_seconds": 138.7,
+   "rc": 0,
+   "rows": 100,
+   "step_ids_tail": [
+    96,
+    97,
+    98,
+    99,
+    100
+   ],
+   "loss_first": 0.09686005,
+   "gradnorm_first": 0.0,
+   "loss_head": [
+    0.09686005,
+    0.09686005,
+    0.07612569,
+    0.03114073,
+    0.03166374,
+    0.02612028
+   ],
+   "gradnorm_head": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  },
+  {
+   "tag": "04_C2",
+   "arm": "C2",
+   "MM_CAND": "C2",
+   "variant": "B",
+   "valid": true,
+   "steps_complete": true,
+   "window_median_ms": 721.1,
+   "wall_seconds": 134.7,
+   "rc": 0,
+   "rows": 100,
+   "step_ids_tail": [
+    96,
+    97,
+    98,
+    99,
+    100
+   ],
+   "loss_first": 0.09686005,
+   "gradnorm_first": 34.182,
+   "loss_head": [
+    0.09686005,
+    0.09686005,
+    0.07441769,
+    0.02954342,
+    0.03130281,
+    0.02582021
+   ],
+   "gradnorm_head": [
+    34.182,
+    34.189,
+    27.462,
+    17.859,
+    8.577,
+    9.256
+   ],
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  },
+  {
+   "tag": "05_N",
+   "arm": "N",
+   "MM_CAND": null,
+   "variant": "A",
+   "valid": true,
+   "steps_complete": true,
+   "window_median_ms": 723.1500000000001,
+   "wall_seconds": 132.6,
+   "rc": 0,
+   "rows": 100,
+   "step_ids_tail": [
+    96,
+    97,
+    98,
+    99,
+    100
+   ],
+   "loss_first": 0.09686005,
+   "gradnorm_first": 34.176,
+   "loss_head": [
+    0.09686005,
+    0.09686005,
+    0.07713599,
+    0.02874527,
+    0.03076763,
+    0.02532921
+   ],
+   "gradnorm_head": [
+    34.176,
+    34.184,
+    27.3,
+    17.288,
+    8.179,
+    10.172
+   ],
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  },
+  {
+   "tag": "06_C2",
+   "arm": "C2",
+   "MM_CAND": "C2",
+   "variant": "B",
+   "valid": true,
+   "steps_complete": true,
+   "window_median_ms": 708.9,
+   "wall_seconds": 130.6,
+   "rc": 0,
+   "rows": 100,
+   "step_ids_tail": [
+    96,
+    97,
+    98,
+    99,
+    100
+   ],
+   "loss_first": 0.09686005,
+   "gradnorm_first": 34.168,
+   "loss_head": [
+    0.09686005,
+    0.09686005,
+    0.0759114,
+    0.03045501,
+    0.03183733,
+    0.02725778
+   ],
+   "gradnorm_head": [
+    34.168,
+    34.182,
+    27.527,
+    17.581,
+    8.472,
+    9.429
+   ],
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  },
+  {
+   "tag": "07_N",
+   "arm": "N",
+   "MM_CAND": null,
+   "variant": "A",
+   "valid": true,
+   "steps_complete": true,
+   "window_median_ms": 713.3499999999999,
+   "wall_seconds": 137.5,
+   "rc": 0,
+   "rows": 100,
+   "step_ids_tail": [
+    96,
+    97,
+    98,
+    99,
+    100
+   ],
+   "loss_first": 0.09686005,
+   "gradnorm_first": 34.184,
+   "loss_head": [
+    0.09686005,
+    0.09686005,
+    0.07611521,
+    0.02834139,
+    0.03158621,
+    0.02615768
+   ],
+   "gradnorm_head": [
+    34.184,
+    34.185,
+    27.445,
+    16.562,
+    8.329,
+    10.125
+   ],
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  },
+  {
+   "tag": "08_C1",
+   "arm": "C1",
+   "MM_CAND": "C1",
+   "variant": "B",
+   "valid": true,
+   "steps_complete": true,
+   "window_median_ms": 703.9,
+   "wall_seconds": 131.6,
+   "rc": 0,
+   "rows": 100,
+   "step_ids_tail": [
+    96,
+    97,
+    98,
+    99,
+    100
+   ],
+   "loss_first": 0.09686005,
+   "gradnorm_first": 0.0,
+   "loss_head": [
+    0.09686005,
+    0.09686005,
+    0.07639033,
+    0.02995407,
+    0.03086556,
+    0.02448496
+   ],
+   "gradnorm_head": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  }
+ ],
+ "markers": {
+  "c1_active": true,
+  "c2_active": true
+ }
+}

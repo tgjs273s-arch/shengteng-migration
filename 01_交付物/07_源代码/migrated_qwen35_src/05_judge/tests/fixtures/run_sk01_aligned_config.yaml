@@ -1,0 +1,33 @@
+# =============================================================================
+# run_sk01_aligned_config.yaml — 测试 fixture：镜像 R2-SK01 对齐复跑【预期配置】
+# -----------------------------------------------------------------------------
+# 用途：selfcheck 里演示"确定性链对齐后"指纹门如何变化（R2-SK01 目标：仅改
+#       shuffle=False / freeze=[model.visual] / cutoff_len=1024 / num_workers=8，
+#       eager+GBS=8 不变）。取值 = shortlist_round2_v3.md R2-SK01 节 + A2 §3.1。
+# 注意：本文件是【测试夹具】；SK01 真实跑出的配置以 A2 runs/run_<tag>/config.yaml 为准，
+#       跑后应把真实文件喂 fingerprint_cfg（不许用本夹具冒充运行证据）。
+# =============================================================================
+
+model:
+  model_id: qwen3_5
+  freeze: [model.visual]
+  gdn_implementation: eager
+  causal_conv1d_implementation: eager
+
+data:
+  dataset_param:
+    basic_parameters:
+      dataset_dir: /root/coco_dl/extracted/dataset
+      dataset: [/root/coco_dl/extracted/dataset/annotations_slim.json]
+      cutoff_len: 1024
+  dataloader_param:
+    dataloader_mode: sampler
+    sampler_type: BaseRandomBatchSampler
+    shuffle: false
+    num_workers: 8
+
+training:
+  micro_batch_size: 1
+  gradient_accumulation_steps: 8
+  seed: 42
+  train_iters: 100

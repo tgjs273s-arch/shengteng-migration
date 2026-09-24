@@ -1,0 +1,291 @@
+{
+ "schema": "p59ab.v2",
+ "key": "MM_CAND=C1",
+ "official_comparable": false,
+ "comparability": {
+  "reason": "同机同批次、mock 数据（official_comparable=false）"
+ },
+ "order_used": "latin-square(N,C1,C2 / C1,C2,N / C2,N,C1)",
+ "steps": 100,
+ "n_A": 3,
+ "n_B": 3,
+ "paired": {
+  "pairs": 3,
+  "diffs": [
+   {
+    "pair": 1,
+    "A_ms": 705.55,
+    "B_ms": 716.25,
+    "diff_ms": 10.7,
+    "delta_pct": 1.517
+   },
+   {
+    "pair": 2,
+    "A_ms": 715.3,
+    "B_ms": 700.6500000000001,
+    "diff_ms": -14.65,
+    "delta_pct": -2.048
+   },
+   {
+    "pair": 3,
+    "A_ms": 708.45,
+    "B_ms": 695.8,
+    "diff_ms": -12.65,
+    "delta_pct": -1.786
+   }
+  ],
+  "mean_delta_pct": -0.772,
+  "sd_pct": 1.987,
+  "t_crit": 4.303,
+  "ci95_delta_pct": [
+   -5.709,
+   4.164
+  ],
+  "improvement_pct": 0.772,
+  "note": "负的 delta 表示 B 更快；改善率 = -mean"
+ },
+ "runs": [
+  {
+   "tag": "00_N",
+   "arm": "N",
+   "MM_CAND": null,
+   "variant": "A",
+   "valid": true,
+   "steps_complete": true,
+   "window_median_ms": 705.55,
+   "wall_seconds": 131.9,
+   "rc": 0,
+   "rows": 100,
+   "step_ids_tail": [
+    96,
+    97,
+    98,
+    99,
+    100
+   ],
+   "loss_first": 0.09686005,
+   "gradnorm_first": 34.168,
+   "loss_head": [
+    0.09686005,
+    0.09686005,
+    0.07492239,
+    0.02843357,
+    0.03093432,
+    0.0255827
+   ],
+   "gradnorm_head": [
+    34.168,
+    34.185,
+    27.313,
+    17.349,
+    8.456,
+    9.394
+   ],
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba"
+   }
+  },
+  {
+   "tag": "03_N",
+   "arm": "N",
+   "MM_CAND": null,
+   "variant": "A",
+   "valid": true,
+   "steps_complete": true,
+   "window_median_ms": 715.3,
+   "wall_seconds": 130.2,
+   "rc": 0,
+   "rows": 100,
+   "step_ids_tail": [
+    96,
+    97,
+    98,
+    99,
+    100
+   ],
+   "loss_first": 0.09686005,
+   "gradnorm_first": 34.176,
+   "loss_head": [
+    0.09686005,
+    0.09686005,
+    0.07599823,
+    0.02978958,
+    0.03168691,
+    0.02745415
+   ],
+   "gradnorm_head": [
+    34.176,
+    34.175,
+    27.748,
+    17.227,
+    8.226,
+    9.655
+   ],
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba"
+   }
+  },
+  {
+   "tag": "04_N",
+   "arm": "N",
+   "MM_CAND": null,
+   "variant": "A",
+   "valid": true,
+   "steps_complete": true,
+   "window_median_ms": 708.45,
+   "wall_seconds": 130.1,
+   "rc": 0,
+   "rows": 100,
+   "step_ids_tail": [
+    96,
+    97,
+    98,
+    99,
+    100
+   ],
+   "loss_first": 0.09686005,
+   "gradnorm_first": 34.188,
+   "loss_head": [
+    0.09686005,
+    0.09686005,
+    0.07527734,
+    0.02957488,
+    0.03126324,
+    0.02531026
+   ],
+   "gradnorm_head": [
+    34.188,
+    34.188,
+    27.208,
+    17.282,
+    8.342,
+    9.39
+   ],
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba"
+   }
+  },
+  {
+   "tag": "01_C1",
+   "arm": "C1",
+   "MM_CAND": "P2CHUNKO",
+   "variant": "B",
+   "valid": true,
+   "steps_complete": true,
+   "window_median_ms": 716.25,
+   "wall_seconds": 130.3,
+   "rc": 0,
+   "rows": 100,
+   "step_ids_tail": [
+    96,
+    97,
+    98,
+    99,
+    100
+   ],
+   "loss_first": 0.09686005,
+   "gradnorm_first": 34.182,
+   "loss_head": [
+    0.09686005,
+    0.09686005,
+    0.07651694,
+    0.0291853,
+    0.03120225,
+    0.02597634
+   ],
+   "gradnorm_head": [
+    34.182,
+    34.175,
+    27.339,
+    17.307,
+    8.309,
+    9.287
+   ],
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba"
+   }
+  },
+  {
+   "tag": "02_C1",
+   "arm": "C1",
+   "MM_CAND": "P2CHUNKO",
+   "variant": "B",
+   "valid": true,
+   "steps_complete": true,
+   "window_median_ms": 700.6500000000001,
+   "wall_seconds": 133.0,
+   "rc": 0,
+   "rows": 100,
+   "step_ids_tail": [
+    96,
+    97,
+    98,
+    99,
+    100
+   ],
+   "loss_first": 0.09686005,
+   "gradnorm_first": 34.191,
+   "loss_head": [
+    0.09686005,
+    0.09686005,
+    0.07438438,
+    0.02832998,
+    0.0307035,
+    0.02560682
+   ],
+   "gradnorm_head": [
+    34.191,
+    34.188,
+    27.682,
+    17.01,
+    8.302,
+    9.738
+   ],
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba"
+   }
+  },
+  {
+   "tag": "05_C1",
+   "arm": "C1",
+   "MM_CAND": "P2CHUNKO",
+   "variant": "B",
+   "valid": true,
+   "steps_complete": true,
+   "window_median_ms": 695.8,
+   "wall_seconds": 129.6,
+   "rc": 0,
+   "rows": 100,
+   "step_ids_tail": [
+    96,
+    97,
+    98,
+    99,
+    100
+   ],
+   "loss_first": 0.09686005,
+   "gradnorm_first": 34.181,
+   "loss_head": [
+    0.09686005,
+    0.09686005,
+    0.07511672,
+    0.02892767,
+    0.03208653,
+    0.02598639
+   ],
+   "gradnorm_head": [
+    34.181,
+    34.183,
+    27.676,
+    17.076,
+    8.375,
+    9.371
+   ],
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba"
+   }
+  }
+ ],
+ "verdict": "PENDING_LOCAL_62",
+ "verdict_reason": "由 62_reportability.py 按冻结判据判定（阈值=max(2×底噪,5%)）"
+}

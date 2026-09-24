@@ -1,0 +1,74 @@
+{
+ "schema": "dsh.protocol.correction.v1",
+ "frozen_at": "2026-09-22",
+ "corrects": "protocols/codelevel_sync_candidates_20260922.json",
+ "reason": "★ 外部复核用**独立复算**指出两处问题：① 我把『C1 达不到 5%』写成了『**数学上已被限定**』——但 C1 的 95% 区间**包含 5% 以上**，该断言不成立；② 我给的符号/分母口径自相矛盾（写正 `1.84%` 却配负方向区间）。按纪律『**改判据要另存新版并说明，不能静默改历史**』，原始文件**保留不改**，更正一律写在本文件。",
+ "authority": "复核方独立复算：省时比例 =（基线耗时 − 候选耗时）÷ 基线耗时；每轮取第 11–100 步中位数，再按实验区组配对。本文件采用**同一口径**，并由 `62_reportability.py` v2 复算验证。",
+
+ "corrections": [
+  {
+   "id": "CORR-1",
+   "topic": "『数学上已被限定为 NOT_REPORTABLE』属过度声称",
+   "old_wording_quoted": [
+    "（protocols/codelevel_sync_candidates_20260922.json · results.decision）『端到端 A/B 的结果在数学上已被限定为 NOT_REPORTABLE，故**不投入卡时**。』",
+    "（同文件 · results.end_to_end_ab_2026_09_22.interpretation）『两臂 95% 区间都跨 0 ⇒ 在本样本量下不显著；即便只看点估计（~1.8% / ~0.02%）也均 < 5% 阈值。』",
+    "（docs/推荐配置与保底配置_决策记录_v2_20260922.md §9.3）『比 5% 门槛低一个数量级，端到端 A/B 的结果在数学上已被限定为 NOT_REPORTABLE。』"
+   ],
+   "why_wrong": "C1 的 95% 区间是 [−4.44%, +7.97%]（口径：savings_pct，正 = 候选更快），**上界 7.97% 超过 5%** ⇒ 该区间**不能**排除『真实省时 ≥ 5%』。因此**不存在**『数学上已证明达不到 5%』这回事。我把『kernel 归因的 duration 上界 0.87%』这个**点状上界**当成了**统计结论**，两者不是一回事：前者是单次 profile 的算子时间占比，不含抽样不确定性。",
+   "corrected_wording": "C1 端到端实测点估计 **+1.76%**，95% 区间 **[−4.44%, +7.97%]**，**未达**『区间下界 ≥ 5%』的达标条件（`PERFORMANCE_NOT_MET`）。★ 停止投入这条线的理由是：① **证据不足**（区间跨零、n=3，且区间上界已覆盖 5%，即既不能确认达标、也没有把它证伪）；② **点估计小**（1.76%，远低于阈值）；③ **代价大于收益**（跳过 grad-norm 会打断观测指纹链、并使 `59` 的 `PAT` 解析失效）。**不是**因为『数学上不可能达标』。",
+   "scope_of_the_087_claim": "『0.87%』这个数**仍然有效**，但它的正确表述是：**单次 `--with-stack` profile 中，`LpNormV2` 与 hccl `allReduce` 的 kernel Duration 合计占 kernel 时间的 0.87%** —— 这是**算子时间占比**，不是端到端省时的置信上界，**不得**用来宣称『收益不可能达到 5%』。"
+  },
+  {
+   "id": "CORR-2",
+   "topic": "符号 / 分母错配",
+   "old_wording_quoted": [
+    "（docs/优化候选评估固定流程_20260922.md §5）『**C1** 跳过 `clip_grad_norm`（范数计算 + 归约） | **1.84%** | [−8.32, 4.64]』—— 写成**正的** 1.84%，却沿用了**负方向**的区间。"
+   ],
+   "why_wrong": "旧版 `62_reportability.py` 用 `savings_b = (B−A)/B`，其中**正号表示 B(候选)更慢**；而文档正文用『省时』（正 = 候选更快）叙述。两者**同名前缀不同含义**，于是同一个结论在点估计与区间上呈现相反的符号，读者无法判断『到底省了多少』。根因是**用 A/B 字母决定含义**——而在这批产物里 A/B 指的是**两个配置**，不是基线/候选。",
+   "corrected_wording": "★ v2 起**不再依赖 A/B 字母**，改为**角色制**并显式存储：`baseline_run_id` / `candidate_run_id` / `savings_pct` / `ci95_savings_pct` / `denominator`，且把定义写进产物：`savings_pct = (baseline − candidate) / 分母 × 100`，**正号恒等于「候选更快」**。分母由 `--denominator {baseline,candidate}` 显式声明（默认 `baseline`，即标准省时比例）。",
+   "role_declaration_required": "`parse_summary()` 的 `variant` 角色**必须显式声明**（`--baseline-variant` / `--candidate-variant`）；未声明时按默认 A/B 假定，并在产物里标 `roles_assumed=true` 且打印告警 —— **不允许把『假定』当成『声明』**。",
+   "example": "评估『配置 A（推荐）相对 配置 B（保底）省时』⇒ 候选是 A、基线是 B ⇒ 必须 `--baseline-variant B --candidate-variant A`。"
+  },
+  {
+   "id": "CORR-3",
+   "topic": "判据未落实『至少省时 5%』的硬红线（v1 缺口）",
+   "old_wording_quoted": [
+    "（scripts/62_reportability.py v1 · judge）`performance` 只比较 `|点估计| ≥ 阈值` 与 `pairs ≥ min_pairs`；区间跨零**仅告警**，不参与判定。"
+   ],
+   "why_wrong": "复核方用**合成坏例**（非真机实验）证明：点估计 10%、95% 区间 [−14.84%, 34.84%]（跨零）⇒ v1 仍返回 `REPORTABLE`、退出码 0。本机已复现该缺口。",
+   "corrected_wording": "★ v2 把硬红线写成 `performance_pass = (ci95_savings_pct[0] >= threshold_pct)`（**区间下界**判定），缺失区间一律 `INVALID_INPUT`（`CI_MISSING`）—— **不允许用点估计顶替区间**；噪声倍数规则保留为**工程筛选**，不再替代置信区间。修复后同一坏例返回 `PERFORMANCE_NOT_MET` / 退出码 4（本机实测）。"
+  }
+ ],
+
+ "corrected_numbers_table": {
+  "note": "口径统一为：savings_pct =（基线 − 候选）÷ 基线 × 100；正 = 候选更快；每轮取第 11–100 步中位数，按区组配对；95% 区间用 t(0.975, df=n−1)。由 `62_reportability.py` v2 复算，**与复核方独立复算逐位一致**。",
+  "rows": [
+   {"candidate": "C1（跳过 clip_grad_norm）", "baseline_run_id": "00_N/05_N/07_N", "candidate_run_id": "01_C1/03_C1/08_C1",
+    "pairs": 3, "savings_pct": 1.7645, "ci95_savings_pct": [-4.4405, 7.9695],
+    "verdict_v2": "PERFORMANCE_NOT_MET", "reason": "CI_LOWER_BELOW_THRESHOLD", "exit_code": 4},
+   {"candidate": "C2（跳过 loss all_reduce）", "baseline_run_id": "00_N/05_N/07_N", "candidate_run_id": "02_C2/04_C2/06_C2",
+    "pairs": 3, "savings_pct": 0.0194, "ci95_savings_pct": [-1.8965, 1.9353],
+    "verdict_v2": "PERFORMANCE_NOT_MET", "reason": "CI_LOWER_BELOW_THRESHOLD", "exit_code": 4}
+  ],
+  "reviewer_independent_values_for_cross_check": {
+   "C1": {"savings_pct": 1.76, "ci95": [-4.44, 7.97]},
+   "C2": {"savings_pct": 0.019, "ci95": [-1.90, 1.94]},
+   "agreement": "★ 逐位一致（C1 1.7645 ≈ 1.76；C2 0.0194 ≈ 0.019）"
+  }
+ },
+
+ "delivery_headline_recheck_under_v2": {
+  "what": "用 v2 判据复核交付主结论『配置 A 相对 B 省时 19.606%』",
+  "command": "62_reportability.py --noise <ab62 null_summary> --summary AB_AVSB_20260921__summary.json --baseline-variant B --candidate-variant A --accuracy-validity unverified",
+  "result": {"savings_pct": 19.6062, "ci95_savings_pct": [18.3235, 20.8889],
+             "performance_pass": true, "accuracy_validity": "UNVERIFIED", "adoption_ready": false,
+             "verdict": "PERFORMANCE_MET_ADOPTION_BLOCKED", "exit_code": 3},
+  "note": "★ 关键：**性能达标 ≠ 可采纳**。主结论在 v2 下仍达标（区间下界 18.32% ≥ 5%），但精度关未闭合 ⇒ `adoption_ready=false`（退出码 3）。"
+ },
+
+ "still_open": [
+  "权威会话窗口口径矛盾未解（官方 50–100 步 vs 本批 11–100 步窗口）——本更正沿用 11–100，与既有产出一致，但**不声称**它是唯一正确窗口。",
+  "完整精度对齐仍未闭合；所有 mock 性能结果继续保持 `official_comparable=false`。",
+  "显存预算需重建：本批基线日志第 2 步后记录 `max allocated: 40898.24 MB`，说明旧报告中的『峰值 8.5 GB』**不能**作为当前配置的显存上限（详见下一阶段动作）。"
+ ]
+}

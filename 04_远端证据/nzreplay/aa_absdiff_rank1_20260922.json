@@ -1,0 +1,97 @@
+{
+ "schema": "dsh.aa_absdiff.v1",
+ "purpose": "A/A 分歧的**量纲感知**刻画（只刻画，不设通过阈值）",
+ "a": "nzreplay_20260922_151513__a__replay_dump.rank1.json",
+ "b": "nzreplay_20260922_151513__b__replay_dump.rank1.json",
+ "note": "sum/absmax 为**全张量**统计量；sample 为固定种子抽样（head+rand）",
+ "groups": [
+  {
+   "group": "C3_post_comm_grad",
+   "n_tensors": 200,
+   "n_byte_identical": 0,
+   "sum_rel_diff": {
+    "median": 0.001667810498,
+    "max": 2.84170344227
+   },
+   "absmax_rel_diff": {
+    "median": 0.0,
+    "max": 0.016216216216
+   },
+   "sample_elem_abs_diff": {
+    "median": 7.451e-09,
+    "max": 5.3405762e-05
+   },
+   "sample_elem_scale_ratio": {
+    "median": 2.347506e-06,
+    "max": 0.035135135135
+   },
+   "n_sample_pairs": 21952
+  },
+  {
+   "group": "C4_after_one_update",
+   "n_tensors": 200,
+   "n_byte_identical": 35,
+   "sum_rel_diff": {
+    "median": 1.7481e-08,
+    "max": 7.45003e-07
+   },
+   "absmax_rel_diff": {
+    "median": 0.0,
+    "max": 1.1299e-07
+   },
+   "sample_elem_abs_diff": {
+    "median": 0.0,
+    "max": 1.19209e-07
+   },
+   "sample_elem_scale_ratio": {
+    "median": 0.0,
+    "max": 2.11071e-07
+   },
+   "n_sample_pairs": 20560
+  },
+  {
+   "group": "OPT_before",
+   "n_tensors": 200,
+   "n_byte_identical": 200,
+   "sum_rel_diff": {
+    "median": null,
+    "max": null
+   },
+   "absmax_rel_diff": {
+    "median": null,
+    "max": null
+   },
+   "sample_elem_abs_diff": {
+    "median": null,
+    "max": null
+   },
+   "sample_elem_scale_ratio": {
+    "median": null,
+    "max": null
+   },
+   "n_sample_pairs": 0
+  },
+  {
+   "group": "OPT_after",
+   "n_tensors": 200,
+   "n_byte_identical": 66,
+   "sum_rel_diff": {
+    "median": 4.9632027e-05,
+    "max": 0.065210684171
+   },
+   "absmax_rel_diff": {
+    "median": 5.57562e-07,
+    "max": 0.003134741885
+   },
+   "sample_elem_abs_diff": {
+    "median": 0.0,
+    "max": 2.050394e-06
+   },
+   "sample_elem_scale_ratio": {
+    "median": 1.6e-09,
+    "max": 0.003732940765
+   },
+   "n_sample_pairs": 14848
+  }
+ ]
+}

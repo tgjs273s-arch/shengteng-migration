@@ -1,0 +1,297 @@
+{
+ "schema": "p59ab.v2",
+ "key": "MM_CAND=C2",
+ "official_comparable": false,
+ "comparability": {
+  "reason": "同机同批次、mock 数据（official_comparable=false）"
+ },
+ "order_used": "latin-square(N,C1,C2 / C1,C2,N / C2,N,C1)",
+ "steps": 100,
+ "n_A": 3,
+ "n_B": 3,
+ "paired": {
+  "pairs": 3,
+  "diffs": [
+   {
+    "pair": 1,
+    "A_ms": 724.25,
+    "B_ms": 730.4000000000001,
+    "diff_ms": 6.15,
+    "delta_pct": 0.849
+   },
+   {
+    "pair": 2,
+    "A_ms": 723.1500000000001,
+    "B_ms": 721.1,
+    "diff_ms": -2.05,
+    "delta_pct": -0.283
+   },
+   {
+    "pair": 3,
+    "A_ms": 713.3499999999999,
+    "B_ms": 708.9,
+    "diff_ms": -4.45,
+    "delta_pct": -0.624
+   }
+  ],
+  "mean_delta_pct": -0.019,
+  "sd_pct": 0.771,
+  "t_crit": 4.303,
+  "ci95_delta_pct": [
+   -1.935,
+   1.896
+  ],
+  "improvement_pct": 0.019,
+  "note": "负的 delta 表示 B 更快；改善率 = -mean"
+ },
+ "runs": [
+  {
+   "tag": "00_N",
+   "arm": "N",
+   "MM_CAND": null,
+   "variant": "A",
+   "valid": true,
+   "steps_complete": true,
+   "window_median_ms": 724.25,
+   "wall_seconds": 133.4,
+   "rc": 0,
+   "rows": 100,
+   "step_ids_tail": [
+    96,
+    97,
+    98,
+    99,
+    100
+   ],
+   "loss_first": 0.09686005,
+   "gradnorm_first": 34.165,
+   "loss_head": [
+    0.09686005,
+    0.09686005,
+    0.07668044,
+    0.02956149,
+    0.0312562,
+    0.02495757
+   ],
+   "gradnorm_head": [
+    34.165,
+    34.186,
+    27.253,
+    17.298,
+    8.364,
+    9.363
+   ],
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  },
+  {
+   "tag": "05_N",
+   "arm": "N",
+   "MM_CAND": null,
+   "variant": "A",
+   "valid": true,
+   "steps_complete": true,
+   "window_median_ms": 723.1500000000001,
+   "wall_seconds": 132.6,
+   "rc": 0,
+   "rows": 100,
+   "step_ids_tail": [
+    96,
+    97,
+    98,
+    99,
+    100
+   ],
+   "loss_first": 0.09686005,
+   "gradnorm_first": 34.176,
+   "loss_head": [
+    0.09686005,
+    0.09686005,
+    0.07713599,
+    0.02874527,
+    0.03076763,
+    0.02532921
+   ],
+   "gradnorm_head": [
+    34.176,
+    34.184,
+    27.3,
+    17.288,
+    8.179,
+    10.172
+   ],
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  },
+  {
+   "tag": "07_N",
+   "arm": "N",
+   "MM_CAND": null,
+   "variant": "A",
+   "valid": true,
+   "steps_complete": true,
+   "window_median_ms": 713.3499999999999,
+   "wall_seconds": 137.5,
+   "rc": 0,
+   "rows": 100,
+   "step_ids_tail": [
+    96,
+    97,
+    98,
+    99,
+    100
+   ],
+   "loss_first": 0.09686005,
+   "gradnorm_first": 34.184,
+   "loss_head": [
+    0.09686005,
+    0.09686005,
+    0.07611521,
+    0.02834139,
+    0.03158621,
+    0.02615768
+   ],
+   "gradnorm_head": [
+    34.184,
+    34.185,
+    27.445,
+    16.562,
+    8.329,
+    10.125
+   ],
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  },
+  {
+   "tag": "02_C2",
+   "arm": "C2",
+   "MM_CAND": "C2",
+   "variant": "B",
+   "valid": true,
+   "steps_complete": true,
+   "window_median_ms": 730.4000000000001,
+   "wall_seconds": 139.9,
+   "rc": 0,
+   "rows": 100,
+   "step_ids_tail": [
+    96,
+    97,
+    98,
+    99,
+    100
+   ],
+   "loss_first": 0.09686005,
+   "gradnorm_first": 34.188,
+   "loss_head": [
+    0.09686005,
+    0.09686005,
+    0.07540946,
+    0.02954589,
+    0.03123668,
+    0.02581872
+   ],
+   "gradnorm_head": [
+    34.188,
+    34.182,
+    27.526,
+    17.446,
+    8.338,
+    9.676
+   ],
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  },
+  {
+   "tag": "04_C2",
+   "arm": "C2",
+   "MM_CAND": "C2",
+   "variant": "B",
+   "valid": true,
+   "steps_complete": true,
+   "window_median_ms": 721.1,
+   "wall_seconds": 134.7,
+   "rc": 0,
+   "rows": 100,
+   "step_ids_tail": [
+    96,
+    97,
+    98,
+    99,
+    100
+   ],
+   "loss_first": 0.09686005,
+   "gradnorm_first": 34.182,
+   "loss_head": [
+    0.09686005,
+    0.09686005,
+    0.07441769,
+    0.02954342,
+    0.03130281,
+    0.02582021
+   ],
+   "gradnorm_head": [
+    34.182,
+    34.189,
+    27.462,
+    17.859,
+    8.577,
+    9.256
+   ],
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  },
+  {
+   "tag": "06_C2",
+   "arm": "C2",
+   "MM_CAND": "C2",
+   "variant": "B",
+   "valid": true,
+   "steps_complete": true,
+   "window_median_ms": 708.9,
+   "wall_seconds": 130.6,
+   "rc": 0,
+   "rows": 100,
+   "step_ids_tail": [
+    96,
+    97,
+    98,
+    99,
+    100
+   ],
+   "loss_first": 0.09686005,
+   "gradnorm_first": 34.168,
+   "loss_head": [
+    0.09686005,
+    0.09686005,
+    0.0759114,
+    0.03045501,
+    0.03183733,
+    0.02725778
+   ],
+   "gradnorm_head": [
+    34.168,
+    34.182,
+    27.527,
+    17.581,
+    8.472,
+    9.429
+   ],
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  }
+ ],
+ "verdict": "PENDING_LOCAL_62",
+ "verdict_reason": "由 62_reportability.py 按冻结判据判定（阈值=max(2×底噪,5%)）"
+}

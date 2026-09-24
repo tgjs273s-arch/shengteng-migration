@@ -1,0 +1,9 @@
+PRE	预检能力矩阵	PASS	25	out/logs/PRE.log
+P0	环境探测	PASS	35	out/logs/P0.log
+P1	迁移点识别(AST)	PASS	0	out/logs/P1.log
+P2	迁移方案与配置生成	PASS	0	out/logs/P2.log
+P3	算子与契约验证	PASS	8	out/logs/P3.log
+P4	权重与数据准备	PASS	3	out/logs/P4.log
+P5	训练执行(100 步)	PASS	220	out/logs/P5.log
+P6	性能基准(算子微基准 + 50-100 窗口口径)	PASS	9	out/logs/P6.log
+P7	精度判定(P7)	PASS	4	out/logs/P7.log

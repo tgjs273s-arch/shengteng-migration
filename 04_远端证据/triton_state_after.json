@@ -1,0 +1,68 @@
+{
+ "pip_triton_entries": [
+  "triton_ascend==3.2.2"
+ ],
+ "pip_show_triton": {
+  "WARNING": "Package(s) not found: triton"
+ },
+ "pip_show_triton_ascend": {
+  "Name": "triton_ascend",
+  "Version": "3.2.2",
+  "Summary": "A language and compiler for custom Deep Learning operations",
+  "Home-page": "https://gitcode.com/Ascend/triton-ascend/",
+  "Author": "Philippe Tillet",
+  "Author-email": "phil@openai.com",
+  "License": "",
+  "Location": "/usr/local/lib64/python3.11/site-packages",
+  "Requires": "attrs, decorator, numpy, pandas, psutil, pybind11, pytest, pytest-xdist, pyyaml, scipy, triton",
+  "Required-by": ""
+ },
+ "import_probe": {
+  "triton": {
+   "ok": true,
+   "version": "3.2.0",
+   "file": "/usr/local/lib64/python3.11/site-packages/triton/__init__.py"
+  },
+  "triton_ascend": {
+   "ok": false,
+   "error": "ModuleNotFoundError: No module named 'triton_ascend'"
+  },
+  "torch": {
+   "ok": true,
+   "version": "2.7.1+cpu",
+   "file": "/usr/local/lib64/python3.11/site-packages/torch/__init__.py"
+  },
+  "torch_npu": {
+   "ok": true,
+   "version": "2.7.1.post10",
+   "file": "/usr/local/lib64/python3.11/site-packages/torch_npu/__init__.py"
+  }
+ },
+ "triton_ascend_owns_prefixes": [
+  "triton"
+ ],
+ "triton_ascend_file_count": 243,
+ "triton_ascend_sample_files": [
+  "triton/_C/libentryC.so",
+  "triton/_C/libtriton.so",
+  "triton/__init__.py",
+  "triton/__pycache__/__init__.cpython-311.pyc",
+  "triton/__pycache__/_internal_testing.cpython-311.pyc",
+  "triton/__pycache__/errors.cpython-311.pyc",
+  "triton/__pycache__/testing.cpython-311.pyc",
+  "triton/_internal_testing.py",
+  "triton/backends/__init__.py",
+  "triton/backends/__pycache__/__init__.cpython-311.pyc",
+  "triton/backends/__pycache__/compiler.cpython-311.pyc",
+  "triton/backends/__pycache__/driver.cpython-311.pyc"
+ ],
+ "site_packages": "/usr/local/lib64/python3.11/site-packages",
+ "sitepkg_triton_entries": [
+  "triton",
+  "triton_ascend-3.2.2.dist-info"
+ ],
+ "triton_distinfo_dirs": [
+  "triton_ascend-3.2.2.dist-info"
+ ],
+ "verdict": "上游 triton 与 triton-ascend 混装；import triton 拿到的是 3.2.0；triton-ascend **自带** triton/ 包 ⇒ 卸载上游 triton 后应回落到它"
+}

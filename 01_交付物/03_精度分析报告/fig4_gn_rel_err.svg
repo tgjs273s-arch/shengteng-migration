@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="440" viewBox="0 0 900 440">
+<rect width="100%%" height="100%%" fill="#ffffff"/>
+<text x="72" y="24" font-size="16" font-weight="bold" font-family="sans-serif" fill="#1f4e79">精度对齐 · grad_norm 逐点相对误差（%）</text>
+<line x1="72" y1="388.0" x2="872" y2="388.0" stroke="#e8edf2" stroke-width="1"/>
+<text x="65" y="391.5" font-size="10.5" font-family="sans-serif" text-anchor="end" fill="#555">-0.06915</text>
+<line x1="72" y1="318.8" x2="872" y2="318.8" stroke="#e8edf2" stroke-width="1"/>
+<text x="65" y="322.3" font-size="10.5" font-family="sans-serif" text-anchor="end" fill="#555">0.1314</text>
+<line x1="72" y1="249.6" x2="872" y2="249.6" stroke="#e8edf2" stroke-width="1"/>
+<text x="65" y="253.1" font-size="10.5" font-family="sans-serif" text-anchor="end" fill="#555">0.3319</text>
+<line x1="72" y1="180.4" x2="872" y2="180.4" stroke="#e8edf2" stroke-width="1"/>
+<text x="65" y="183.9" font-size="10.5" font-family="sans-serif" text-anchor="end" fill="#555">0.5324</text>
+<line x1="72" y1="111.2" x2="872" y2="111.2" stroke="#e8edf2" stroke-width="1"/>
+<text x="65" y="114.7" font-size="10.5" font-family="sans-serif" text-anchor="end" fill="#555">0.733</text>
+<line x1="72" y1="42.0" x2="872" y2="42.0" stroke="#e8edf2" stroke-width="1"/>
+<text x="65" y="45.5" font-size="10.5" font-family="sans-serif" text-anchor="end" fill="#555">0.9335</text>
+<line x1="72.0" y1="42" x2="72.0" y2="388" stroke="#f2f5f8" stroke-width="1"/>
+<text x="72.0" y="405" font-size="10.5" font-family="sans-serif" text-anchor="middle" fill="#555">1</text>
+<line x1="225.5" y1="42" x2="225.5" y2="388" stroke="#f2f5f8" stroke-width="1"/>
+<text x="225.5" y="405" font-size="10.5" font-family="sans-serif" text-anchor="middle" fill="#555">20</text>
+<line x1="387.2" y1="42" x2="387.2" y2="388" stroke="#f2f5f8" stroke-width="1"/>
+<text x="387.2" y="405" font-size="10.5" font-family="sans-serif" text-anchor="middle" fill="#555">40</text>
+<line x1="548.8" y1="42" x2="548.8" y2="388" stroke="#f2f5f8" stroke-width="1"/>
+<text x="548.8" y="405" font-size="10.5" font-family="sans-serif" text-anchor="middle" fill="#555">60</text>
+<line x1="710.4" y1="42" x2="710.4" y2="388" stroke="#f2f5f8" stroke-width="1"/>
+<text x="710.4" y="405" font-size="10.5" font-family="sans-serif" text-anchor="middle" fill="#555">80</text>
+<line x1="872.0" y1="42" x2="872.0" y2="388" stroke="#f2f5f8" stroke-width="1"/>
+<text x="872.0" y="405" font-size="10.5" font-family="sans-serif" text-anchor="middle" fill="#555">100</text>
+<text x="486" y="426" font-size="11.5" font-family="sans-serif" text-anchor="middle" fill="#333">iteration</text>
+<text x="20" y="220" font-size="11.5" font-family="sans-serif" fill="#333" transform="rotate(-90 20,220)">relative error (%)</text>
+<line x1="72" y1="-326.0" x2="872" y2="-326.0" stroke="#d33" stroke-width="1.2" stroke-dasharray="6,4"/>
+<text x="868" y="-331.0" font-size="10.5" font-family="sans-serif" fill="#d33">2% 验收线</text>
+<polyline points="72.0,362.6 80.1,348.5 88.2,245.1 96.2,148.2 104.3,341.7 112.4,305.0 120.5,315.7 128.6,312.2 136.6,348.0 144.7,304.0 152.8,154.8 160.9,361.1 169.0,340.1 177.1,302.9 185.1,360.6 193.2,306.1 201.3,347.4 209.4,323.4 217.5,281.5 225.5,304.3 233.6,293.5 241.7,318.4 249.8,352.2 257.9,364.1 265.9,351.6 274.0,303.5 282.1,232.1 290.2,287.7 298.3,357.4 306.3,349.4 314.4,364.1 322.5,327.3 330.6,342.9 338.7,350.8 346.7,233.8 354.8,346.8 362.9,352.5 371.0,303.9 379.1,328.0 387.2,341.0 395.2,301.7 403.3,345.4 411.4,317.2 419.5,317.5 427.6,364.1 435.6,275.2 443.7,348.2 451.8,349.8 459.9,343.6 468.0,322.5 476.0,338.0 484.1,353.1 492.2,353.9 500.3,353.3 508.4,338.1 516.4,309.6 524.5,346.3 532.6,329.1 540.7,327.1 548.8,360.9 556.8,360.5 564.9,352.1 573.0,342.8 581.1,301.2 589.2,331.1 597.3,338.9 605.3,304.5 613.4,314.0 621.5,309.0 629.6,354.1 637.7,309.6 645.7,304.0 653.8,331.8 661.9,290.0 670.0,320.9 678.1,65.9 686.1,349.7 694.2,325.7 702.3,353.4 710.4,340.6 718.5,357.4 726.5,305.3 734.6,345.9 742.7,337.9 750.8,319.9 758.9,299.5 766.9,360.2 775.0,340.2 783.1,335.7 791.2,306.5 799.3,326.0 807.4,364.1 815.4,364.1 823.5,357.0 831.6,335.9 839.7,292.0 847.8,346.9 855.8,339.7 863.9,340.3 872.0,350.4" fill="none" stroke="#ff7f0e" stroke-width="1.8" stroke-linejoin="round"/>
+<line x1="84" y1="50" x2="112" y2="50" stroke="#ff7f0e" stroke-width="1.8"/>
+<text x="118" y="54" font-size="11" font-family="sans-serif" fill="#222">|我方−官方| / 官方 ×100%</text>
+<text x="72" y="438" font-size="10.5" font-family="sans-serif" fill="#444">Max 0.8643% → 距验收线余量 2.3×</text>
+</svg>

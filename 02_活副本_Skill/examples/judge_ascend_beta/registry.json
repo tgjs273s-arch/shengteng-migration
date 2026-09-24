@@ -1,0 +1,71 @@
+{
+ "schema": "sk04_registry.v1",
+ "entries": [
+  {
+   "seq": 1,
+   "tag": "p5fix100_20260916_194758",
+   "run_dir": "/root/qwen35-ascend-migrator/out/judge_fix100",
+   "manifest_sha256": "b1f758bd6fde69b51bfa244ecc4853a857f34fbce91b1dc20a0e38588a776f27",
+   "fingerprint_digest": "cb5925d73778a72e0517a77967fcea989524193bcc70cb26ecc9ee202e6661bc",
+   "observed_digest": "a664ec2102421c8f8d98da6dc43baaa0a0d7405b7621e0ef4b48ad0b895b83eb",
+   "prev_hash": "GENESIS",
+   "ts": "2026-09-16T19:48:02Z",
+   "entry_hash": "029a37e987784b2bf8becfd5cd29af49900b175830f256aedfaf0874848dbbe0"
+  },
+  {
+   "seq": 2,
+   "tag": "fromzero_20260916_195612",
+   "run_dir": "/root/qwen35-ascend-migrator/out/judge",
+   "manifest_sha256": "9a52f70c8e72a68fd116b021ceda3d6826744a899e00751556b0e66d94bfa856",
+   "fingerprint_digest": "cd95e06f2cff323fa9847122e5ebc7796dc86aa9c9283e1ce5fbde8423a489a3",
+   "observed_digest": "d23c5958edc15367a20565b4b097790e802911a5d41b18feb3fb7e077322f692",
+   "prev_hash": "029a37e987784b2bf8becfd5cd29af49900b175830f256aedfaf0874848dbbe0",
+   "ts": "2026-09-16T19:56:17Z",
+   "entry_hash": "09af2ce85814c59eb0597a36839cec4c4e4ab12454e57bacca9dc48d4a8d9d97"
+  },
+  {
+   "seq": 3,
+   "tag": "fromzero_20260916_195822",
+   "run_dir": "/root/qwen35-ascend-migrator/out/judge",
+   "manifest_sha256": "9a52f70c8e72a68fd116b021ceda3d6826744a899e00751556b0e66d94bfa856",
+   "fingerprint_digest": "cd95e06f2cff323fa9847122e5ebc7796dc86aa9c9283e1ce5fbde8423a489a3",
+   "observed_digest": "d23c5958edc15367a20565b4b097790e802911a5d41b18feb3fb7e077322f692",
+   "prev_hash": "09af2ce85814c59eb0597a36839cec4c4e4ab12454e57bacca9dc48d4a8d9d97",
+   "ts": "2026-09-16T19:58:27Z",
+   "entry_hash": "c8e87597a9b80c5d375d4d94302f6f0ec4b176641c0a6b704b32276575bd353b"
+  },
+  {
+   "seq": 4,
+   "tag": "fromzero_20260916_195948",
+   "run_dir": "/root/qwen35-ascend-migrator/out/judge",
+   "manifest_sha256": "9a52f70c8e72a68fd116b021ceda3d6826744a899e00751556b0e66d94bfa856",
+   "fingerprint_digest": "cd95e06f2cff323fa9847122e5ebc7796dc86aa9c9283e1ce5fbde8423a489a3",
+   "observed_digest": "d23c5958edc15367a20565b4b097790e802911a5d41b18feb3fb7e077322f692",
+   "prev_hash": "c8e87597a9b80c5d375d4d94302f6f0ec4b176641c0a6b704b32276575bd353b",
+   "ts": "2026-09-16T19:59:52Z",
+   "entry_hash": "204bae316a86dffd14a89d3e809f4c3719a152a381bccffe1f52433a970329ff"
+  },
+  {
+   "seq": 5,
+   "tag": "fromzero_20260916_200200",
+   "run_dir": "/root/qwen35-ascend-migrator/out/judge",
+   "manifest_sha256": "9a52f70c8e72a68fd116b021ceda3d6826744a899e00751556b0e66d94bfa856",
+   "fingerprint_digest": "cd95e06f2cff323fa9847122e5ebc7796dc86aa9c9283e1ce5fbde8423a489a3",
+   "observed_digest": "d23c5958edc15367a20565b4b097790e802911a5d41b18feb3fb7e077322f692",
+   "prev_hash": "204bae316a86dffd14a89d3e809f4c3719a152a381bccffe1f52433a970329ff",
+   "ts": "2026-09-16T20:02:05Z",
+   "entry_hash": "2a7190687573f175ce736025285031fe8772a4cb6fd306d393f1fe4937e0dbee"
+  },
+  {
+   "seq": 6,
+   "tag": "fromzero_20260916_201250",
+   "run_dir": "/root/qwen35-ascend-migrator/out/judge",
+   "manifest_sha256": "71535bf002f5d41328663c93e34b086a9d82eca31b1d03620bf1e15a54cce01f",
+   "fingerprint_digest": "4d3c5931f7e6cb4a78972788f7f1d16e8ddd344360202901880d6e50eaf16d78",
+   "observed_digest": "6a27e5f0d39dd8e6d6f74ab8cae831ccb83c46d5ff2bcf3b549fdc489d923425",
+   "prev_hash": "2a7190687573f175ce736025285031fe8772a4cb6fd306d393f1fe4937e0dbee",
+   "ts": "2026-09-16T20:12:54Z",
+   "entry_hash": "12a04a1ebeaa5485b0b3f77facd656f221b3d8f9526f9bcc17d8ca2fd828458e"
+  }
+ ]
+}

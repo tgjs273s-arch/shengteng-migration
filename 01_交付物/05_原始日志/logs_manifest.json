@@ -1,0 +1,66 @@
+[
+ {
+  "file": "20260910_1006_验收主日志_最终配置100步.log",
+  "stage": "最终验收",
+  "desc": "★ 最终验收主日志：1×910C 双 die，官方几何（world2/mbs4/gas1/dp2），全量数据 157,712 样本，100 步完整训练（从 torchrun 启动到 checkpoint 保存）",
+  "key_numbers": "50-100 步中位 419.0ms；step1 loss 1.924621；gn 50-100 均值 9.860",
+  "bytes": 81770,
+  "lines": 629
+ },
+ {
+  "file": "20260907_1440_全量数据dp2_100步.log",
+  "stage": "精度锚点",
+  "desc": "全量数据（output_llava_coco_data.json，157,712 样本）下的官方几何 100 步；数据同源验证轮次",
+  "key_numbers": "step1 loss 1.924620；mismatch=[]（配置零偏离）",
+  "bytes": 96784,
+  "lines": 716
+ },
+ {
+  "file": "20260907_1334_官方几何dp2_100步.log",
+  "stage": "几何突破",
+  "desc": "首次复刻官方并行几何（双 die）的 100 步；早期使用 2000 样本子集",
+  "key_numbers": "50-100 中位 549.8ms；step1 loss 1.924621",
+  "bytes": 96505,
+  "lines": 711
+ },
+ {
+  "file": "20260907_1257_单die几何m8g1_100步.log",
+  "stage": "几何探索",
+  "desc": "单 die 几何探索（mbs8/gas1，单 micro 上界）；说明单 die 与官方几何的差异",
+  "key_numbers": "中位 752ms（单 die 上界）",
+  "bytes": 92598,
+  "lines": 684
+ },
+ {
+  "file": "20260907_跨卡数值等价_coco100.log",
+  "stage": "跨卡验证",
+  "desc": "跨卡数值等价性验证：910B4(A2) 与 910C(A3) 同配置逐点对比",
+  "key_numbers": "loss Δmax 0.196% / mean 0.059%；gn Δmax 0.60%",
+  "bytes": 92590,
+  "lines": 684
+ },
+ {
+  "file": "20260904_A2_910B4_最终配置100步.log",
+  "stage": "A2 对照",
+  "desc": "A2（昇腾 910B4 单卡 32GB）上的最终配置 100 步；作为跨卡对照的基线",
+  "key_numbers": "中位 3051ms；step1 loss 1.928093",
+  "bytes": 92842,
+  "lines": 681
+ },
+ {
+  "file": "20260910_0949_优化轮E1_关闭显存节省开关.log",
+  "stage": "性能优化",
+  "desc": "优化轮 E1：关闭 recompute/chunk_loss/activation_offload 后的 100 步（性能突破轮）",
+  "key_numbers": "50-100 中位 451.0ms（vs 改前 549.8ms）",
+  "bytes": 82048,
+  "lines": 631
+ },
+ {
+  "file": "20260724_官方基线日志_triton精度日志.log",
+  "stage": "官方基线",
+  "desc": "官方 7/24 发布的 Triton 精度参考日志（精度/性能对比的基准）",
+  "key_numbers": "50-100 中位 431.3ms；step1 loss 1.924621；全程均值 2502ms/3.197 samples/s",
+  "bytes": 97819,
+  "lines": 712
+ }
+]

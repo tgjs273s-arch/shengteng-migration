@@ -1,0 +1,47 @@
+{
+ "verdict_id": "f2ad023d09ce5af5392c754ef0e501f7feb9da623a449f0dc3e27c024cf5d7be",
+ "verdict": "NEEDS_EVIDENCE",
+ "color": "yellow",
+ "level": "pointwise_feasible",
+ "officiality": "proposed",
+ "deviations": 0,
+ "open_gates": [
+  "data_identity",
+  "sample_order"
+ ],
+ "pointwise": {
+  "n_common": 100,
+  "loss": {
+   "mean": 0.055443487694473534,
+   "mse": 0.0049238308661057285,
+   "max": 0.19377739143032946,
+   "min": 0.0,
+   "median": 0.04973262095450838
+  },
+  "grad_norm": {
+   "mean": 0.10089640006822825,
+   "mse": 0.02121087529672529,
+   "max": 0.7423225544030955,
+   "min": 0.00949397132821819,
+   "median": 0.07661515046465003
+  },
+  "loss_over_2pct_iters": [],
+  "gn_over_2pct_iters": [],
+  "step1_loss_ours": 1.92462,
+  "step1_loss_official": 1.924621
+ },
+ "window_50_100": {
+  "loss": {
+   "ours_mean": 1.3342083921568628,
+   "official_mean": 1.3344086078431372,
+   "rel_dev_pct": 0.01500407634495041,
+   "ours_median": 1.326593,
+   "official_median": 1.328064
+  },
+  "grad_norm": {
+   "ours_mean": 9.864862745098039,
+   "official_mean": 9.863901960784315,
+   "rel_dev_pct": 0.009740408182725547
+  }
+ }
+}

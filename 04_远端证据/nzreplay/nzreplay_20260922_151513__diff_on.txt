@@ -1,0 +1,31 @@
+DETSC active pid=174633 rank=x
+== rank 0 ==
+  [结果] fixed.grads_sha_all          同  A=6dd96fd056a53b591319f4b1 B=6dd96fd056a53b591319f4b1
+  [前提] fixed.input_sha_all          同  A=7a99c6b2031e4049c744cd7f B=7a99c6b2031e4049c744cd7f
+  [前提] fixed.iteration              同  A=30 B=30
+  [前提] fixed.lr                     同  A=8.83022221559489e-06 B=8.83022221559489e-06
+  [其它] fixed.opt_after_sha_all      同  A=d4f5a8f9236ce1c30c3aa511 B=d4f5a8f9236ce1c30c3aa511
+  [其它] fixed.opt_before_sha_all     同  A=9ee57500e82d8a458e981e3e B=9ee57500e82d8a458e981e3e
+  [结果] fixed.params_after_sha_all   同  A=1c305d6b9ad6c0a3921e860b B=1c305d6b9ad6c0a3921e860b
+  [前提] fixed.params_before_sha_all  同  A=bae65eb56c2cac8f0ef6c9d2 B=bae65eb56c2cac8f0ef6c9d2
+  [前提] fixed.rng_cpu_sha            同  A=c80d2f5a43765e550b1cf301 B=c80d2f5a43765e550b1cf301
+  C1 前向输出：loss 逐字节相同（118e286971ea vs 118e286971ea）；logits 逐字节相同
+  C2 通信前局部梯度：UNVERIFIED（FSDP2 不可观测；**不参与**判定，不用 C3 顶替）
+  C3 通信后梯度: 逐字节相同（n_tensors=320 sha_all=6dd96fd056a53b59）
+  C4 一次更新后参数: 逐字节相同（n_tensors=473 sha_all=1c305d6b9ad6c0a3）
+REPLAY_IDENTICAL rank=0（**只**证明这一步；不推出全程可复现）
+== rank 1 ==
+  [结果] fixed.grads_sha_all          同  A=8dfddb07e8e6be1c06004c1a B=8dfddb07e8e6be1c06004c1a
+  [前提] fixed.input_sha_all          同  A=7a99c6b2031e4049c744cd7f B=7a99c6b2031e4049c744cd7f
+  [前提] fixed.iteration              同  A=30 B=30
+  [前提] fixed.lr                     同  A=8.83022221559489e-06 B=8.83022221559489e-06
+  [其它] fixed.opt_after_sha_all      同  A=f4b9bea3ea325bd46e9eb298 B=f4b9bea3ea325bd46e9eb298
+  [其它] fixed.opt_before_sha_all     同  A=4d9e96723d06f1cedba2df9f B=4d9e96723d06f1cedba2df9f
+  [结果] fixed.params_after_sha_all   同  A=2923e30a509475ba4f82ccc5 B=2923e30a509475ba4f82ccc5
+  [前提] fixed.params_before_sha_all  同  A=587a806cff6dd0230b4e3e5b B=587a806cff6dd0230b4e3e5b
+  [前提] fixed.rng_cpu_sha            同  A=c80d2f5a43765e550b1cf301 B=c80d2f5a43765e550b1cf301
+  C1 前向输出：loss 逐字节相同（118e286971ea vs 118e286971ea）；logits 逐字节相同
+  C2 通信前局部梯度：UNVERIFIED（FSDP2 不可观测；**不参与**判定，不用 C3 顶替）
+  C3 通信后梯度: 逐字节相同（n_tensors=320 sha_all=8dfddb07e8e6be1c）
+  C4 一次更新后参数: 逐字节相同（n_tensors=473 sha_all=2923e30a509475ba）
+REPLAY_IDENTICAL rank=1（**只**证明这一步；不推出全程可复现）

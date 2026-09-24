@@ -1,0 +1,29 @@
+{
+ "floor_pct": 1.53,
+ "min_effect_pct": 5.0,
+ "noise_multiplier": 2.0,
+ "noise_term_pct": 3.06,
+ "threshold_pct": 5.0,
+ "effect_pct": -1.84,
+ "pairs": 3,
+ "min_pairs": 3,
+ "claim_scope": "同机同批次（非官方可比）：不得声称优于官方基线",
+ "official_comparable": false,
+ "threshold_governed_by": "min_effect_floor",
+ "verdict": "NOT_REPORTABLE",
+ "reason": "BELOW_FLOOR",
+ "direction_only": true,
+ "note": "效应 -1.840% 未超过阈值 5.000%（实测底噪 1.530% × 2.0 = 3.060%、下限 5.0%）⇒ **不可报告数字**，只能作方向判断。这与「没效应」不同：它是「这把尺子在这个量级上分不出来」。",
+ "schema": "p62report.v1",
+ "metric": "savings_b",
+ "metric_definition": "(B-A)/B —— 项目主口径「省时比例」，分母 = 候选臂(B)",
+ "ab_schema": "p59ab.v2",
+ "noise_source": "C:\\Users\\HUAWEI\\Desktop\\_tmp_ab62_analysis\\null_summary.json",
+ "effect_source": "C:\\Users\\HUAWEI\\Desktop\\_tmp_ab62_analysis\\C1_vs_N__summary.json",
+ "noise_runs": 3,
+ "sd_pct": 2.6069,
+ "ci95_pct": [
+  -8.3169,
+  4.6361
+ ]
+}

@@ -1,0 +1,99 @@
+{
+ "out": "/root/ops/p2ab_20260922_164204",
+ "steps": 100,
+ "runs": [
+  {
+   "tag": "00_N",
+   "arm": "N",
+   "MM_CAND": null,
+   "rc": 0,
+   "wall_seconds": 131.9,
+   "train_log": "/root/ops/p2ab_20260922_164204/00_N/train.log",
+   "driver_log": "/root/ops/p2ab_20260922_164204/00_N/driver.log",
+   "config": "/root/ops/p2ab_20260922_164204/00_N/config.yaml",
+   "arm_file_sha256": "fefdb197e98ab0d165b35df35816155744b3da9727c6fdb026be8e8c1b31d4fd",
+   "iteration_lines": 100,
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba"
+   }
+  },
+  {
+   "tag": "01_C1",
+   "arm": "C1",
+   "MM_CAND": "P2CHUNKO",
+   "rc": 0,
+   "wall_seconds": 130.3,
+   "train_log": "/root/ops/p2ab_20260922_164204/01_C1/train.log",
+   "driver_log": "/root/ops/p2ab_20260922_164204/01_C1/driver.log",
+   "config": "/root/ops/p2ab_20260922_164204/01_C1/config.yaml",
+   "arm_file_sha256": "591a08714cc093fa9344c64ae3b7039b523f270ff9301d83da6a717cd1e8ea9d",
+   "iteration_lines": 100,
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba"
+   }
+  },
+  {
+   "tag": "02_C1",
+   "arm": "C1",
+   "MM_CAND": "P2CHUNKO",
+   "rc": 0,
+   "wall_seconds": 133.0,
+   "train_log": "/root/ops/p2ab_20260922_164204/02_C1/train.log",
+   "driver_log": "/root/ops/p2ab_20260922_164204/02_C1/driver.log",
+   "config": "/root/ops/p2ab_20260922_164204/02_C1/config.yaml",
+   "arm_file_sha256": "591a08714cc093fa9344c64ae3b7039b523f270ff9301d83da6a717cd1e8ea9d",
+   "iteration_lines": 100,
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba"
+   }
+  },
+  {
+   "tag": "03_N",
+   "arm": "N",
+   "MM_CAND": null,
+   "rc": 0,
+   "wall_seconds": 130.2,
+   "train_log": "/root/ops/p2ab_20260922_164204/03_N/train.log",
+   "driver_log": "/root/ops/p2ab_20260922_164204/03_N/driver.log",
+   "config": "/root/ops/p2ab_20260922_164204/03_N/config.yaml",
+   "arm_file_sha256": "fefdb197e98ab0d165b35df35816155744b3da9727c6fdb026be8e8c1b31d4fd",
+   "iteration_lines": 100,
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba"
+   }
+  },
+  {
+   "tag": "04_N",
+   "arm": "N",
+   "MM_CAND": null,
+   "rc": 0,
+   "wall_seconds": 130.1,
+   "train_log": "/root/ops/p2ab_20260922_164204/04_N/train.log",
+   "driver_log": "/root/ops/p2ab_20260922_164204/04_N/driver.log",
+   "config": "/root/ops/p2ab_20260922_164204/04_N/config.yaml",
+   "arm_file_sha256": "fefdb197e98ab0d165b35df35816155744b3da9727c6fdb026be8e8c1b31d4fd",
+   "iteration_lines": 100,
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba"
+   }
+  },
+  {
+   "tag": "05_C1",
+   "arm": "C1",
+   "MM_CAND": "P2CHUNKO",
+   "rc": 0,
+   "wall_seconds": 129.6,
+   "train_log": "/root/ops/p2ab_20260922_164204/05_C1/train.log",
+   "driver_log": "/root/ops/p2ab_20260922_164204/05_C1/driver.log",
+   "config": "/root/ops/p2ab_20260922_164204/05_C1/config.yaml",
+   "arm_file_sha256": "591a08714cc093fa9344c64ae3b7039b523f270ff9301d83da6a717cd1e8ea9d",
+   "iteration_lines": 100,
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba"
+   }
+  }
+ ],
+ "identity": {
+  "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba"
+ }
+}

@@ -1,0 +1,104 @@
+{
+ "schema": "dsh.hash_consistency.v1",
+ "purpose": "远端运行侧代码 与 本地判据侧代码 的哈希对照（复核要求：分别记录，不靠人记）",
+ "rule": "★ 判据必须来自交付副本（judge_side）；远端那份只允许『跑』，不允许『判』",
+ "files": [
+  {
+   "name": "59_config_ab.py",
+   "role": "judge_side",
+   "judge_on_remote": false,
+   "remote_path": "/root/qwen35-ascend-migrator/scripts/59_config_ab.py",
+   "local_path": "C:\\Users\\HUAWEI\\Desktop\\转交给codex的内容\\04_核心资产\\qwen35-ascend-migrator_整合版\\scripts\\59_config_ab.py",
+   "remote_sha256": "07045e103f3ad912cd2406c0551ce00510a140a927b32b03491931889d344eba",
+   "local_sha256": "4e0b79ff97c58ed4e7533e3ff7d0a7ccbc2b71042cf91c079247e5c9d8770f7f",
+   "status": "MISMATCH",
+   "severity": "INFO",
+   "note": "判据侧副本不一致（只要**不在远端**用它判据即安全；判据一律回本地用交付副本）"
+  },
+  {
+   "name": "62_reportability.py",
+   "role": "judge_side",
+   "judge_on_remote": false,
+   "remote_path": "/root/qwen35-ascend-migrator/scripts/62_reportability.py",
+   "local_path": "C:\\Users\\HUAWEI\\Desktop\\转交给codex的内容\\04_核心资产\\qwen35-ascend-migrator_整合版\\scripts\\62_reportability.py",
+   "remote_sha256": null,
+   "local_sha256": "3cbeb94d452944583da56608253ec2015cba720313d97d81a21ac5478539c898",
+   "status": "REMOTE_UNREADABLE",
+   "severity": "UNKNOWN",
+   "note": "远端取不到哈希（会话断了？路径不存在？）"
+  },
+  {
+   "name": "_envcompat.py",
+   "role": "judge_side",
+   "judge_on_remote": false,
+   "remote_path": "/root/qwen35-ascend-migrator/scripts/_envcompat.py",
+   "local_path": "C:\\Users\\HUAWEI\\Desktop\\转交给codex的内容\\04_核心资产\\qwen35-ascend-migrator_整合版\\scripts\\_envcompat.py",
+   "remote_sha256": "11667c82517cb591c958d091e521cefbd28adb1fc6a2b2c1b8b63a0a33d0066d",
+   "local_sha256": "11667c82517cb591c958d091e521cefbd28adb1fc6a2b2c1b8b63a0a33d0066d",
+   "status": "MATCH",
+   "severity": "OK",
+   "note": "远端与交付副本逐字节一致"
+  },
+  {
+   "name": "50_train.py",
+   "role": "run_side",
+   "judge_on_remote": false,
+   "remote_path": "/root/qwen35-ascend-migrator/scripts/50_train.py",
+   "local_path": "C:\\Users\\HUAWEI\\Desktop\\转交给codex的内容\\04_核心资产\\qwen35-ascend-migrator_整合版\\scripts\\50_train.py",
+   "remote_sha256": "d2a82dd63fa8fbbca5037ccab37b8c037326c2637a180fd22c63d87400f28755",
+   "local_sha256": "d2a82dd63fa8fbbca5037ccab37b8c037326c2637a180fd22c63d87400f28755",
+   "status": "MATCH",
+   "severity": "OK",
+   "note": "远端与交付副本逐字节一致"
+  },
+  {
+   "name": "56_profile_run.py",
+   "role": "run_side",
+   "judge_on_remote": false,
+   "remote_path": "/root/qwen35-ascend-migrator/scripts/56_profile_run.py",
+   "local_path": "C:\\Users\\HUAWEI\\Desktop\\转交给codex的内容\\04_核心资产\\qwen35-ascend-migrator_整合版\\scripts\\56_profile_run.py",
+   "remote_sha256": "7fec77cf1eab32356bf91a067501efec8e214a822916ea828be5a9eb48b38eed",
+   "local_sha256": "7fec77cf1eab32356bf91a067501efec8e214a822916ea828be5a9eb48b38eed",
+   "status": "MATCH",
+   "severity": "OK",
+   "note": "远端与交付副本逐字节一致"
+  },
+  {
+   "name": "70_judge.py",
+   "role": "run_side",
+   "judge_on_remote": true,
+   "remote_path": "/root/qwen35-ascend-migrator/scripts/70_judge.py",
+   "local_path": "C:\\Users\\HUAWEI\\Desktop\\转交给codex的内容\\04_核心资产\\qwen35-ascend-migrator_整合版\\scripts\\70_judge.py",
+   "remote_sha256": "200b8e0f9b0e0f856da1c465851da8aba191659e343197fbc5c6a5c51cc42719",
+   "local_sha256": "200b8e0f9b0e0f856da1c465851da8aba191659e343197fbc5c6a5c51cc42719",
+   "status": "MATCH",
+   "severity": "OK",
+   "note": "远端与交付副本逐字节一致"
+  },
+  {
+   "name": "train_engine.py",
+   "role": "framework",
+   "judge_on_remote": false,
+   "remote_path": "/root/MindSpeed-MM/mindspeed_mm/fsdp/train/train_engine.py",
+   "local_path": null,
+   "remote_sha256": "a6af6df7befd3965248bd51605b396f3a923e32158936eba33afc7dd0304a781",
+   "local_sha256": null,
+   "status": "LOCAL_MISSING",
+   "severity": "INFO",
+   "note": "本地交付副本不存在 ⇒ 无法证明远端与交付一致"
+  },
+  {
+   "name": "clip_grad_norm.py",
+   "role": "framework",
+   "judge_on_remote": false,
+   "remote_path": "/root/MindSpeed-MM/mindspeed_mm/fsdp/optimizer/clip_grad_norm.py",
+   "local_path": null,
+   "remote_sha256": "8c00dbf8ef26ade2e5fae2eb9146cde1fe4305c1126a45f8280811fecde98a97",
+   "local_sha256": null,
+   "status": "LOCAL_MISSING",
+   "severity": "INFO",
+   "note": "本地交付副本不存在 ⇒ 无法证明远端与交付一致"
+  }
+ ],
+ "judge_skew_count": 0
+}

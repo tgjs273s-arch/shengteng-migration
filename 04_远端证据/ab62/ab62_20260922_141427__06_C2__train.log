@@ -1,0 +1,632 @@
+W0922 14:28:00.448000 129837 torch/distributed/run.py:766] 
+W0922 14:28:00.448000 129837 torch/distributed/run.py:766] *****************************************
+W0922 14:28:00.448000 129837 torch/distributed/run.py:766] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0922 14:28:00.448000 129837 torch/distributed/run.py:766] *****************************************
+[INFO] Starting configuration loading...
+[INFO] Loaded configuration file: /root/ops/ab62_20260922_141427/06_C2/config.yaml
+[WARNING] Field 'preprocess_parameters' exists but is not a BaseArguments subclass: typing.Optional[mindspeed_mm.fsdp.data.data_utils.func_utils.model_args.ProcessorArguments]
+[INFO] Automatically registered YAML field: data.dataset_param.preprocess_parameters.model_name_or_path (type: <class 'str'>, value: /root/Qwen3.5-0.8B-hf)
+[WARNING] Field 'preprocess_parameters' exists but is not a BaseArguments subclass: typing.Optional[mindspeed_mm.fsdp.data.data_utils.func_utils.model_args.ProcessorArguments]
+[INFO] Automatically registered YAML field: data.dataset_param.preprocess_parameters.use_fast_tokenizer (type: <class 'bool'>, value: True)
+[WARNING] Field 'preprocess_parameters' exists but is not a BaseArguments subclass: typing.Optional[mindspeed_mm.fsdp.data.data_utils.func_utils.model_args.ProcessorArguments]
+[INFO] Automatically registered YAML field: data.dataset_param.preprocess_parameters.split_special_tokens (type: <class 'bool'>, value: False)
+[WARNING] Field 'preprocess_parameters' exists but is not a BaseArguments subclass: typing.Optional[mindspeed_mm.fsdp.data.data_utils.func_utils.model_args.ProcessorArguments]
+[INFO] Automatically registered YAML field: data.dataset_param.preprocess_parameters.image_max_pixels (type: <class 'int'>, value: 262144)
+[WARNING] Field 'preprocess_parameters' exists but is not a BaseArguments subclass: typing.Optional[mindspeed_mm.fsdp.data.data_utils.func_utils.model_args.ProcessorArguments]
+[INFO] Automatically registered YAML field: data.dataset_param.preprocess_parameters.image_min_pixels (type: <class 'int'>, value: 1024)
+[WARNING] Field 'preprocess_parameters' exists but is not a BaseArguments subclass: typing.Optional[mindspeed_mm.fsdp.data.data_utils.func_utils.model_args.ProcessorArguments]
+[INFO] Automatically registered YAML field: data.dataset_param.preprocess_parameters.video_max_pixels (type: <class 'int'>, value: 16384)
+[WARNING] Field 'preprocess_parameters' exists but is not a BaseArguments subclass: typing.Optional[mindspeed_mm.fsdp.data.data_utils.func_utils.model_args.ProcessorArguments]
+[INFO] Automatically registered YAML field: data.dataset_param.preprocess_parameters.video_min_pixels (type: <class 'int'>, value: 0)
+[WARNING] Field 'preprocess_parameters' exists but is not a BaseArguments subclass: typing.Optional[mindspeed_mm.fsdp.data.data_utils.func_utils.model_args.ProcessorArguments]
+[INFO] Automatically registered YAML field: data.dataset_param.preprocess_parameters.video_fps (type: <class 'float'>, value: 2.0)
+[WARNING] Field 'preprocess_parameters' exists but is not a BaseArguments subclass: typing.Optional[mindspeed_mm.fsdp.data.data_utils.func_utils.model_args.ProcessorArguments]
+[INFO] Automatically registered YAML field: data.dataset_param.preprocess_parameters.video_maxlen (type: <class 'int'>, value: 64)
+[INFO] Automatically registered YAML field: model.gdn_implementation (type: <class 'str'>, value: triton)
+[INFO] Automatically registered YAML field: model.causal_conv1d_implementation (type: <class 'str'>, value: triton)
+[INFO] Automatically registered YAML field: model.skip_gdn_recompute (type: <class 'bool'>, value: False)
+[INFO] Automatically registered YAML field: model.skip_flash_attn_recompute (type: <class 'bool'>, value: False)
+[INFO] Automatically registered YAML field: features.recompute (type: <class 'bool'>, value: False)
+============================================================
+BaseArguments Configuration Manager Summary
+============================================================
+
+Configuration class: Arguments
+Configuration file: /root/ops/ab62_20260922_141427/06_C2/config.yaml
+Allow YAML extensions: True
+Allow CLI override: True
+Strict CLI validation: True
+Allow registering YAML fields: True
+
+Defined field count: 208
+Dynamic field count: 14
+Total field count: 222
+
+
+============ Configuration Details ============
+parallel:
+  data_parallel_size: 2
+  fully_shard_parallel_size: 2
+  fsdp_plan:
+    ignored_modules: []
+    apply_modules: ['model.visual', 'model.visual.blocks.{*}', 'model.language_model.embed_tokens', 'model.language_model', 'model.language_model.layers.{*}', 'lm_head', 'mtp']
+    param_dtype: bf16
+    reduce_dtype: fp32
+    output_dtype: None
+    cast_forward_inputs: True
+    reshard_after_forward: False
+    num_to_forward_prefetch: 1
+    num_to_backward_prefetch: 1
+    pregather: True
+    hook_modules: None
+    cpu_offload: False
+  tensor_parallel_size: 1
+  tp_plan:
+    colwise_parallel: []
+    rowwise_parallel: []
+    sequence_parallel: []
+  ring_attention_size: 1
+  ulysses_parallel_size: 1
+  expert_parallel_size: 1
+  expert_fully_shard_parallel_size: 2
+  ep_plan:
+    apply_modules: []
+    use_npu_fused_ops: True
+    dispatcher: alltoall
+    apply_efsdp_modules: []
+  recompute: False
+  recompute_plan:
+    apply_modules: []
+    use_reentrant: False
+  local_rank: 0
+  global_rank: 0
+  world_size: 2
+model:
+  model_id: qwen3_5
+  model_name_or_path: /root/Qwen3.5-0.8B-hf
+  trust_remote_code: True
+  attn_implementation: flash_attention_2
+  freeze: ['model.visual']
+  mtp_num_layers: 0
+  mtp_loss_scaling_factor: 0.1
+  gdn_implementation: triton
+  causal_conv1d_implementation: triton
+  skip_gdn_recompute: False
+  skip_flash_attn_recompute: False
+data:
+  dataset_param:
+    dataset_type: huggingface
+    basic_parameters:
+      cache_dir: ./cache_dir/
+      template: qwen3_vl_nothink
+      chat_template: None
+      enable_thinking: False
+      dataset_dir: /root/MindSpeed-MM/data/mocked_vl_data
+      dataset: ['/root/MindSpeed-MM/data/mocked_vl_data/mock_data_pic_num_4_textlen_512.json']
+      cutoff_len: 2048
+      train_on_prompt: False
+      mask_history: False
+      streaming: False
+      overwrite_cache: False
+      preprocessing_batch_size: 1000
+      preprocessing_num_workers: 4
+      max_samples: None
+      tool_format: None
+      val_dataset: None
+      val_max_samples: None
+      val_rate: None
+      packing: None
+      neat_packing: False
+      preprocess_on_fly: True
+      async_preprocess: False
+      async_preprocess_buffer_size: None
+      stage: sft
+    preprocess_parameters:
+      model_name_or_path: /root/Qwen3.5-0.8B-hf
+      use_fast_tokenizer: True
+      split_special_tokens: False
+      image_resolution: 512
+      video_resolution: 128
+      image_max_pixels: 262144
+      image_min_pixels: 1024
+      video_max_pixels: 16384
+      video_min_pixels: 0
+      video_fps: 2.0
+      video_maxlen: 64
+      image_do_pan_and_scan: False
+      crop_to_patches: False
+      use_audio_in_video: False
+      audio_sampling_rate: 16000
+      trust_remote_code: False
+    attr:
+      ranking: False
+      system: None
+      images: images
+      videos: None
+      audios: None
+      prompt: None
+      query: None
+      response: None
+      history: None
+      messages: messages
+      tools: None
+      role_tag: role
+      content_tag: content
+      user_tag: user
+      assistant_tag: assistant
+      observation_tag: observation
+      function_tag: function_call
+      system_tag: system
+      chosen: None
+      rejected: None
+      formatting: sharegpt
+  val_dataset_param: None
+  dataloader_param:
+    dataloader_mode: sampler
+    sampler_type: BaseRandomBatchSampler
+    shuffle: False
+    drop_last: True
+    pin_memory: True
+    collate_param:
+      collator_id: None
+      model_name: qwen3vl
+      ignore_pad_token_for_loss: True
+      pad_to_multiple_of: 8
+    num_workers: 2
+    enable_preload: False
+training:
+  profile:
+    enable: False
+    start_step: 1
+    end_step: 2
+    save_path: ./profiling
+    record_shapes: True
+    with_memory: True
+    with_stack: True
+    ranks: [0]
+    _train_steps: -1
+    local_rank: 0
+    global_rank: 0
+    world_size: 2
+    profile_this_rank: False
+  lora:
+    enable: False
+    rank: 8
+    alpha: 16
+    target_modules: ['q_proj', 'k_proj', 'v_proj']
+    dropout: 0.0
+    init_lora_weights: True
+    pretrained_lora_path: None
+    lora_target_modules_support: None
+    disable_peft_moe_conversion: True
+  lr: 1e-05
+  lr_min: 0.0
+  lr_start: 0.0
+  weight_decay: 0.0
+  no_decay_modules: []
+  no_decay_params: []
+  optimizer: adamw
+  mem_fraction_static: 0.8
+  matched_adamw_rms: 0.2
+  muon_momentum: 0.95
+  ns_steps: 5
+  adam_fused: True
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_eps: 1e-08
+  clip_grad: 0.0
+  clip_grad_foreach: True
+  micro_batch_size: 4
+  gradient_accumulation_steps: 1
+  lr_warmup_ratio: 0.1
+  lr_decay_style: cosine
+  lr_decay_ratio: 1.0
+  enable_full_determinism: False
+  ckpt_manager: dcp
+  save_async: False
+  save_ckpt_dtype: None
+  load_checkpoint_path: None
+  save_steps: 0
+  seed: 42
+  max_steps: None
+  init_model_with_meta_device: True
+  train_iters: 100
+  train_epochs: None
+  load: /root/Qwen3.5-0.8B-dcp
+  load_format: auto
+  save_format: hf
+  load_strict: False
+  load_rank0_and_broadcast: True
+  no_load_optim: True
+  no_load_rng: True
+  save: /root/ops/ab62_20260922_141427/06_C2/checkpoint
+  no_save_optim: True
+  no_save_rng: True
+  log_interval: 1
+  save_interval: 10000
+  val_interval: 0
+  val_micro_batch_size: None
+  use_deter_comp: False
+  allow_hf32: None
+  plugin: ['mindspeed_mm/fsdp/models/qwen3_5', 'mindspeed_mm/fsdp/data/datasets/huggingface']
+  lr_scaling_plan: None
+  quantization_plan: QuantizeConfig(recipe_name=None, apply_modules=[], ignored_modules=[], quant_converters=[], extra_args={}, enable_fsdp_low_precision_all_gather=True, fsdp_low_precision_all_gather_mode='on-demand')
+  _train_steps: -1
+  local_rank: 0
+  global_rank: 0
+  world_size: 2
+  global_batch_size: 8
+tools:
+  profile:
+    enable: False
+    profile_type: static
+    ranks: [0]
+    static_param:
+      level: level1
+      with_stack: False
+      with_memory: False
+      record_shapes: False
+      with_cpu: True
+      save_path: ./profiling
+      start_step: 10
+      end_step: 11
+      data_simplification: False
+      aic_metrics_type: PipeUtilization
+      analyse_flag: True
+  memory_profile:
+    enable: False
+    start_step: 1
+    end_step: 2
+    save_path: ./memory_snapshot
+    dump_ranks: [0]
+    stacks: all
+    max_entries: None
+    mem_info: False
+features:
+  recompute_plan:
+    apply_modules: ['model.visual.blocks.{*}', 'model.language_model.layers.{*}']
+    use_reentrant: False
+  loss_cfg:
+    loss_type: default
+    router_aux_loss_coef: 0.0
+    router_aux_loss_offload: False
+  enable_chunk_loss: False
+  enable_dynamic_chunk_loss: False
+  chunkloss_plan:
+    apply_module: lm_head
+    chunk_size: 1024
+    total_chunk_size: 4096
+  enable_activation_offload: False
+  activation_offload_plan:
+    apply_modules: ['model.visual.blocks.{*}', 'model.language_model.layers.{*}']
+  enable_chunk_mbs: False
+  chunkmbs_plan:
+    apply_modules: ['model.language_model.layers.{*}']
+    chunk_mbs: 2
+    batch_dim: 0
+    chunk_arg_indexs: [0]
+    chunk_kwarg_names: ['position_embeddings', 'position_ids', 'rope_deltas', 'attention_mask']
+  enable_ep_balance: False
+  ep_balance_plan:
+    max_dup_experts_num: 2
+  skip_moe_pad_tokens: False
+  recompute: False
+data.dataset_param.preprocess_parameters.model_name_or_path: /root/Qwen3.5-0.8B-hf
+data.dataset_param.preprocess_parameters.use_fast_tokenizer: True
+data.dataset_param.preprocess_parameters.split_special_tokens: False
+data.dataset_param.preprocess_parameters.image_max_pixels: 262144
+data.dataset_param.preprocess_parameters.image_min_pixels: 1024
+data.dataset_param.preprocess_parameters.video_max_pixels: 16384
+data.dataset_param.preprocess_parameters.video_min_pixels: 0
+data.dataset_param.preprocess_parameters.video_fps: 2.0
+data.dataset_param.preprocess_parameters.video_maxlen: 64
+
+
+============ Dynamic Fields ============
+ data.dataset_param.preprocess_parameters.image_max_pixels
+ data.dataset_param.preprocess_parameters.image_min_pixels
+ data.dataset_param.preprocess_parameters.model_name_or_path
+ data.dataset_param.preprocess_parameters.split_special_tokens
+ data.dataset_param.preprocess_parameters.use_fast_tokenizer
+ data.dataset_param.preprocess_parameters.video_fps
+ data.dataset_param.preprocess_parameters.video_max_pixels
+ data.dataset_param.preprocess_parameters.video_maxlen
+ data.dataset_param.preprocess_parameters.video_min_pixels
+ features.recompute
+ model.causal_conv1d_implementation
+ model.gdn_implementation
+ model.skip_flash_attn_recompute
+ model.skip_gdn_recompute
+============================================================
+Successfully imported: mindspeed_mm.fsdp.models.qwen3_5
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,284 INFO [torch_npu.env:15] => get env TRITON_CACHE_DIR = /root/triton_cache
+Successfully imported: mindspeed_mm.fsdp.data.datasets.huggingface
+[Rank 1 | Local Rank 1] 2026-09-22 14:28:07,494 INFO [torch_npu.env:15] => get env TRITON_CACHE_DIR = /root/triton_cache
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,549 INFO [torch_npu.env:15] => get env USE_TF = FALSE
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,550 INFO [datasets:114] => Disabling Tensorflow because USE_TORCH is set
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,760 INFO [torch_npu.env:15] => get env MASTER_ADDR = localhost
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,760 INFO [torch_npu.env:15] => get env MASTER_PORT = 6111
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,760 INFO [torch_npu.env:15] => get env TORCHELASTIC_USE_AGENT_STORE = True
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,771 INFO [mindspeed_mm.fsdp.distributed.parallel_state:87] => Parallel state initialized:
+ [dp] = True | Group size: 2 | device mesh:DeviceMesh('npu', [0, 1], mesh_dim_names=('dp',)) 
+[cp] = False | Group size: 1 | device mesh:DeviceMesh('npu', [0], mesh_dim_names=('cp',)) 
+[ulysses] = False | Group size: 1 | device mesh:DeviceMesh('npu', [0], mesh_dim_names=('ulysses',)) 
+[ring] = False | Group size: 1 | device mesh:DeviceMesh('npu', [0], mesh_dim_names=('ring',)) 
+[tp] = False | Group size: 1 | device mesh:DeviceMesh('npu', [0], mesh_dim_names=('tp',)) 
+[edp] = False | Group size: 1 | device mesh:DeviceMesh('npu', [0], mesh_dim_names=('edp',)) 
+[efsdp] = True | Group size: 2 | device mesh:DeviceMesh('npu', [0, 1], mesh_dim_names=('efsdp',)) 
+[ep] = False | Group size: 1 | device mesh:DeviceMesh('npu', [0], mesh_dim_names=('ep',)) 
+[fsdp] = True | Group size: 2 | device mesh:DeviceMesh('npu', [0, 1], mesh_dim_names=('dp_shard_cp',)) 
+
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,771 INFO [mindspeed_mm.fsdp.models.modelhub:48] => > Loading AutoConfig from /root/Qwen3.5-0.8B-hf...
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,773 INFO [mindspeed_mm.fsdp.models.modelhub:48] => Building transformers model from configuration...
+[Rank 1 | Local Rank 1] 2026-09-22 14:28:07,780 INFO [torch_npu.env:15] => get env USE_TF = FALSE
+[Rank 1 | Local Rank 1] 2026-09-22 14:28:07,781 INFO [datasets:114] => Disabling Tensorflow because USE_TORCH is set
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,809 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,903 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,903 WARNING [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:327] => The fast path is not available because one of the required library is not installed. Falling back to torch implementation.
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,905 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,905 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,906 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,906 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,908 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,908 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,909 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,910 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,911 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,911 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,913 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,913 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,914 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,914 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,915 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,915 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,917 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,918 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,919 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,919 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,920 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,920 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,922 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,922 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,923 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,923 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,925 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,925 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,927 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,927 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,929 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,929 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,930 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:07,930 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 1 | Local Rank 1] 2026-09-22 14:28:07,994 INFO [torch_npu.env:15] => get env MASTER_ADDR = localhost
+[Rank 1 | Local Rank 1] 2026-09-22 14:28:07,995 INFO [torch_npu.env:15] => get env MASTER_PORT = 6111
+[Rank 1 | Local Rank 1] 2026-09-22 14:28:07,995 INFO [torch_npu.env:15] => get env TORCHELASTIC_USE_AGENT_STORE = True
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,015 INFO [mindspeed_mm.fsdp.models.modelhub:48] => freezing module model.visual...
+[rank0]:[W922 14:28:08.830801020 NPUCachingAllocator.cpp:198] Warning: The current CANN and Soc Version require processing for 32 padding size, with memory allocation. (function operator())
+[Rank 1 | Local Rank 1] 2026-09-22 14:28:08,144 WARNING [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:327] => The fast path is not available because one of the required library is not installed. Falling back to torch implementation.
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,244 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual set forward prefetch: ['model.visual.blocks.0']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,244 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.0 set forward prefetch: ['model.visual.blocks.1']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,244 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.1 set forward prefetch: ['model.visual.blocks.2']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,244 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.2 set forward prefetch: ['model.visual.blocks.3']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,244 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.3 set forward prefetch: ['model.visual.blocks.4']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,244 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.4 set forward prefetch: ['model.visual.blocks.5']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,245 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.5 set forward prefetch: ['model.visual.blocks.6']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,245 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.6 set forward prefetch: ['model.visual.blocks.7']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,245 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.7 set forward prefetch: ['model.visual.blocks.8']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,245 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.8 set forward prefetch: ['model.visual.blocks.9']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,245 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.9 set forward prefetch: ['model.visual.blocks.10']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,245 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.10 set forward prefetch: ['model.visual.blocks.11']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,246 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.11 set forward prefetch: ['model.language_model.embed_tokens']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,246 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.embed_tokens set forward prefetch: ['model.language_model']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,246 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model set forward prefetch: ['model.language_model.layers.0']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,246 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.0 set forward prefetch: ['model.language_model.layers.1']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,247 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.1 set forward prefetch: ['model.language_model.layers.2']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,247 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.2 set forward prefetch: ['model.language_model.layers.3']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,247 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.3 set forward prefetch: ['model.language_model.layers.4']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,247 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.4 set forward prefetch: ['model.language_model.layers.5']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,248 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.5 set forward prefetch: ['model.language_model.layers.6']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,248 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.6 set forward prefetch: ['model.language_model.layers.7']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,249 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.7 set forward prefetch: ['model.language_model.layers.8']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,249 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.8 set forward prefetch: ['model.language_model.layers.9']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,249 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.9 set forward prefetch: ['model.language_model.layers.10']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,250 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.10 set forward prefetch: ['model.language_model.layers.11']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,250 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.11 set forward prefetch: ['model.language_model.layers.12']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,251 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.12 set forward prefetch: ['model.language_model.layers.13']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,251 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.13 set forward prefetch: ['model.language_model.layers.14']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,252 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.14 set forward prefetch: ['model.language_model.layers.15']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,253 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.15 set forward prefetch: ['model.language_model.layers.16']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,253 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.16 set forward prefetch: ['model.language_model.layers.17']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,254 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.17 set forward prefetch: ['model.language_model.layers.18']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,254 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.18 set forward prefetch: ['model.language_model.layers.19']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,255 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.19 set forward prefetch: ['model.language_model.layers.20']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,256 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.20 set forward prefetch: ['model.language_model.layers.21']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,257 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.21 set forward prefetch: ['model.language_model.layers.22']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,257 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.22 set forward prefetch: ['model.language_model.layers.23']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,258 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.23 set forward prefetch: ['lm_head']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,274 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => lm_head set backward prefetch: ['model.language_model']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,274 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model set backward prefetch: ['model.language_model.layers.23']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,275 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.23 set backward prefetch: ['model.language_model.layers.22']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,276 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.22 set backward prefetch: ['model.language_model.layers.21']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,276 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.21 set backward prefetch: ['model.language_model.layers.20']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,277 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.20 set backward prefetch: ['model.language_model.layers.19']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,278 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.19 set backward prefetch: ['model.language_model.layers.18']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,278 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.18 set backward prefetch: ['model.language_model.layers.17']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,279 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.17 set backward prefetch: ['model.language_model.layers.16']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,280 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.16 set backward prefetch: ['model.language_model.layers.15']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,280 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.15 set backward prefetch: ['model.language_model.layers.14']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,281 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.14 set backward prefetch: ['model.language_model.layers.13']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,281 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.13 set backward prefetch: ['model.language_model.layers.12']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,282 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.12 set backward prefetch: ['model.language_model.layers.11']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,282 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.11 set backward prefetch: ['model.language_model.layers.10']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,283 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.10 set backward prefetch: ['model.language_model.layers.9']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,283 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.9 set backward prefetch: ['model.language_model.layers.8']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,284 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.8 set backward prefetch: ['model.language_model.layers.7']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,284 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.7 set backward prefetch: ['model.language_model.layers.6']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,284 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.6 set backward prefetch: ['model.language_model.layers.5']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,285 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.5 set backward prefetch: ['model.language_model.layers.4']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,285 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.4 set backward prefetch: ['model.language_model.layers.3']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,285 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.3 set backward prefetch: ['model.language_model.layers.2']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,286 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.2 set backward prefetch: ['model.language_model.layers.1']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,286 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.1 set backward prefetch: ['model.language_model.layers.0']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,286 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.0 set backward prefetch: ['model.language_model.embed_tokens']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,286 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.embed_tokens set backward prefetch: ['model.visual']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,286 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual set backward prefetch: ['model.visual.blocks.11']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,286 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.11 set backward prefetch: ['model.visual.blocks.10']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,287 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.10 set backward prefetch: ['model.visual.blocks.9']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,287 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.9 set backward prefetch: ['model.visual.blocks.8']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,287 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.8 set backward prefetch: ['model.visual.blocks.7']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,287 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.7 set backward prefetch: ['model.visual.blocks.6']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,287 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.6 set backward prefetch: ['model.visual.blocks.5']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,287 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.5 set backward prefetch: ['model.visual.blocks.4']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,287 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.4 set backward prefetch: ['model.visual.blocks.3']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,287 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.3 set backward prefetch: ['model.visual.blocks.2']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,288 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.2 set backward prefetch: ['model.visual.blocks.1']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,288 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.1 set backward prefetch: ['model.visual.blocks.0']
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:08,465 INFO [__main__:48] => Prepare data
+2026-09-22 14:28:11,928 - template - 756 - INFO - Replace eos token: <|im_end|>
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:11,928 INFO [mindspeed_mm.fsdp.data.data_utils.func_utils.template:756] => Replace eos token: <|im_end|>
+2026-09-22 14:28:12,177 - template - 756 - INFO - Replace eos token: <|im_end|>
+[Rank 1 | Local Rank 1] 2026-09-22 14:28:12,177 INFO [mindspeed_mm.fsdp.data.data_utils.func_utils.template:756] => Replace eos token: <|im_end|>
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:12,852 INFO [httpx:1025] => HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/json/json.py "HTTP/1.1 200 OK"
+training example:
+input_ids:
+[248045, 846, 198, 248053, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248054, 198, 248053, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248054, 198, 248053, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248054, 198, 248053, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248054, 198, 13, 5044, 7276, 279, 2099, 13, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 248046, 198, 248045, 74455, 198, 32, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 248046, 198]
+inputs:
+<|im_start|>user
+<|vision_start|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|vision_end|>
+<|vision_start|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|vision_end|>
+<|vision_start|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|vision_end|>
+<|vision_start|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|vision_end|>
+. Please describe the image. A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time<|im_end|>
+<|im_start|>assistant
+A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time<|im_end|>
+
+label_ids:
+[-100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, 32, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 357, 4299, 19088, 303, 279, 6195, 314, 854, 248046, 198]
+labels:
+A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time A moment frozen in the flow of time<|im_end|>
+
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:14,167 WARNING [mindspeed_mm.fsdp.data.dataloader.data_collator:177] => model_name is deprecated and will be removed in a future version. Please use collator_id instead. Available collator_ids: llm_pretrain, qwen3asr, qwen3omni, qwen3vl, step3_vl.
+[Rank 1 | Local Rank 1] 2026-09-22 14:28:15,119 INFO [httpx:1025] => HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/json/json.py "HTTP/1.1 200 OK"
+[Rank 1 | Local Rank 1] 2026-09-22 14:28:15,316 WARNING [mindspeed_mm.fsdp.data.dataloader.data_collator:177] => model_name is deprecated and will be removed in a future version. Please use collator_id instead. Available collator_ids: llm_pretrain, qwen3asr, qwen3omni, qwen3vl, step3_vl.
+2026-09-22 14:28:17,822 - template - 756 - INFO - Replace eos token: <|im_end|>
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:17,822 INFO [mindspeed_mm.fsdp.data.data_utils.func_utils.template:756] => Replace eos token: <|im_end|>
+2026-09-22 14:28:19,023 - template - 756 - INFO - Replace eos token: <|im_end|>
+[Rank 1 | Local Rank 1] 2026-09-22 14:28:19,023 INFO [mindspeed_mm.fsdp.data.data_utils.func_utils.template:756] => Replace eos token: <|im_end|>
+Loading checkpoint shards:   0%|          | 0/1 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 1/1 [00:01<00:00,  1.43s/it]Loading checkpoint shards: 100%|██████████| 1/1 [00:01<00:00,  1.43s/it]
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:20,516 WARNING [mindspeed_mm.fsdp.checkpoint.broadcast_utils:48] => These weights were not loaded from the checkpoint, param keys: {'lm_head.weight'}.
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:20,516 INFO [mindspeed_mm.fsdp.checkpoint.broadcast_utils:48] => Finished loading and broadcasting checkpoint tensors from rank 0.
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:20,519 INFO [mindspeed_mm.fsdp.checkpoint.dcp_checkpointer:48] => Loaded checkpoint from /root/Qwen3.5-0.8B-dcp/release
+[2026-09-22 14:28:20] [WARNING] [129933] profiler.py: Profiler won't be using warmup, this can skew profiler results
+[rank1]:[W922 14:28:22.358700170 TensorFactories.cpp:423] Warning: Cannot create tensor with interal format while allow_internel_format=False, tensor will be created with base format. (function operator())
+[rank0]:[W922 14:28:22.396980920 TensorFactories.cpp:423] Warning: Cannot create tensor with interal format while allow_internel_format=False, tensor will be created with base format. (function operator())
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:30,588 INFO [torch_npu.env:15] => get env MM_CAND = C2
+[Rank 1 | Local Rank 1] 2026-09-22 14:28:30,594 INFO [torch_npu.env:15] => get env MM_CAND = C2
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:30,873 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:30] iteration        1/     100 | consumed samples:            8 | elapsed time per iteration (ms): 10348.6 | learning rate: 0.000000E+00 | global batch size:     8 | loss: 9.686005E-02 | grad norm: 34.168 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:31,854 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:31] iteration        2/     100 | consumed samples:           16 | elapsed time per iteration (ms): 979.8 | learning rate: 1.000000E-06 | global batch size:     8 | loss: 9.686005E-02 | grad norm: 34.182 |
+[Rank 0] (after 2 iterations) memory (MB) | allocated: 4501.828125 | max allocated: 40898.244140625 | reserved: 42920.0 | max reserved: 42920.0
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:32,601 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:32] iteration        3/     100 | consumed samples:           24 | elapsed time per iteration (ms): 745.2 | learning rate: 2.000000E-06 | global batch size:     8 | loss: 7.591140E-02 | grad norm: 27.527 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:33,339 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:33] iteration        4/     100 | consumed samples:           32 | elapsed time per iteration (ms): 736.2 | learning rate: 3.000000E-06 | global batch size:     8 | loss: 3.045501E-02 | grad norm: 17.581 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:34,051 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:34] iteration        5/     100 | consumed samples:           40 | elapsed time per iteration (ms): 711.3 | learning rate: 4.000000E-06 | global batch size:     8 | loss: 3.183733E-02 | grad norm: 8.472 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:34,764 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:34] iteration        6/     100 | consumed samples:           48 | elapsed time per iteration (ms): 712.1 | learning rate: 5.000000E-06 | global batch size:     8 | loss: 2.725778E-02 | grad norm: 9.429 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:35,472 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:35] iteration        7/     100 | consumed samples:           56 | elapsed time per iteration (ms): 706.4 | learning rate: 6.000000E-06 | global batch size:     8 | loss: 1.556352E-02 | grad norm: 8.729 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:36,189 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:36] iteration        8/     100 | consumed samples:           64 | elapsed time per iteration (ms): 716.2 | learning rate: 7.000000E-06 | global batch size:     8 | loss: 8.731762E-02 | grad norm: 34.844 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:36,913 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:36] iteration        9/     100 | consumed samples:           72 | elapsed time per iteration (ms): 722.5 | learning rate: 8.000000E-06 | global batch size:     8 | loss: 3.052213E-02 | grad norm: 4.724 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:37,638 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:37] iteration       10/     100 | consumed samples:           80 | elapsed time per iteration (ms): 723.4 | learning rate: 9.000000E-06 | global batch size:     8 | loss: 3.698805E-02 | grad norm: 3.589 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:38,348 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:38] iteration       11/     100 | consumed samples:           88 | elapsed time per iteration (ms): 708.9 | learning rate: 1.000000E-05 | global batch size:     8 | loss: 3.418308E-02 | grad norm: 2.882 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:39,060 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:39] iteration       12/     100 | consumed samples:           96 | elapsed time per iteration (ms): 711.0 | learning rate: 9.996954E-06 | global batch size:     8 | loss: 3.053071E-02 | grad norm: 2.202 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:39,776 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:39] iteration       13/     100 | consumed samples:          104 | elapsed time per iteration (ms): 715.2 | learning rate: 9.987820E-06 | global batch size:     8 | loss: 2.621170E-02 | grad norm: 2.044 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:40,488 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:40] iteration       14/     100 | consumed samples:          112 | elapsed time per iteration (ms): 709.9 | learning rate: 9.972609E-06 | global batch size:     8 | loss: 2.056704E-02 | grad norm: 1.608 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:41,201 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:41] iteration       15/     100 | consumed samples:          120 | elapsed time per iteration (ms): 712.1 | learning rate: 9.951340E-06 | global batch size:     8 | loss: 1.613763E-02 | grad norm: 2.913 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:41,923 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:41] iteration       16/     100 | consumed samples:          128 | elapsed time per iteration (ms): 721.5 | learning rate: 9.924039E-06 | global batch size:     8 | loss: 1.262913E-02 | grad norm: 1.612 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:42,639 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:42] iteration       17/     100 | consumed samples:          136 | elapsed time per iteration (ms): 714.8 | learning rate: 9.890738E-06 | global batch size:     8 | loss: 1.046670E-02 | grad norm: 1.363 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:43,355 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:43] iteration       18/     100 | consumed samples:          144 | elapsed time per iteration (ms): 714.9 | learning rate: 9.851479E-06 | global batch size:     8 | loss: 7.804339E-03 | grad norm: 1.176 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:44,067 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:44] iteration       19/     100 | consumed samples:          152 | elapsed time per iteration (ms): 710.7 | learning rate: 9.806308E-06 | global batch size:     8 | loss: 5.840798E-03 | grad norm: 2.128 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:44,778 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:44] iteration       20/     100 | consumed samples:          160 | elapsed time per iteration (ms): 710.2 | learning rate: 9.755283E-06 | global batch size:     8 | loss: 4.004459E-02 | grad norm: 39.492 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:45,487 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:45] iteration       21/     100 | consumed samples:          168 | elapsed time per iteration (ms): 707.3 | learning rate: 9.698463E-06 | global batch size:     8 | loss: 3.359460E-02 | grad norm: 4.597 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:46,201 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:46] iteration       22/     100 | consumed samples:          176 | elapsed time per iteration (ms): 712.9 | learning rate: 9.635919E-06 | global batch size:     8 | loss: 8.998431E-02 | grad norm: 183.919 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:46,914 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:46] iteration       23/     100 | consumed samples:          184 | elapsed time per iteration (ms): 712.1 | learning rate: 9.567727E-06 | global batch size:     8 | loss: 2.841156E-02 | grad norm: 2.554 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:47,626 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:47] iteration       24/     100 | consumed samples:          192 | elapsed time per iteration (ms): 711.0 | learning rate: 9.493970E-06 | global batch size:     8 | loss: 2.707301E-02 | grad norm: 2.352 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:48,341 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:48] iteration       25/     100 | consumed samples:          200 | elapsed time per iteration (ms): 713.9 | learning rate: 9.414738E-06 | global batch size:     8 | loss: 2.465194E-02 | grad norm: 2.669 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:49,054 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:49] iteration       26/     100 | consumed samples:          208 | elapsed time per iteration (ms): 712.6 | learning rate: 9.330127E-06 | global batch size:     8 | loss: 2.534303E-02 | grad norm: 5.520 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:49,764 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:49] iteration       27/     100 | consumed samples:          216 | elapsed time per iteration (ms): 708.6 | learning rate: 9.240240E-06 | global batch size:     8 | loss: 2.112031E-02 | grad norm: 5.109 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:50,490 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:50] iteration       28/     100 | consumed samples:          224 | elapsed time per iteration (ms): 724.3 | learning rate: 9.145188E-06 | global batch size:     8 | loss: 1.494437E-02 | grad norm: 1.202 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:51,200 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:51] iteration       29/     100 | consumed samples:          232 | elapsed time per iteration (ms): 708.3 | learning rate: 9.045085E-06 | global batch size:     8 | loss: 1.409541E-02 | grad norm: 0.856 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:51,912 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:51] iteration       30/     100 | consumed samples:          240 | elapsed time per iteration (ms): 711.7 | learning rate: 8.940054E-06 | global batch size:     8 | loss: 1.333277E-02 | grad norm: 0.995 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:52,615 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:52] iteration       31/     100 | consumed samples:          248 | elapsed time per iteration (ms): 701.7 | learning rate: 8.830222E-06 | global batch size:     8 | loss: 1.295299E-02 | grad norm: 0.718 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:53,325 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:53] iteration       32/     100 | consumed samples:          256 | elapsed time per iteration (ms): 709.1 | learning rate: 8.715724E-06 | global batch size:     8 | loss: 1.289121E-02 | grad norm: 0.851 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:54,033 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:54] iteration       33/     100 | consumed samples:          264 | elapsed time per iteration (ms): 706.7 | learning rate: 8.596699E-06 | global batch size:     8 | loss: 1.260693E-02 | grad norm: 1.087 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:54,752 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:54] iteration       34/     100 | consumed samples:          272 | elapsed time per iteration (ms): 717.4 | learning rate: 8.473292E-06 | global batch size:     8 | loss: 1.134208E-02 | grad norm: 0.845 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:55,465 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:55] iteration       35/     100 | consumed samples:          280 | elapsed time per iteration (ms): 712.1 | learning rate: 8.345653E-06 | global batch size:     8 | loss: 1.004654E-02 | grad norm: 1.593 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:56,179 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:56] iteration       36/     100 | consumed samples:          288 | elapsed time per iteration (ms): 712.8 | learning rate: 8.213938E-06 | global batch size:     8 | loss: 8.864673E-03 | grad norm: 1.176 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:56,891 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:56] iteration       37/     100 | consumed samples:          296 | elapsed time per iteration (ms): 710.7 | learning rate: 8.078307E-06 | global batch size:     8 | loss: 6.666032E-03 | grad norm: 0.985 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:57,597 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:57] iteration       38/     100 | consumed samples:          304 | elapsed time per iteration (ms): 704.7 | learning rate: 7.938926E-06 | global batch size:     8 | loss: 4.866520E-03 | grad norm: 5.099 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:58,299 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:58] iteration       39/     100 | consumed samples:          312 | elapsed time per iteration (ms): 701.6 | learning rate: 7.795965E-06 | global batch size:     8 | loss: 2.376520E-02 | grad norm: 4.586 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:59,003 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:59] iteration       40/     100 | consumed samples:          320 | elapsed time per iteration (ms): 702.6 | learning rate: 7.649596E-06 | global batch size:     8 | loss: 1.705581E-02 | grad norm: 4.833 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:28:59,707 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:28:59] iteration       41/     100 | consumed samples:          328 | elapsed time per iteration (ms): 702.3 | learning rate: 7.500000E-06 | global batch size:     8 | loss: 1.250385E-02 | grad norm: 4.950 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:00,420 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:00] iteration       42/     100 | consumed samples:          336 | elapsed time per iteration (ms): 711.8 | learning rate: 7.347358E-06 | global batch size:     8 | loss: 1.253759E-02 | grad norm: 6.286 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:01,128 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:01] iteration       43/     100 | consumed samples:          344 | elapsed time per iteration (ms): 707.1 | learning rate: 7.191856E-06 | global batch size:     8 | loss: 1.375174E-02 | grad norm: 4.682 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:01,835 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:01] iteration       44/     100 | consumed samples:          352 | elapsed time per iteration (ms): 706.1 | learning rate: 7.033683E-06 | global batch size:     8 | loss: 1.342094E-02 | grad norm: 5.501 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:02,540 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:02] iteration       45/     100 | consumed samples:          360 | elapsed time per iteration (ms): 704.5 | learning rate: 6.873033E-06 | global batch size:     8 | loss: 1.022013E-02 | grad norm: 1.916 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:03,247 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:03] iteration       46/     100 | consumed samples:          368 | elapsed time per iteration (ms): 705.0 | learning rate: 6.710101E-06 | global batch size:     8 | loss: 1.171484E-02 | grad norm: 4.005 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:03,949 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:03] iteration       47/     100 | consumed samples:          376 | elapsed time per iteration (ms): 701.8 | learning rate: 6.545085E-06 | global batch size:     8 | loss: 3.812275E-02 | grad norm: 34.683 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:04,662 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:04] iteration       48/     100 | consumed samples:          384 | elapsed time per iteration (ms): 711.7 | learning rate: 6.378187E-06 | global batch size:     8 | loss: 1.990974E-02 | grad norm: 3.440 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:05,360 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:05] iteration       49/     100 | consumed samples:          392 | elapsed time per iteration (ms): 696.6 | learning rate: 6.209609E-06 | global batch size:     8 | loss: 2.920981E-02 | grad norm: 2.308 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:06,070 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:06] iteration       50/     100 | consumed samples:          400 | elapsed time per iteration (ms): 709.6 | learning rate: 6.039558E-06 | global batch size:     8 | loss: 3.061013E-02 | grad norm: 2.130 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:06,773 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:06] iteration       51/     100 | consumed samples:          408 | elapsed time per iteration (ms): 702.0 | learning rate: 5.868241E-06 | global batch size:     8 | loss: 3.014738E-02 | grad norm: 1.991 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:07,491 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:07] iteration       52/     100 | consumed samples:          416 | elapsed time per iteration (ms): 716.2 | learning rate: 5.695866E-06 | global batch size:     8 | loss: 2.782514E-02 | grad norm: 1.825 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:08,200 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:08] iteration       53/     100 | consumed samples:          424 | elapsed time per iteration (ms): 708.0 | learning rate: 5.522642E-06 | global batch size:     8 | loss: 2.507512E-02 | grad norm: 1.687 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:08,907 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:08] iteration       54/     100 | consumed samples:          432 | elapsed time per iteration (ms): 706.5 | learning rate: 5.348782E-06 | global batch size:     8 | loss: 2.240924E-02 | grad norm: 1.550 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:09,614 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:09] iteration       55/     100 | consumed samples:          440 | elapsed time per iteration (ms): 705.3 | learning rate: 5.174497E-06 | global batch size:     8 | loss: 1.945929E-02 | grad norm: 1.360 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:10,318 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:10] iteration       56/     100 | consumed samples:          448 | elapsed time per iteration (ms): 702.7 | learning rate: 5.000000E-06 | global batch size:     8 | loss: 1.694224E-02 | grad norm: 1.025 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:11,023 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:11] iteration       57/     100 | consumed samples:          456 | elapsed time per iteration (ms): 704.5 | learning rate: 4.825503E-06 | global batch size:     8 | loss: 1.520882E-02 | grad norm: 0.453 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:11,744 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:11] iteration       58/     100 | consumed samples:          464 | elapsed time per iteration (ms): 719.4 | learning rate: 4.651218E-06 | global batch size:     8 | loss: 1.540622E-02 | grad norm: 0.639 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:12,484 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:12] iteration       59/     100 | consumed samples:          472 | elapsed time per iteration (ms): 738.3 | learning rate: 4.477358E-06 | global batch size:     8 | loss: 1.694244E-02 | grad norm: 1.842 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:13,215 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:13] iteration       60/     100 | consumed samples:          480 | elapsed time per iteration (ms): 730.1 | learning rate: 4.304134E-06 | global batch size:     8 | loss: 1.795524E-02 | grad norm: 2.518 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:13,913 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:13] iteration       61/     100 | consumed samples:          488 | elapsed time per iteration (ms): 697.4 | learning rate: 4.131759E-06 | global batch size:     8 | loss: 1.752213E-02 | grad norm: 2.194 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:14,620 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:14] iteration       62/     100 | consumed samples:          496 | elapsed time per iteration (ms): 705.7 | learning rate: 3.960442E-06 | global batch size:     8 | loss: 1.614887E-02 | grad norm: 1.368 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:15,319 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:15] iteration       63/     100 | consumed samples:          504 | elapsed time per iteration (ms): 697.8 | learning rate: 3.790391E-06 | global batch size:     8 | loss: 1.514350E-02 | grad norm: 0.525 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:16,011 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:16] iteration       64/     100 | consumed samples:          512 | elapsed time per iteration (ms): 691.4 | learning rate: 3.621813E-06 | global batch size:     8 | loss: 1.465687E-02 | grad norm: 0.260 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:17,511 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:17] iteration       65/     100 | consumed samples:          520 | elapsed time per iteration (ms): 1499.5 | learning rate: 3.454915E-06 | global batch size:     8 | loss: 1.507636E-02 | grad norm: 0.521 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:18,245 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:18] iteration       66/     100 | consumed samples:          528 | elapsed time per iteration (ms): 732.8 | learning rate: 3.289899E-06 | global batch size:     8 | loss: 1.499452E-02 | grad norm: 0.714 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:18,960 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:18] iteration       67/     100 | consumed samples:          536 | elapsed time per iteration (ms): 713.8 | learning rate: 3.126967E-06 | global batch size:     8 | loss: 1.558244E-02 | grad norm: 0.850 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:19,691 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:19] iteration       68/     100 | consumed samples:          544 | elapsed time per iteration (ms): 730.1 | learning rate: 2.966317E-06 | global batch size:     8 | loss: 1.546436E-02 | grad norm: 0.898 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:20,400 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:20] iteration       69/     100 | consumed samples:          552 | elapsed time per iteration (ms): 707.8 | learning rate: 2.808144E-06 | global batch size:     8 | loss: 1.546700E-02 | grad norm: 0.899 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:21,135 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:21] iteration       70/     100 | consumed samples:          560 | elapsed time per iteration (ms): 733.9 | learning rate: 2.652642E-06 | global batch size:     8 | loss: 1.509126E-02 | grad norm: 0.867 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:21,855 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:21] iteration       71/     100 | consumed samples:          568 | elapsed time per iteration (ms): 718.5 | learning rate: 2.500000E-06 | global batch size:     8 | loss: 1.525706E-02 | grad norm: 0.805 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:22,613 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:22] iteration       72/     100 | consumed samples:          576 | elapsed time per iteration (ms): 756.8 | learning rate: 2.350404E-06 | global batch size:     8 | loss: 1.460973E-02 | grad norm: 0.699 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:23,339 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:23] iteration       73/     100 | consumed samples:          584 | elapsed time per iteration (ms): 725.3 | learning rate: 2.204035E-06 | global batch size:     8 | loss: 1.452069E-02 | grad norm: 0.569 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:24,065 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:24] iteration       74/     100 | consumed samples:          592 | elapsed time per iteration (ms): 724.9 | learning rate: 2.061074E-06 | global batch size:     8 | loss: 1.367560E-02 | grad norm: 0.390 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:24,784 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:24] iteration       75/     100 | consumed samples:          600 | elapsed time per iteration (ms): 717.3 | learning rate: 1.921693E-06 | global batch size:     8 | loss: 1.411859E-02 | grad norm: 0.298 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:25,494 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:25] iteration       76/     100 | consumed samples:          608 | elapsed time per iteration (ms): 709.6 | learning rate: 1.786062E-06 | global batch size:     8 | loss: 1.373595E-02 | grad norm: 0.303 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:26,203 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:26] iteration       77/     100 | consumed samples:          616 | elapsed time per iteration (ms): 707.8 | learning rate: 1.654347E-06 | global batch size:     8 | loss: 1.362590E-02 | grad norm: 0.385 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:26,919 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:26] iteration       78/     100 | consumed samples:          624 | elapsed time per iteration (ms): 714.1 | learning rate: 1.526708E-06 | global batch size:     8 | loss: 1.363685E-02 | grad norm: 0.537 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:27,626 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:27] iteration       79/     100 | consumed samples:          632 | elapsed time per iteration (ms): 706.6 | learning rate: 1.403301E-06 | global batch size:     8 | loss: 1.389135E-02 | grad norm: 0.627 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:28,343 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:28] iteration       80/     100 | consumed samples:          640 | elapsed time per iteration (ms): 715.2 | learning rate: 1.284276E-06 | global batch size:     8 | loss: 1.344710E-02 | grad norm: 0.634 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:29,049 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:29] iteration       81/     100 | consumed samples:          648 | elapsed time per iteration (ms): 705.6 | learning rate: 1.169778E-06 | global batch size:     8 | loss: 1.342389E-02 | grad norm: 0.635 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:29,761 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:29] iteration       82/     100 | consumed samples:          656 | elapsed time per iteration (ms): 710.9 | learning rate: 1.059946E-06 | global batch size:     8 | loss: 1.372517E-02 | grad norm: 0.583 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:30,462 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:30] iteration       83/     100 | consumed samples:          664 | elapsed time per iteration (ms): 700.1 | learning rate: 9.549150E-07 | global batch size:     8 | loss: 1.346829E-02 | grad norm: 0.500 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:31,170 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:31] iteration       84/     100 | consumed samples:          672 | elapsed time per iteration (ms): 707.1 | learning rate: 8.548121E-07 | global batch size:     8 | loss: 1.335401E-02 | grad norm: 0.468 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:31,882 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:31] iteration       85/     100 | consumed samples:          680 | elapsed time per iteration (ms): 710.1 | learning rate: 7.597595E-07 | global batch size:     8 | loss: 1.309645E-02 | grad norm: 0.402 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:32,588 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:32] iteration       86/     100 | consumed samples:          688 | elapsed time per iteration (ms): 705.2 | learning rate: 6.698730E-07 | global batch size:     8 | loss: 1.339306E-02 | grad norm: 0.360 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:33,293 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:33] iteration       87/     100 | consumed samples:          696 | elapsed time per iteration (ms): 704.4 | learning rate: 5.852620E-07 | global batch size:     8 | loss: 1.288060E-02 | grad norm: 0.343 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:34,001 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:34] iteration       88/     100 | consumed samples:          704 | elapsed time per iteration (ms): 707.1 | learning rate: 5.060298E-07 | global batch size:     8 | loss: 1.316937E-02 | grad norm: 0.317 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:34,704 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:34] iteration       89/     100 | consumed samples:          712 | elapsed time per iteration (ms): 701.5 | learning rate: 4.322727E-07 | global batch size:     8 | loss: 1.302710E-02 | grad norm: 0.309 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:35,414 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:35] iteration       90/     100 | consumed samples:          720 | elapsed time per iteration (ms): 708.9 | learning rate: 3.640807E-07 | global batch size:     8 | loss: 1.283217E-02 | grad norm: 0.312 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:36,117 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:36] iteration       91/     100 | consumed samples:          728 | elapsed time per iteration (ms): 702.3 | learning rate: 3.015369E-07 | global batch size:     8 | loss: 1.285167E-02 | grad norm: 0.309 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:36,827 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:36] iteration       92/     100 | consumed samples:          736 | elapsed time per iteration (ms): 708.6 | learning rate: 2.447174E-07 | global batch size:     8 | loss: 1.274256E-02 | grad norm: 0.320 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:37,530 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:37] iteration       93/     100 | consumed samples:          744 | elapsed time per iteration (ms): 702.6 | learning rate: 1.936915E-07 | global batch size:     8 | loss: 1.278073E-02 | grad norm: 0.321 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:38,242 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:38] iteration       94/     100 | consumed samples:          752 | elapsed time per iteration (ms): 710.9 | learning rate: 1.485214E-07 | global batch size:     8 | loss: 1.275108E-02 | grad norm: 0.327 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:38,947 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:38] iteration       95/     100 | consumed samples:          760 | elapsed time per iteration (ms): 704.0 | learning rate: 1.092620E-07 | global batch size:     8 | loss: 1.269823E-02 | grad norm: 0.330 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:39,654 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:39] iteration       96/     100 | consumed samples:          768 | elapsed time per iteration (ms): 705.8 | learning rate: 7.596123E-08 | global batch size:     8 | loss: 1.273332E-02 | grad norm: 0.326 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:40,359 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:40] iteration       97/     100 | consumed samples:          776 | elapsed time per iteration (ms): 704.3 | learning rate: 4.865966E-08 | global batch size:     8 | loss: 1.271170E-02 | grad norm: 0.332 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:41,066 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:41] iteration       98/     100 | consumed samples:          784 | elapsed time per iteration (ms): 705.5 | learning rate: 2.739052E-08 | global batch size:     8 | loss: 1.275609E-02 | grad norm: 0.324 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:41,770 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:41] iteration       99/     100 | consumed samples:          792 | elapsed time per iteration (ms): 703.3 | learning rate: 1.217975E-08 | global batch size:     8 | loss: 1.269817E-02 | grad norm: 0.329 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:42,479 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:42] iteration      100/     100 | consumed samples:          800 | elapsed time per iteration (ms): 707.4 | learning rate: 3.045865E-09 | global batch size:     8 | loss: 1.271001E-02 | grad norm: 0.326 |
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:42,519 INFO [mindspeed_mm.fsdp.checkpoint.hf_utils:24] => Skipping weight not in HF weight_map: lm_head.weight
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:42,521 INFO [mindspeed_mm.fsdp.checkpoint.hf_checkpointer:24] => Filtered fqn_to_index_mapping from 488 to 473 keys to match actual model weights.
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:42,522 INFO [mindspeed_mm.fsdp.checkpoint.hf_checkpointer:24] => Starting HuggingFace safetensors save from model...
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:46,736 INFO [mindspeed_mm.fsdp.checkpoint.hf_checkpointer:24] => HuggingFace safetensors save from live model took 4.21s
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:46,736 INFO [mindspeed_mm.fsdp.checkpoint.hf_checkpointer:182] => Model weights saved at /root/ops/ab62_20260922_141427/06_C2/checkpoint/iter_0000100/model.safetensors.
+[Rank 0 | Local Rank 0] 2026-09-22 14:29:50,163 INFO [mindspeed_mm.fsdp.checkpoint.hf_checkpointer:189] => HuggingFace checkpoint saved at /root/ops/ab62_20260922_141427/06_C2/checkpoint/iter_0000100 successfully!

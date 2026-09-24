@@ -1,0 +1,96 @@
+{
+ "schema": "dsh.evidence.kernel_attribution.v1",
+ "provenance": {
+  "kind": "★ 本地派生件（NOT 远端原件）",
+  "derived_from": "/root/ops/prof62_20260922_140144/prof/4ac9ca3712ba_114174_20260922140256671_ascend_pt/ASCEND_PROFILER_OUTPUT/kernel_details.csv",
+  "derived_by": "工具_重建/_rcmd_prof62_analyze.sh（在远端本地读取该 CSV 并聚合；只读，未改远端任何文件）",
+  "parent_run_result": "prof62_20260922_140144__result.json（同目录，远端原件已拉回并校验 sha256）",
+  "why_not_original": "kernel_details.csv 为 12 MB（整棵 prof 树 2.7 GB），不随包归档；但其**聚合结果**是本轮结论的唯一依据，故单独落盘以便「数字能追到产物」。"
+ },
+ "run_identity": {
+  "machine": "199.98.58.213",
+  "hostname": "4ac9ca3712ba",
+  "boot_id": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+  "wall_seconds": 188.3,
+  "steps_parsed": 100,
+  "profiling_window": [50, 55],
+  "geometry": {"mbs": 4, "gas": 1, "dp": 2, "gbs": 8, "official_comparable": false},
+  "config": "/root/ops/qwen3_5_0_8B_mock_dp2_v3.yaml",
+  "with_stack": true
+ },
+ "raw_aggregates": {
+  "kernel_detail_rows": 35750,
+  "total_duration_us": 3161607,
+  "total_wait_us": 8218220,
+  "wait_over_duration": 2.6,
+  "computing_bucket_mean_us": 573635.0,
+  "computing_bucket_mean_us_prior_profile_without_stack": 576949.0,
+  "note_on_comparability": "★ `--with-stack` 把 Free 从 19.3% 抬到 72.8%（Stage 均值 739.5 → 2226.5 ms）⇒ **桶比例与 profile_short 不可比**；但 Computing 均值几乎不变（573635 vs 576949 us，差 0.6%）⇒ kernel 级比例仍可用。"
+ },
+ "target_kernels": {
+  "C1_grad_norm": {
+   "kernel": "aclnnLinalgVectorNorm_LpNormV2_LpNormV2",
+   "calls": 1600,
+   "calls_per_step": 320,
+   "duration_us": 14080,
+   "duration_pct_of_total_kernel_time": 0.45,
+   "wait_us": 455721,
+   "wait_pct_of_total_wait": 5.55,
+   "wait_over_duration": 32.37,
+   "per_call_duration_us": 8.8,
+   "per_call_wait_us": 285.0
+  },
+  "C2_loss_allreduce": {
+   "kernel_family": "AllReduce / Hccl / allreduceAicpuKernel",
+   "calls": 40,
+   "calls_per_step": 8.0,
+   "duration_us": 13425,
+   "duration_pct_of_total_kernel_time": 0.42,
+   "wait_us": 19602,
+   "wait_pct_of_total_wait": 0.24
+  }
+ },
+ "derived_bound": {
+  "combined_duration_us": 27505,
+  "combined_pct_of_kernel_time": 0.87,
+  "combined_pct_of_computing": 0.96,
+  "combined_per_step_us": 5501,
+  "combined_pct_of_steady_420ms_step": 1.31,
+  "threshold_pct_for_reporting": 5.0
+ },
+ "wait_is_not_recoverable_evidence": {
+  "claim": "LpNormV2 的高 wait/dur **不是**可回收成本，而是小算子排在大算子后面的**排队现象**。",
+  "controls_wait_over_duration": {
+   "LpNormV2": 32.37,
+   "InplaceCopy_Cast": 7.64,
+   "InplaceCopy_Transpose": 5.66,
+   "Add": 2.99,
+   "Mul": 0.52,
+   "MatMulV3": 0.64
+  },
+  "reasoning": "同类小算子普遍高 wait/dur（Cast 7.6x、Transpose 5.7x、Add 3.0x），而大算子 MatMulV3 仅 0.64x ⇒ 高 wait 是小算子通性；且 wait 落在 Free 桶（高度重叠、不可直接相加）⇒ 移除一个正在排队的算子只会把 wait 让给其它算子。"
+ },
+ "context_top_kernels_pct_of_kernel_time": {
+  "aclnnMatmul_MatMulV3Common_MatMulV3": 19.99,
+  "prepare_wy_repr_bwd_kernel": 6.18,
+  "causal_conv1d_bwd_kernel": 5.46,
+  "chunk_bwd_kernel_dqkwg": 5.24,
+  "chunk_gated_delta_rule_fwd_kernel_h_blockdim64": 5.05,
+  "chunk_gated_delta_rule_bwd_kernel_dhu_blockdim64": 4.6,
+  "aclnnInplaceCopy_TransposeAiCore_Transpose": 4.05,
+  "aclnnMul_MulAiCore_Mul": 3.5,
+  "aclnnInplaceCopy_CastAiCore_Cast": 3.29
+ },
+ "conclusion": {
+  "verdict": "两个候选按冻结判据记『不可报告』：可省 kernel 时间上界 0.87%，比 5% 阈值低一个数量级；且代价是放弃 grad_norm 与 loss 两条观测链 ⇒ 净亏。",
+  "used_by": "protocols/codelevel_sync_candidates_20260922.json（results 段）；docs/优化候选评估固定流程_20260922.md §5",
+  "redirect": "优化方向改为算子族：GDN/linear-attn 28.22%、MatMul 20.5%、小算子/拷贝/cast 簇 16.3%。"
+ },
+ "boundaries": [
+  "样本仅 5 个步（窗口 50–55）。",
+  "只用比例；profiled 绝对时间（Stage 2226.5 ms）**不得**与稳态 432.7 ms 对标。",
+  "数据为 mock 且每步同一批 ⇒ 不代表官方 COCO 多图数据。",
+  "单机单次运行；无跨机复现。",
+  "★ kernel/wait 归因**测不到「同步等待的可回收性」**；本轮用同类小算子对照说明高 wait 属排队通性，但该点**未做端到端实测**，如实保留为残余边界。"
+ ]
+}

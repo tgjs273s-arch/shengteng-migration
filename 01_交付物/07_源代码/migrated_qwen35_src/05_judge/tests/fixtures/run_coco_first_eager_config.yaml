@@ -1,0 +1,36 @@
+# =============================================================================
+# run_coco_first_eager_config.yaml — 测试 fixture：镜像 A2 COCO 首跑【生效配置】
+# -----------------------------------------------------------------------------
+# 用途：selfcheck 里以 --config <yaml> 路径跑 fingerprint_cfg（A2 run_train 集成形态：
+#       runs/run_<tag>/config.yaml 即官方文本风格 yaml，非日志 details 视图）。
+# 取值来源：snapshots/coco_train_run1.log 的 Configuration Details 区逐值镜像
+#       （A2 审计 §3.1 的"我方 COCO 运行"列；world_size 由训练时环境决定，此处不写，
+#       fingerprint_cfg 用 --world-size 1 传入 = A2 单卡实测值）。
+# 本文件是【测试夹具】，不是 A2 上的真实运行产物；真实产物以 A2 runs/run_<tag>/ 为准。
+# =============================================================================
+
+model:
+  model_id: qwen3_5
+  freeze: []
+  gdn_implementation: eager
+  causal_conv1d_implementation: eager
+  skip_gdn_recompute: false
+  skip_flash_attn_recompute: false
+
+data:
+  dataset_param:
+    basic_parameters:
+      dataset_dir: /root/coco_dl/extracted/dataset
+      dataset: [/root/coco_dl/extracted/dataset/annotations_slim.json]
+      cutoff_len: 2048
+  dataloader_param:
+    dataloader_mode: sampler
+    sampler_type: BaseRandomBatchSampler
+    shuffle: true
+    num_workers: 2
+
+training:
+  micro_batch_size: 1
+  gradient_accumulation_steps: 8
+  seed: 42
+  train_iters: 100

@@ -1,0 +1,305 @@
+{
+ "schema": "sk04_judge_verdict.v1",
+ "verdict_id": "606056b3cb04ecbbf5de9d666960265c63a825153e1f118f9d85c71a8b3919c5",
+ "generated_by": "judge_comparable.py",
+ "run": {
+  "fingerprint_file": "/root/skills_R2/a3_e4b_100_verdict/fp.json",
+  "baseline_id": "officialB"
+ },
+ "baseline": {
+  "id": "officialB",
+  "officiality": "proposed",
+  "officiality_note": "官方身份未证实：chaspark 帖登录墙未核 + hiascend 官方日志无 Triton 字样（A2 审计 §2.2 弱项 2、 §7-2）；配置值与官方 PDF §3.3 吻合（旁证）。确认动作见文件头动作单。",
+  "role": "次级对照/性能参考（预训练续训尺度 1.x；2 卡 dp=2 ~0.43s/步）"
+ },
+ "config_deviation": {
+  "count_mismatch": 0,
+  "count_unverified": 0,
+  "table": [
+   {
+    "dim": "shuffle",
+    "label": "shuffle(数据序)",
+    "run": false,
+    "baseline": false,
+    "equal": true,
+    "status": "match",
+    "run_config_line": 167,
+    "baseline_evidence": [
+     {
+      "file": "docs/official/triton精度日志.txt",
+      "line": 167
+     },
+     {
+      "file": "docs/official_templates_parsed.md",
+      "line": 206
+     },
+     {
+      "file": "docs/audit_round1_v3_A2.md",
+      "line": 87
+     }
+    ]
+   },
+   {
+    "dim": "freeze",
+    "label": "freeze(冻结)",
+    "run": [
+     "model.visual"
+    ],
+    "baseline": [
+     "model.visual"
+    ],
+    "equal": true,
+    "status": "match",
+    "run_config_line": 89,
+    "baseline_evidence": [
+     {
+      "file": "docs/official/triton精度日志.txt",
+      "line": 89
+     },
+     {
+      "file": "docs/official_templates_parsed.md",
+      "line": 222
+     },
+     {
+      "file": "docs/audit_round1_v3_A2.md",
+      "line": 88
+     }
+    ]
+   },
+   {
+    "dim": "cutoff_len",
+    "label": "cutoff_len(截断)",
+    "run": 1024,
+    "baseline": 1024,
+    "equal": true,
+    "status": "match",
+    "run_config_line": 106,
+    "baseline_evidence": [
+     {
+      "file": "docs/official/triton精度日志.txt",
+      "line": 106
+     },
+     {
+      "file": "docs/official_templates_parsed.md",
+      "line": 191
+     },
+     {
+      "file": "docs/audit_round1_v3_A2.md",
+      "line": 89
+     }
+    ]
+   },
+   {
+    "dim": "mbs",
+    "label": "micro_batch_size",
+    "run": 4,
+    "baseline": 4,
+    "equal": true,
+    "status": "match",
+    "run_config_line": 219,
+    "baseline_evidence": [
+     {
+      "file": "docs/official/triton精度日志.txt",
+      "line": 217
+     },
+     {
+      "file": "docs/official_templates_parsed.md",
+      "line": 253
+     },
+     {
+      "file": "docs/audit_round1_v3_A2.md",
+      "line": 90
+     }
+    ]
+   },
+   {
+    "dim": "gas",
+    "label": "gradient_accumulation_steps",
+    "run": 1,
+    "baseline": 1,
+    "equal": true,
+    "status": "match",
+    "run_config_line": 220,
+    "baseline_evidence": [
+     {
+      "file": "docs/official/triton精度日志.txt",
+      "line": 218
+     },
+     {
+      "file": "docs/official_templates_parsed.md",
+      "line": 254
+     },
+     {
+      "file": "docs/audit_round1_v3_A2.md",
+      "line": 90
+     }
+    ]
+   },
+   {
+    "dim": "dp",
+    "label": "data_parallel/world",
+    "run": 2,
+    "baseline": 2,
+    "equal": true,
+    "status": "match",
+    "run_config_line": 48,
+    "baseline_evidence": [
+     {
+      "file": "docs/official/triton精度日志.txt",
+      "line": 48
+     },
+     {
+      "file": "docs/official/triton精度日志.txt",
+      "line": 83
+     },
+     {
+      "file": "docs/audit_round1_v3_A2.md",
+      "line": 103
+     }
+    ]
+   },
+   {
+    "dim": "gdn_causal",
+    "label": "gdn/causal 实现",
+    "run": {
+     "gdn": "triton",
+     "causal": "triton"
+    },
+    "baseline": {
+     "gdn": "triton",
+     "causal": "triton"
+    },
+    "equal": true,
+    "status": "match",
+    "run_config_line": 92,
+    "baseline_evidence": [
+     {
+      "file": "docs/official/triton精度日志.txt",
+      "line": 92
+     },
+     {
+      "file": "docs/official/triton精度日志.txt",
+      "line": 93
+     },
+     {
+      "file": "docs/official_templates_parsed.md",
+      "line": 223
+     },
+     {
+      "file": "docs/official_templates_parsed.md",
+      "line": 224
+     },
+     {
+      "file": "docs/audit_round1_v3_A2.md",
+      "line": 91
+     }
+    ]
+   },
+   {
+    "dim": "dataset_file",
+    "label": "数据集文件身份",
+    "run": {
+     "file": "/root/data/output_llava_coco_data.json",
+     "dataset_dir": "/root/data/coco"
+    },
+    "baseline": {
+     "file": "output_llava_coco_data.json",
+     "dataset_dir": "/home/dataset/llava_coco/coco/",
+     "full_path": "/data/s00977099/output_llava_coco_data.json"
+    },
+    "equal": true,
+    "status": "match_declared",
+    "run_config_line": 105,
+    "baseline_evidence": [
+     {
+      "file": "docs/official/triton精度日志.txt",
+      "line": 105
+     },
+     {
+      "file": "docs/official/triton精度日志.txt",
+      "line": 104
+     },
+     {
+      "file": "docs/audit_round1_v3_A2.md",
+      "line": 92
+     },
+     {
+      "file": "docs/official_templates_parsed.md",
+      "line": 309
+     }
+    ]
+   },
+   {
+    "dim": "num_workers",
+    "label": "num_workers(dataloader)",
+    "run": 8,
+    "baseline": 8,
+    "equal": true,
+    "status": "match",
+    "run_config_line": 175,
+    "baseline_evidence": [
+     {
+      "file": "docs/official/triton精度日志.txt",
+      "line": 175
+     },
+     {
+      "file": "docs/official/triton精度日志.txt",
+      "line": 112
+     },
+     {
+      "file": "docs/audit_round1_v3_A2.md",
+      "line": 93
+     }
+    ]
+   }
+  ]
+ },
+ "data_same_source": {
+  "same_source": "unverified",
+  "status": "declared_same_file_byte_unverified",
+  "detail": "basename 相同（output_llava_coco_data.json）但基线文件字节不可得 → 同源未证实（诚实：标 unresolved）"
+ },
+ "n_eff": {
+  "run": 8,
+  "baseline": 8,
+  "equal": true
+ },
+ "reachability": {
+  "level": "pointwise_feasible",
+  "rule": "7 维全等 + N_eff 同（8）",
+  "color": "yellow",
+  "verdict": "NEEDS_EVIDENCE",
+  "exit_hint": 3
+ },
+ "officiality": "proposed",
+ "evidence_gates": [
+  {
+   "gate": "data_identity",
+   "closed": false,
+   "detail": "basename 相同（output_llava_coco_data.json）但基线文件字节不可得 → 同源未证实（诚实：标 unresolved）"
+  },
+  {
+   "gate": "sample_order",
+   "closed": false,
+   "detail": "shuffle=False / 数据同源=declared_same_file_byte_unverified → 每步 batch 组成未证实相同"
+  },
+  {
+   "gate": "kernel_evidence",
+   "closed": true,
+   "detail": "kernel 证据核验通过（effective=npu_triton_active, declared=triton）"
+  },
+  {
+   "gate": "loss_band",
+   "closed": true,
+   "detail": "带一致：run step1 实测 B(1.924621) == baseline B"
+  }
+ ],
+ "open_gates": [
+  "data_identity",
+  "sample_order"
+ ],
+ "reasons": [
+  "未闭合证据门: data_identity, sample_order",
+  "候选可比但证据不足：补齐 observed/data 字节/官方确认后再判"
+ ]
+}

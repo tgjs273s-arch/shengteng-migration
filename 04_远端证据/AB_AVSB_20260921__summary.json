@@ -1,0 +1,299 @@
+{
+ "schema": "t63_two_config_ab.v1",
+ "config_a": "/root/ops/A_recommended.yaml",
+ "config_b": "/root/ops/B_fallback.yaml",
+ "name_a": "A_recommended",
+ "name_b": "B_fallback",
+ "declared_differences": [
+  "features.enable_activation_offload",
+  "features.enable_chunk_loss",
+  "features.recompute",
+  "model.skip_flash_attn_recompute",
+  "model.skip_gdn_recompute",
+  "parallel.fsdp_plan.pregather",
+  "parallel.fsdp_plan.reshard_after_forward"
+ ],
+ "actual_differences": [
+  "features.enable_activation_offload",
+  "features.enable_chunk_loss",
+  "features.recompute",
+  "model.skip_flash_attn_recompute",
+  "model.skip_gdn_recompute",
+  "parallel.fsdp_plan.pregather",
+  "parallel.fsdp_plan.reshard_after_forward"
+ ],
+ "order_used": [
+  "A",
+  "B",
+  "B",
+  "A",
+  "A",
+  "B"
+ ],
+ "steps": 100,
+ "numeric_steps": 2,
+ "n_A": 3,
+ "n_B": 3,
+ "baseline_A_mean_ms": 419.03,
+ "baseline_drift_pct": 0.6,
+ "paired": {
+  "pairs": 3,
+  "diffs": [
+   {
+    "pair": 1,
+    "A_ms": 418.6,
+    "B_ms": 521.45,
+    "diff_ms": 102.85,
+    "delta_pct": 24.57
+   },
+   {
+    "pair": 2,
+    "A_ms": 418.0,
+    "B_ms": 522.8499999999999,
+    "diff_ms": 104.85,
+    "delta_pct": 25.084
+   },
+   {
+    "pair": 3,
+    "A_ms": 420.5,
+    "B_ms": 519.4000000000001,
+    "diff_ms": 98.9,
+    "delta_pct": 23.52
+   }
+  ],
+  "mean_delta_pct": 24.391,
+  "sd_pct": 0.797,
+  "t_crit": 4.303,
+  "ci95_delta_pct": [
+   22.411,
+   26.372
+  ],
+  "improvement_pct": -24.391,
+  "note": "负的 delta 表示 B 更快；改善率 = -mean"
+ },
+ "pointwise_rel_diff_pct": {
+  "loss": {
+   "len_a": 100,
+   "len_b": 100,
+   "length_ok": true,
+   "n": 2,
+   "compared": 2,
+   "undefined_zero_baseline": 0,
+   "max_pct": 0.0,
+   "mean_pct": 0.0
+  },
+  "grad_norm": {
+   "len_a": 100,
+   "len_b": 100,
+   "length_ok": true,
+   "n": 2,
+   "compared": 2,
+   "undefined_zero_baseline": 0,
+   "max_pct": 0.0465,
+   "mean_pct": 0.0232
+  }
+ },
+ "pointwise_per_pair": [
+  {
+   "loss": {
+    "len_a": 100,
+    "len_b": 100,
+    "length_ok": true,
+    "n": 2,
+    "compared": 2,
+    "undefined_zero_baseline": 0,
+    "max_pct": 0.0,
+    "mean_pct": 0.0
+   },
+   "grad_norm": {
+    "len_a": 100,
+    "len_b": 100,
+    "length_ok": true,
+    "n": 2,
+    "compared": 2,
+    "undefined_zero_baseline": 0,
+    "max_pct": 0.0401,
+    "mean_pct": 0.0232
+   }
+  },
+  {
+   "loss": {
+    "len_a": 100,
+    "len_b": 100,
+    "length_ok": true,
+    "n": 2,
+    "compared": 2,
+    "undefined_zero_baseline": 0,
+    "max_pct": 0.0,
+    "mean_pct": 0.0
+   },
+   "grad_norm": {
+    "len_a": 100,
+    "len_b": 100,
+    "length_ok": true,
+    "n": 2,
+    "compared": 2,
+    "undefined_zero_baseline": 0,
+    "max_pct": 0.0169,
+    "mean_pct": 0.0106
+   }
+  },
+  {
+   "loss": {
+    "len_a": 100,
+    "len_b": 100,
+    "length_ok": true,
+    "n": 2,
+    "compared": 2,
+    "undefined_zero_baseline": 0,
+    "max_pct": 0.0,
+    "mean_pct": 0.0
+   },
+   "grad_norm": {
+    "len_a": 100,
+    "len_b": 100,
+    "length_ok": true,
+    "n": 2,
+    "compared": 2,
+    "undefined_zero_baseline": 0,
+    "max_pct": 0.0465,
+    "mean_pct": 0.0275
+   }
+  }
+ ],
+ "step1_loss": {
+  "A": 0.1154926,
+  "B": 0.1154926,
+  "anchor_ok": true
+ },
+ "verdict": "NO_GAIN",
+ "verdict_reason": "B 显著更慢：配对差 +24.39%（区间 [22.411, 26.372] 不含 0）",
+ "official_comparable": false,
+ "comparability_note": "两组都是**官方几何** world2/mbs4/gas1；`official_comparable` 仍为 False —— 原因是**数据不是官方 COCO**（本机是 mock），几何一致**不能**替代数据一致；本对照回答的是：出货对比A-vs-B（须连同**显存峰值**一起读：本类差异常常是「用显存换速度」而不是纯粹的更快）",
+ "unclosed_items": [
+  "每步全局样本身份未做字节级验证（需 sampler hook 才能落 sample id）—— 本案只声明：同数据文件、同 seed、同 shuffle:false、同 GBS；**不得**据此宣称「两组每步吃的是同一批样本」",
+  "实际 token 吞吐未落盘：日志未提供每步有效 token 数 ⇒ **不予估计**（不编数）"
+ ],
+ "runs": [
+  {
+   "tag": "00_A",
+   "variant": "A",
+   "valid": true,
+   "steps_complete": true,
+   "world_size": 2,
+   "gbs": 8,
+   "window_11_end_median_ms": 418.6,
+   "median_step_s": 0.4186,
+   "samples_per_s": 19.111323459149546,
+   "wall_seconds": 130.5,
+   "steps_parsed": 100,
+   "max_allocated_mb": 24090.56640625,
+   "cgroup_peak_max_usage_bytes": 257700139008,
+   "config_sha256": "88fc59cc9b6e2418983264c7a84682b805ba6a8f3ee67fd09421f24b0fde165c",
+   "identity": {
+    "boot": "d3e2cfb0-9169-4c3e-8ff9-3fefdec0f75a",
+    "hostname": "5d7b6b055c02"
+   }
+  },
+  {
+   "tag": "01_B",
+   "variant": "B",
+   "valid": true,
+   "steps_complete": true,
+   "world_size": 2,
+   "gbs": 8,
+   "window_11_end_median_ms": 521.45,
+   "median_step_s": 0.5214500000000001,
+   "samples_per_s": 15.341835267043818,
+   "wall_seconds": 148.6,
+   "steps_parsed": 100,
+   "max_allocated_mb": 19786.31298828125,
+   "cgroup_peak_max_usage_bytes": 257700139008,
+   "config_sha256": "ff6ca6135704f4328cdb8ddd65e16d64034c6ad2a7c006e71cb0e05024046462",
+   "identity": {
+    "boot": "d3e2cfb0-9169-4c3e-8ff9-3fefdec0f75a",
+    "hostname": "5d7b6b055c02"
+   }
+  },
+  {
+   "tag": "02_B",
+   "variant": "B",
+   "valid": true,
+   "steps_complete": true,
+   "world_size": 2,
+   "gbs": 8,
+   "window_11_end_median_ms": 522.8499999999999,
+   "median_step_s": 0.5228499999999999,
+   "samples_per_s": 15.300755474801571,
+   "wall_seconds": 144.6,
+   "steps_parsed": 100,
+   "max_allocated_mb": 19786.31298828125,
+   "cgroup_peak_max_usage_bytes": 257700139008,
+   "config_sha256": "78604f6a94940fa33a8caf297eb6773ef1aacbee25a7798a149bcca0f5fa2dfa",
+   "identity": {
+    "boot": "d3e2cfb0-9169-4c3e-8ff9-3fefdec0f75a",
+    "hostname": "5d7b6b055c02"
+   }
+  },
+  {
+   "tag": "03_A",
+   "variant": "A",
+   "valid": true,
+   "steps_complete": true,
+   "world_size": 2,
+   "gbs": 8,
+   "window_11_end_median_ms": 418.0,
+   "median_step_s": 0.418,
+   "samples_per_s": 19.138755980861244,
+   "wall_seconds": 137.2,
+   "steps_parsed": 100,
+   "max_allocated_mb": 24090.56640625,
+   "cgroup_peak_max_usage_bytes": 257700139008,
+   "config_sha256": "8f625b78325c02c62440d1a833db1f025c50390d7fbca51419ac66dba6f9772a",
+   "identity": {
+    "boot": "d3e2cfb0-9169-4c3e-8ff9-3fefdec0f75a",
+    "hostname": "5d7b6b055c02"
+   }
+  },
+  {
+   "tag": "04_A",
+   "variant": "A",
+   "valid": true,
+   "steps_complete": true,
+   "world_size": 2,
+   "gbs": 8,
+   "window_11_end_median_ms": 420.5,
+   "median_step_s": 0.4205,
+   "samples_per_s": 19.024970273483948,
+   "wall_seconds": 131.4,
+   "steps_parsed": 100,
+   "max_allocated_mb": 24090.56640625,
+   "cgroup_peak_max_usage_bytes": 257700139008,
+   "config_sha256": "6552092c4bf8f4b4f72f48fd68ab15eaaed21d9f7fa52790cd4fcc60d9e8e887",
+   "identity": {
+    "boot": "d3e2cfb0-9169-4c3e-8ff9-3fefdec0f75a",
+    "hostname": "5d7b6b055c02"
+   }
+  },
+  {
+   "tag": "05_B",
+   "variant": "B",
+   "valid": true,
+   "steps_complete": true,
+   "world_size": 2,
+   "gbs": 8,
+   "window_11_end_median_ms": 519.4000000000001,
+   "median_step_s": 0.5194000000000001,
+   "samples_per_s": 15.402387370042353,
+   "wall_seconds": 145.2,
+   "steps_parsed": 100,
+   "max_allocated_mb": 19786.31298828125,
+   "cgroup_peak_max_usage_bytes": 257700139008,
+   "config_sha256": "978f400709fd727998caa5b51a55e5e0e8cbbffad14cd9fe04c397df8344842c",
+   "identity": {
+    "boot": "d3e2cfb0-9169-4c3e-8ff9-3fefdec0f75a",
+    "hostname": "5d7b6b055c02"
+   }
+  }
+ ]
+}

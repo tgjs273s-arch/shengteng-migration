@@ -1,0 +1,112 @@
+# C4-AI 昇腾复赛 · 验收环境版本锁 versions.lock
+# ============================================================
+# 用途：官方验收口径 = 评委用选手配置+环境【重跑复现】对比（2026-09-07 QQ 官方答复 A2）。
+#       本文件锁定"最终验收锚点"（A3 dp2 全量 157k 100 步）的完整环境，评委照此可精确复现。
+# 校验：本文件应由 selfcheck.sh 做版本一致性检查（skill_R2 结构件）。
+# 字段：name | 锁定值 | 来源(实测日期/文档) | 备注
+# ============================================================
+
+# ---- 硬件（A3，1×910C 双 die）----
+hardware.soc              | Ascend910_9382 (910C 双 die) | 2026-09-07 npu-smi board i3 c0/c1 | Total=1 Chip=2, 同 Board 0xb1
+hardware.chip_count       | 2                            | 2026-09-07 npu-smi info -l          | 单卡双 die, 合计 128GB HBM
+hardware.hbm_per_chip     | 64GB                         | npu-smi                            |
+hardware.driver           | 25.5.0                       | 2026-09-07 /usr/local/Ascend/driver/version.info |
+
+# ---- 系统 / Python ----
+os.image                  | quay.io/ascend/cann devel (ubuntu 22.04) | A3 bringup 实测 | 无 pip → get-pip 引导
+python                    | 3.10.12 (system /usr/bin/python3)         | A3 bringup 实测 | 无 venv，勿写死 /root/msmm_26
+pip                       | 26.2.1 (bootstrap.pypa.io)                | A3 bringup 实测 |
+
+# ---- CANN / 框架栈 ----
+cann                      | 9.1.0        | /usr/local/Ascend/cann-9.1.0   | 与 triton-ascend 3.2.2 官方配对
+torch                     | 2.7.1        | pip install torch==2.7.1       | 勿用更高（v26.1.0 pyproject 锁 2.10 会冲突）
+torch_npu                 | 2.7.1.post10 | pip install torch_npu==2.7.1.post10 |
+transformers              | 5.2.0        | MSMM v26.1.0 配套              | 勿装 4.57 等其它版
+mindspeed                 | 0.12.1       | gitcode.com/Ascend/MindSpeed editable --no-deps | MSMM 核心依赖（megatron 不需装）
+mindspeed_mm             | v26.1.0 tag  | gitcode/Ascend/MindSpeed-MM    | 勿用默认分支
+triton_ascend             | 3.2.2        | mirrors.huaweicloud.com/ascend  | CANN9.1+torch2.7.1+py3.10 官方配对；导入名 `triton`
+triton_ascend.index_url   | --index-url https://mirrors.huaweicloud.com/ascend/repos/pypi --extra-index-url https://repo.huaweicloud.com/repository/pypi/simple | 补 attrs==24.2.0
+
+# ---- 关键运行依赖 ----
+pyyaml | numpy | pybind11 | protobuf | scipy | sentencepiece | torchdata | torchvision | ftfy | diffusers | qwen_vl_utils | einops | av | pandas | attrs==24.2.0
+
+# ---- 模型权重（官方确认与 ModelScope 同款, 2026-09-07 A4）----
+model.name                | Qwen3.5-0.8B                      | ModelScope Qwen/Qwen3.5-0.8B | hf 格式（勿用 hf-mirror, 401）
+model.hf_path             | /root/Qwen3.5-0.8B-hf            | A3 |
+model.dcp_path            | /root/Qwen3.5-0.8B-dcp          | hf_to_dcp 转换 (GenericDCPConverter) |
+
+# ---- 数据（官方同源管线, 2026-09-07 G4 验证）----
+data.llava_json           | llava_instruct_150k.json          | 228,941,895 B = 官方 Content-Length | modelscope AI-ModelScope/LLaVA-Instruct-150K
+data.coco_train2017       | train2017 (118,287 图)            | modelscope PAI/COCO2017 train2017.zip (19.3GB) |
+data.convert_script       | mindspeed_mm/fsdp/tools/data_tool/llava_instruct_2_mllm_demo_format.py | MSMM v26.1.0 自带 |
+data.full_json            | output_llava_coco_data.json       | 157,712 样本, 205MB | = officialB baseline 声明文件名
+data.shuffle              | False                            | 官方同值（loss 一致前提）|
+data.seed                 | 42                               | 官方同值 |
+
+# ---- 验收锚点配置（A3 dp2 官方几何 全量 100 步）----
+config.yaml               | /root/MindSpeed-MM/examples/qwen3_5/qwen3_5_0_8B_geo_m4g1_dp2_full100.yaml | A3 | 由 m8g1 yaml sed 改（勿用日志 repr）
+config.geometry           | world_size=2 / mbs=4 / gas=1 / dp=2 / GBS=8 | 官方 7/24 同几何 |
+config.parallel           | data_parallel_size=2 fully_shard_parallel_size=auto→2 | |
+config.dataloader         | num_workers=8 preprocessing_num_workers=16 pin_memory=true | 官方同值 |
+config.gdn                | gdn_implementation=triton causal_conv1d_implementation=triton | 官方认可（fla_npu 可不装, 2026-09-07 A3）
+config.skip_gdn_recompute | true                         | examples/train/official_baseline.log:94 与 config/baselines/officialB.yaml:244（留证） | ★ 2026-09-21 复核发现**本锁此前漏锁该键**：官方日志是 true，而我们模板曾是 false，且判据链不比对它 ⇒ 我方会复现出一个**与官方不同的计算量**。已改为与官方对齐，并纳入比对清单
+config.train_iters        | 100 |
+config.ckpt               | load=/root/Qwen3.5-0.8B-dcp (no_load_optim) save=./save_path/iter_0000100 |
+
+# ---- 运行时环境变量（缺失任一即失败, 坑 26）----
+env.NON_MEGATRON          | true                             | 缺→走 Megatron 报 No module named 'megatron'
+env.TASK_QUEUE_ENABLE     | 2                                |
+env.ASCEND_LAUNCH_BLOCKING| 0                                |
+env.PYTORCH_NPU_ALLOC_CONF| expandable_segments:True        |
+env.TRITON_CACHE_DIR      | /root/triton_cache               | 我方持久化（官方每次清空 → 报告双口径披露）
+env.ld_library_path       | source /usr/local/Ascend/ascend-toolkit/set_env.sh | 缺→libhccl.so 找不到
+
+# ---- 启动命令（评委复现用）----
+launch.command            | torchrun --nproc_per_node 2 --nnodes 1 --node_rank 0 --master_addr localhost --master_port <port> mindspeed_mm/fsdp/train/trainer.py examples/qwen3_5/qwen3_5_0_8B_geo_m4g1_dp2_full100.yaml
+
+# ---- 判定链（SK04, 0-GPU 可复现）----
+sk04.selfcheck            | scripts/selfcheck_sk04.py → VERIFY_OK 24/24 | |
+sk04.verdict_id           | 18ababd8e34a9403 (pointwise_feasible, mismatch=0) | registry seq=2 (b1e1944f8a8b13e9)
+sk04.registry             | evidence/registry.json entries=3 VERIFY_OK | seq1 dp2-slim, seq2 dp2-full157k, seq3 m8g1
+
+# ============================================================
+# 本机偏离清单（相对本锁）★ 规则：**官方值优先**，凡偏离本锁必须在此登记
+# 字段：deviation.<域>.<键> | 本机实际值 | 依据 | 原因类别 + 是否落在被测窗口内
+# 原因类别：ENV=环境逼迫（本机不可改）／CHOICE=我方选择／DATA=官方数据不可得
+# 作用：让评委一眼分清"哪些差异是有意的、哪些是环境差异"，
+#       并明确**哪些偏离落在被测窗口之外** —— 只影响启动/收尾的偏离
+#       **不构成性能结论的障碍**（这是"尽量与官方一致"的可审计形式，而不是口头约定）
+# 注：selfcheck_env.py 只比对硬编码的几个键（cann/python/torch/triton/…），
+#     本段是登记与披露，不参与 acceptance 判据 —— 故不会把验收检查弄坏。
+# ============================================================
+deviation.env.driver      | 25.5.1（锁 25.5.0）                      | 2026-09-21 machineB env.json | ENV｜不影响窗口
+deviation.env.cann        | cann-9.1.0-beta.3（锁 9.1.0 GA）          | /usr/local/Ascend/cann-9.1.0-beta.3 | ENV｜**是** 坑108/113 两处绕行的根源
+deviation.env.os          | openEuler 系（锁 ubuntu 22.04）           | machineB 实测                | ENV｜不影响窗口
+deviation.env.python      | 3.11.6（锁 3.10.12）                     | machineB env.json            | ENV｜不影响窗口
+deviation.env.triton      | **已修（2026-09-21 15:47）**：清掉上游 `triton-3.5.0.dist-info` **元数据**（未触碰任何模块文件）⇒ `pip list` 里 triton 相关只剩 `triton_ascend==3.2.2`，`import triton` 仍为 3.2.0（= triton-ascend 基于的上游版本号） | 现场：`triton_state.py` 盘点 + `triton_whose.py` 归属判定（按两份 RECORD 的 sha256 逐条对照）；回滚点 `/root/ops/rollback/triton-3.5.0.dist-info.20260921_154713.tar.gz` | ★ **关键：运行时字节未变**（`triton/__init__.py` 与 `triton/_C/libtriton.so` 前后 sha256 逐一相同）⇒ **此前所有 A/B 数字仍然有效，无需重跑**。★ **不得说"完全对齐"**：`triton/_C/libproton.so`（18.9MB，proton 剖析库、训练路径不用）与**两份 RECORD 都不逐字节相符**，来源未判定，已如实留档。★★ **2026-09-22 按外部复核降级**：『只清元数据 ⇒ 运行时字节未变 ⇒ 此前 A/B 仍有效、无需重跑』这句话**收回** —— 历史 A/B 只保留在**当时实测环境**的口径下；**尚缺完整哈希归档与修复后的运行验证**，不能据此保证新环境行为等价（删元数据可能影响版本查询 / 插件入口发现 / 依赖解析）。`libproton.so` 另注：**是否进入本训练路径亦未验证**（原『训练不用』为无证据表述，已删）。★ 另外**严禁**用 `pip uninstall triton` 来"修"这件事：上游 `triton-3.5.0.dist-info/RECORD` 有 488 行、其中 **479 行是 `triton/…` 路径（含 412MB 的 libtriton.so）** ⇒ 照它删会**删掉 triton-ascend 的模块文件、把栈拆掉**
+deviation.config.load_rank0_and_broadcast | true（官方 False）         | 坑108 | ENV 逼迫｜**只影响 load 阶段**，不在被测窗口内
+deviation.config.save_format              | hf（官方 auto）             | 坑113 | ENV 逼迫｜**只影响收尾保存**，不在被测窗口内
+deviation.data.dataset    | mock（锁为 output_llava_coco_data.json：157,712 样本 / 205MB） | 官方数据未下载 | DATA｜**决定 official_comparable**：mock 一律 false
+deviation.data.cutoff_len | 2048（**仅适用于早期 4 图 mock 配置**；**出货模板 A/B 已回到官方 1024**，见 config/templates/*_A.yaml / *_B.yaml）                  | 2026-09-21 真机：官方参数冒烟报 `Image features and image tokens do not match, tokens: 2992, features: 4096`；改 2048 后为唯一变量 | **DATA 逼迫**：官方 1024 是给 **COCO 单图**样本调的，mock 是**每样本 4 图** ⇒ 序列被截断、`<|image_pad|>` 占位符被截掉而视觉侧仍按全部 4 图产出特征。**不在被测窗口内之外**（它改变每步序列长度 ⇒ 影响每步计算量），故 mock 结论**必须**标 `official_comparable=false`
+deviation.config.dataloader | num_workers=8 / preprocessing_num_workers=16 | 已**回归官方值**（2026-09-21） | 无偏离｜现场：官方 worker 数**本身不炸**；此前的 `/dev/shm` 写满（坑 145）是 **256 图 mock** 造成的，不是官方 worker 数的问题
+# ★★ 2026-09-21 新增：把审计锚点从"我手抄的 13 键"改成"**官方日志自己的配置 dump**"之后，
+#    一次性暴露出 13 处**此前从未被比过**的差异（此前 align_audit 打印 UNDECLARED=0 全绿 ——
+#    那个绿是"没看"出来的，见坑 170）。下面逐条登记；**登记 ≠ 认可为最优**，只表示"我们知道它不同"。
+deviation.config.fsdp_plan | pregather=True / reshard_after_forward=False（官方 False / True） | official_baseline.log:47-72 配置 dump × align_audit v2 逐键 | **PERF↔MEM 权衡**：官方两项都偏"省显存/多通信"，我方反之 ⇒ 用显存换速度。**在窗口内**：直接决定每步是否 all-gather 与 forward 后是否重新分片 ⇒ **同时影响时间与显存**；故**必须与显存峰值一起报**，不得单独宣称"更快"
+deviation.config.features  | recompute=False / enable_chunk_loss=False / enable_activation_offload=False（官方三者皆 True） | 同上 | **PERF↔MEM 权衡**：官方三条**全是省显存开关**，我方全关 ⇒ 激活不重算、不切块、不上 CPU ⇒ **每步激活全留**。★ 这组开关是**第 96 步设备 OOM 的主嫌**（比 `skip_gdn_recompute` 更直接）；**在窗口内**（改变每步计算量与显存）
+deviation.config.skip_flash_attn_recompute | False（官方 True） | 同上 | 同 `features` 组：又一条省显存开关被我方关闭；**在窗口内**
+deviation.config.fully_shard_parallel_size | auto（官方 2） | 同上 | **待实测**：`auto` 在本机**解析成几个 shard 我没有实测过** —— 若解析为 1，则与官方几何**不等价**，一切"官方几何"结论都要重标。**未验证前不得声称几何一致**
+deviation.config.save_interval | 10000（官方 100） | 同上 | 测量取向：拉到窗口之外，避免落盘 I/O 干扰计时；**窗口内无影响**（对标时须注明官方在 step 100 有落盘）
+deviation.paths.model      | model_name_or_path=/root/Qwen3.5-0.8B-hf、training.load=/root/Qwen3.5-0.8B-dcp（官方 /home/model/…） | 同上 | 仅路径不同、**语义相同**（同一份权重）；不影响计算与计时
+deviation.paths.save       | training.save=/root/ops/<每次实验自己的目录>（官方 ./save_path） | 同上 | 每次实验写各自目录，避免互相覆盖；不影响窗口
+deviation.paths.dataset_dir | dataset_dir=/root/MindSpeed-MM/data/mocked_vl_data（官方 /home/dataset/llava_coco/coco/） | 同上 | 与 `deviation.data.dataset` 同一条：mock 数据目录；**并决定 official_comparable=false**
+# ★★ 2026-09-21 交付决策（用户拍板）：**A 推荐 / B 保底**，见 docs/推荐配置与保底配置_决策记录.md
+#    A = config/templates/qwen3_5_0_8B_recommended_A.yaml（我方开关组 + skip_gdn=false，逐字节取自实测）
+#    B = config/templates/qwen3_5_0_8B_fallback_B.yaml（全官方值，含 skip_gdn=true）
+#    A 与 B 的实际差异 = 上述 6 个开关键 + `model.skip_gdn_recompute`，共 7 键（逐键校验过）。
+deviation.config.skip_gdn_recompute | **推荐配置 A 用 false**（锁/官方为 true） | A/B 实测：AB2（官方开关组下 true vs false）+ MAB（同键 true 第 96 步 OOM / false 100 步） | **MEM↔PERF 权衡且是 OOM 边界所在**：`true` 在我方开关组下撑不过 100 步（峰值 HBM 98.85%），`false` 可跑完（24091 MB）；★ 单项时间效果**未定**（2 对、区间跨 0 ⇒ UNCERTAIN），**不得**宣称 `false` 更快或更慢。**落在窗口内**（改变每步计算量）
+deviation.profile.recommended_A | 6 个开关键取我方值（features.recompute/enable_chunk_loss/enable_activation_offload=False、model.skip_flash_attn_recompute=False、parallel.fsdp_plan.pregather=True、reshard_after_forward=False）+ skip_gdn_recompute=false | **出货对比实测**（2026-09-21 15:39，3 对平衡顺序 A,B,B,A,A,B，100 步，产物 /root/ops/AB_AVSB_20260921/） | **PERF↔MEM**：A 比 B **快 24.39%**（口径=以 A 为基准 (B−A)/A；95% 区间 **[22.411, 26.372]** 不含 0；等价：A 少用 **19.6%** 时间；A 臂漂移 0.6%），代价是**设备显存峰值 +21.8%**（19786→24091 MB）。同配置跨轮次散布约 5% ⇒ **只引用配对差，不引用单臂绝对值**。★ `official_comparable=false`（mock 数据），**不得**与官方 431.3 ms 做比值
+deviation.profile.fallback_B | 全官方值（含 skip_gdn=true），仅作**可复现优先**的保底 | 同上（同一次出货对比的 B 臂） | 显存峰值 19786.3 MB（低于 A 的 24090.6 MB）；用时 521.2 ms（A 419.0 ms）。用途：评委机器可用显存显著小于 64 GB/die 时改用它；**注意判定词 `NO_GAIN` 是"B 相对 A 无收益"，本实验里 A 才是推荐配置，勿读反**
+
+# ---- 版本锁签名（可选扩展）----
+# selfcheck.sh 应：① 逐行解析本文件 ② 与本机 pip show / npu-smi / git tag 比对 ③ 不一致即 exit 非 0 并打印差异行。

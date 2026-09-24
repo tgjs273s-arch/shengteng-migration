@@ -1,0 +1,204 @@
+# =============================================================================
+# officialA.yaml — R2-SK04 目标基准 A 声明指纹（任务口径验收参考：hiascend 官方帖）
+# -----------------------------------------------------------------------------
+# 角色：官方 hiascend 交流圈"赛事小助手"（官方账号）2026-06-27 帖《精度测试日志》
+#       （运行日期 2026-06-08）内嵌的完整训练日志 = 基准 A 的【配置原文 + 数值原文】。
+#       数值 CSV：docs/raw/reference_log_iterations.csv（loss 12.42247→9.068525，
+#       单卡 ~11.5s/步）＝ R1-SK02 frozen_baseline.json 冻结的验收参考（status=proposed）。
+# 读取方：scripts/fingerprint_cfg.py / scripts/judge_comparable.py（与 officialB 同 schema）。
+# 出处标注约定：
+#   * 帖 JSON 本身是单行（无原生行号）→ 本 skill 提供行级提取产物
+#     evidence/officialA_configuration_details.txt（scripts/extract_postA_log.py 生成，
+#     与帖子正文逐字符一致，--check 可复核防漂移）。evidence[].line 均指该证据文件行号；
+#     line=0 表示"全文不存在该字段"（如 gdn/causal：A 全程未设置 → 缺省）。
+#   * evidence[].file 含 "hiascend_post_精度测试日志.json" 的条目 = 帖子原始抓取件
+#     （docs/raw/ 下，供复核；无行号）。
+#   * A2 审计引用 = docs/audit_round1_v3_A2.md（§2.1/§3.1 口径）与 skill_R1-SK02
+#     frozen_baseline.json / evidence/audit_report.txt。
+# 诚实标注（officiality / 语义）：
+#   * officiality=confirmed：帖子来自 hiascend 官方账号"赛事小助手"（hiascend_post_
+#     精度测试日志.json data.result.author.nickName="赛事小助手"，authorId=508be4…），
+#     且其《功能、精度验证和性能指标说明》帖（2026-06-27）明示"长跑 100 步，loss 与
+#     grad_norm 的相对绝对误差 <2%" —— A 是仓库内唯一经官方账号帖正文确认的验收参考。
+#   * 注意（不可离线判定项，A2 审计 §2.3）：A 的 loss 平台 12.42 与"日志亦打印 dcp 加载
+#     （L504 Loaded checkpoint …/release）"不相容（预训练续训预期 ~1.x）——12.4 平台根因
+#     （从零设计 vs 加载静默失效/权重版本/loss 口径）离线不可判定，需官方澄清或 A2 实测
+#     复现；确认前一切报告用"双基准标注"。
+#   * A 的配置与官方 PDF §3.3（2026-07 Triton 版）【不同阶段】：A=2026-06 单卡 mbs1/gas8、
+#     gdn 缺省、loss_type=raw、无 chunk loss；B/PDF=2026-07 双卡 triton、loss_type=default。
+#     本文件只声明 A 帖原文，不把 PDF 值混入。
+# =============================================================================
+
+schema: sk04_baseline.v1
+baseline_id: officialA
+officiality: confirmed          # confirmed（hiascend 官方账号"赛事小助手"帖《精度测试日志》2026-06-27）
+officiality_note: >-
+  官方账号帖内嵌日志（2026-06-08 运行）+ 配套《功能、精度验证和性能指标说明》帖验收口径
+  （100 步、loss/grad_norm 相对绝对误差 <2%）→ A 为任务口径唯一官方确认的验收参考；
+  但 12.42 平台根因未定（audit §2.3），验收语义仍需官方最终澄清（双基准标注期）。
+role: 任务口径验收参考（从零/随机初始化尺度 12.x；单卡 ~11.5s/步）
+declared_by: CA3 (R2-SK04)
+declared_at: "2026-09-02"
+
+source:
+  post_json: docs/raw/hiascend_post_精度测试日志.json        # 单行 JSON（官方账号帖抓取件）
+  post_author: 赛事小助手 (hiascend 官方账号, authorId 508be4615daa4d609d8983abd7a8bfb0)
+  post_published: "2026-06-27"
+  log_run_date: "2026-06-08"
+  extracted_evidence: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt
+  csv: docs/raw/reference_log_iterations.csv
+  csv_sha256: c066cc2bef935f2e20502428f19fe5c6b23e38b0372d314e3ae507fae01eab34   # 本地实算一致
+  frozen_baseline: code/skills/R1/skill_R1-SK02/frozen_baseline.json            # status=proposed
+  config_file_logged: examples/qwen3_5/qwen3_5_0.8B_config.yaml
+  model_path: /workspace/mnt/share/weights/Qwen3.5-0.8B
+  load_dcp: /workspace/mnt/share/weights/Qwen3.5-0.8B-dcp/release
+  loss_band: A                                                 # step1(lr=0)=12.42247 ≥5 → A 带（从零/随机初始化尺度）
+  step1_evidence_line: 509                                     # 证据文件 L509：iteration 1/100
+  step100_evidence_line: 609                                   # 证据文件 L609：iteration 100/100
+
+# ---------------------------------------------------------------------------
+# 7 项偏离维度声明指纹（与 officialB 同键集；行号 = evidence/officialA_configuration_details.txt）
+# ---------------------------------------------------------------------------
+fingerprint:
+  shuffle:
+    value: false
+    note: A 帖内嵌日志同样关闭 shuffle（shuffle=False + BaseRandomBatchSampler）
+    evidence:
+      - file: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt
+        line: 153
+        quote: "shuffle: False"
+      - file: hiascend_post_精度测试日志.json
+        line: 0
+        quote: "字段 shuffle: False（帖 JSON 单行无行号；键值定位）"
+
+  freeze:
+    value: []                    # ← A 未冻结任何模块（与 B/PDF 的 [model.visual] 不同）
+    note: >-
+      A 帖原文 freeze=[]（2026-06 阶段旧模板）；官方 2026-07 Triton 版（B/PDF §3.3）才是
+      freeze=[model.visual]。引用时勿把两阶段混写。
+    evidence:
+      - file: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt
+        line: 81
+        quote: "freeze: []"
+      - file: code/skills/R1/skill_R1-SK02/evidence/audit_report.txt
+        line: 41
+        quote: "world_size=1 | gdn_implementation=缺省(未设置) | dataset=annotations_slim.json (dir=./) | train_iters=100"
+
+  cutoff_len:
+    value: 1024
+    evidence:
+      - file: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt
+        line: 94
+        quote: "cutoff_len: 1024"
+
+  mbs:
+    value: 1
+    evidence:
+      - file: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt
+        line: 202
+        quote: "micro_batch_size: 1"
+      - file: docs/audit_round1_v3_A2.md
+        line: 48
+        quote: "单卡 world_size=1、mbs1/gas8/GBS8、load dcp、100 步"
+
+  gas:
+    value: 8
+    evidence:
+      - file: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt
+        line: 203
+        quote: "gradient_accumulation_steps: 8"
+
+  dp:
+    value: 1
+    source: observed_world
+    note: A 单卡（data_parallel_size=1 / world_size=1）；A 帖原文与 R2-SK04 我方单卡同构
+    evidence:
+      - file: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt
+        line: 40
+        quote: "data_parallel_size: 1"
+      - file: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt
+        line: 75
+        quote: "world_size: 1"
+
+  gdn_causal:
+    value: {gdn: null, causal: null}     # null = 未设置（缺省）
+    note: >-
+      A 全程未出现 gdn_implementation / causal_conv1d_implementation 字段（证据文件全文
+      无匹配行）→ 走框架缺省实现。缺省 == eager？== ascendc？本地不可判定（模板默认值与
+      运行时缺省路径需 A2 实测），故与 run 侧显式 eager 比较标 unverified，不作等值断言。
+    evidence:
+      - file: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt
+        line: 0
+        quote: "全文无 'gdn' / 'causal_conv1d' 行 → gdn_implementation 缺省（未设置）"
+      - file: code/skills/R1/skill_R1-SK02/evidence/audit_report.txt
+        line: 41
+        quote: "gdn_implementation=缺省(未设置)"
+
+  dataset_file:
+    value:
+      file: annotations_slim.json
+      dataset_dir: ./
+      full_path: ./annotations_slim.json
+    byte_sha256: null                  # 官方 A 的 annotations_slim.json 字节本机不可得 → unresolved
+    order_sha256: null
+    identity_note: >-
+      官方 A 数据集 = annotations_slim.json（dir=./、max_samples=1000）；我方 A2 COCO 运行
+      = /root/coco_dl/extracted/dataset/annotations_slim.json（2000 样本、max_samples=None）。
+      basename 相同、字节身份未核对（A2 审计诚实标注 ④）→ unresolved；待拿到官方文件用
+      data_id.py 回填。
+    evidence:
+      - file: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt
+        line: 92
+        quote: "dataset_dir: ./"
+      - file: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt
+        line: 93
+        quote: "dataset: ['annotations_slim.json']"
+      - file: docs/audit_round1_v3_A2.md
+        line: 70
+        quote: "A 用 annotations_slim.json，B 用 output_llava_coco_data.json，文件身份未核对"
+
+  num_workers:
+    value: 8
+    note: dataloader num_workers=8（preprocess_num_workers=0、max_samples=1000 —— 见 extra）
+    evidence:
+      - file: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt
+        line: 160
+        quote: "num_workers: 8"
+      - file: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt
+        line: 100
+        quote: "preprocessing_num_workers: 0"
+
+# ---------------------------------------------------------------------------
+# 派生指纹
+# ---------------------------------------------------------------------------
+derived:
+  n_eff:
+    value: 8
+    formula: "world(1) × mbs(1) × gas(8)"
+    evidence:
+      - file: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt
+        line: 509
+        quote: "iteration 1/100 | consumed samples: 8 | … | global batch size: 8 | loss: 1.242247E+01"
+  gbs_eff: 8
+  world_size: 1
+  loss_print_semantics: "dp=1：每步打印全局 8 样本均值（单卡无 rank 切片语义）"
+  loss_band: A
+  step1_lr0: {loss: 12.42247, grad_norm: 15.603, source_csv_line: 2}
+  step100: {loss: 9.068525, grad_norm: 17.046, source_csv_line: 101}
+  kernel_evidence_lines: []   # A 日志无 triton 标记、无 roll back（gdn 缺省路径未见 kernel 行）
+
+# ---------------------------------------------------------------------------
+# 7 维之外、A 帖原文中的已知字段（extra_observed —— 不进偏离表，供人工参考）
+# 与 B/PDF（2026-07）不同阶段：A=loss_type raw / 无 chunk loss / 无 activation offload
+# ---------------------------------------------------------------------------
+extra_observed:
+  loss_type: {value: raw, evidence: [{file: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt, line: 268}]}
+  enable_chunk_loss: {value: false, evidence: [{file: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt, line: 271}]}
+  enable_activation_offload: {value: false, evidence: [{file: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt, line: 277}]}
+  seed: {value: 42, evidence: [{file: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt, line: 212}]}
+  lr: {value: 1.0e-5, evidence: [{file: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt, line: 186}]}
+  lr_decay_style: {value: cosine, evidence: [{file: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt, line: 205}]}
+  lr_warmup_ratio: {value: 0.1, evidence: [{file: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt, line: 204}]}
+  train_iters: {value: 100, evidence: [{file: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt, line: 215}]}
+  max_samples: {value: 1000, evidence: [{file: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt, line: 101}]}
+  preprocessing_num_workers: {value: 0, evidence: [{file: code/skills/R2/skill_R2-SK04/evidence/officialA_configuration_details.txt, line: 100}]}

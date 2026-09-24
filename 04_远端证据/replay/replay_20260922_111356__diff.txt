@@ -1,0 +1,38 @@
+== rank 0 ==
+  [结果] fixed.grads_sha_all          **不同**  A=72448bb123d14d47df57a13c B=223de54e52741f6d38ee6949
+  [前提] fixed.input_sha_all          同  A=7a99c6b2031e4049c744cd7f B=7a99c6b2031e4049c744cd7f
+  [前提] fixed.iteration              同  A=0 B=0
+  [前提] fixed.lr                     同  A=0.0 B=0.0
+  [结果] fixed.opt_state_sha_all      **不同**  A=173674d0a8a57393723e64b2 B=c7b58730f59aef79b381d5f8
+  [结果] fixed.params_after_sha_all   同  A=945de97b1d4be9738666e241 B=945de97b1d4be9738666e241
+  [前提] fixed.params_before_sha_all  同  A=945de97b1d4be9738666e241 B=945de97b1d4be9738666e241
+  [前提] fixed.rng_cpu_sha            同  A=36ef520e19dc702025f0579e B=36ef520e19dc702025f0579e
+  ⚠ **C4 无区分力**：params_after == params_before（本配置 lr=0.0 ⇒ 第一次更新是空更新）⇒ C4 的『相同』不能作为『优化器路径可复现』的证据
+  C1 前向输出：loss 逐字节相同（4627dcf31a3c vs 4627dcf31a3c）；logits 逐字节相同
+  C2 通信前局部梯度：UNVERIFIED（FSDP2 不可观测；**不参与**判定，不用 C3 顶替）
+  C3 通信后梯度: **不同**（sha_all 72448bb123d14d47 ≠ 223de54e52741f6d；逐张量不同 200/200）
+     · model.language_model.embed_tokens.weight                   不同元素占比=0.0000 最大相对差=0.0000% 零分母=0（抽样 128/128）
+     · model.language_model.layers.0.input_layernorm.weight       不同元素占比=0.8828 最大相对差=106.7542% 零分母=0（抽样 128/128）
+     · model.language_model.layers.0.linear_attn.A_log            不同元素占比=1.0000 最大相对差=16.2371% 零分母=0（抽样 8/8）
+     · model.language_model.layers.0.linear_attn.conv1d.weight    不同元素占比=0.8672 最大相对差=33.7629% 零分母=0（抽样 128/128）
+  C4 一次更新后参数: 逐字节相同（n_tensors=473 sha_all=945de97b1d4be973）
+REPLAY_VERDICT rank=0 first_diff=C3（判定树：C1⇒前向 / C3⇒通信 / C4⇒优化器更新）
+== rank 1 ==
+  [结果] fixed.grads_sha_all          **不同**  A=4b5f919b25380d90480f2273 B=8276baf9ef8a99af1d25e574
+  [前提] fixed.input_sha_all          同  A=7a99c6b2031e4049c744cd7f B=7a99c6b2031e4049c744cd7f
+  [前提] fixed.iteration              同  A=0 B=0
+  [前提] fixed.lr                     同  A=0.0 B=0.0
+  [结果] fixed.opt_state_sha_all      **不同**  A=cffa507b8d07b4d911872635 B=4804c9bef5cba726dbb45b75
+  [结果] fixed.params_after_sha_all   同  A=3f10e13c5b44c2e086ee7745 B=3f10e13c5b44c2e086ee7745
+  [前提] fixed.params_before_sha_all  同  A=3f10e13c5b44c2e086ee7745 B=3f10e13c5b44c2e086ee7745
+  [前提] fixed.rng_cpu_sha            同  A=36ef520e19dc702025f0579e B=36ef520e19dc702025f0579e
+  ⚠ **C4 无区分力**：params_after == params_before（本配置 lr=0.0 ⇒ 第一次更新是空更新）⇒ C4 的『相同』不能作为『优化器路径可复现』的证据
+  C1 前向输出：loss 逐字节相同（4627dcf31a3c vs 4627dcf31a3c）；logits 逐字节相同
+  C2 通信前局部梯度：UNVERIFIED（FSDP2 不可观测；**不参与**判定，不用 C3 顶替）
+  C3 通信后梯度: **不同**（sha_all 4b5f919b25380d90 ≠ 8276baf9ef8a99af；逐张量不同 200/200）
+     · model.language_model.embed_tokens.weight                   不同元素占比=0.0000 最大相对差=0.0000% 零分母=0（抽样 128/128）
+     · model.language_model.layers.0.input_layernorm.weight       不同元素占比=0.8359 最大相对差=83.6145% 零分母=0（抽样 128/128）
+     · model.language_model.layers.0.linear_attn.A_log            不同元素占比=0.8750 最大相对差=11.9658% 零分母=0（抽样 8/8）
+     · model.language_model.layers.0.linear_attn.conv1d.weight    不同元素占比=0.8438 最大相对差=379.6512% 零分母=0（抽样 128/128）
+  C4 一次更新后参数: 逐字节相同（n_tensors=473 sha_all=3f10e13c5b44c2e0）
+REPLAY_VERDICT rank=1 first_diff=C3（判定树：C1⇒前向 / C3⇒通信 / C4⇒优化器更新）

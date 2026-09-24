@@ -1,0 +1,5 @@
+BENCH_NPUID 2 (npu-smi info -l ms=385 rc=0)
+BENCH_SMI ms=382 rc=0 hbm_pct=None cmd=[npu-smi info -t memory -i 2 -c 0]
+BENCH_SMI ms=551 rc=0 hbm_pct=4 cmd=[npu-smi info -t usages -i 2 -c 0]
+BENCH_SMI ms=352 rc=215 hbm_pct=None cmd=[npu-smi info -t common -i 2 -c 0]
+BENCH_SMI ms=380 rc=0 hbm_pct=None cmd=[npu-smi info -t memory -i 2]

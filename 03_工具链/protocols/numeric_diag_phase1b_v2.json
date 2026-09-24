@@ -1,0 +1,206 @@
+{
+ "schema": "dsh.protocol.numeric_diag.phase1b.v2",
+ "supersedes": "dsh.protocol.numeric_diag.phase1b.v1",
+ "frozen_at": "2026-09-22",
+ "revision_notes": [
+  "★ v1 保留、结果保留；本文件是**新增**的 v2，不是对 v1 的改写。",
+  "v1→v2 的判据变更（逐条来自外部复核裁决，不是我的发挥）：",
+  "  1) **窗口不变**：不做『截到首次分叉之前 k−1』——那等于按观测选容易通过的范围。",
+  "  2) **不再输出『判据不可用』**：同臂大量超阈的正确含义是『未满足完整窗口的逐点一致性约束；仅凭 A/B 轨迹差异不能归因于配置改动』。",
+  "  3) k 只作**诊断量**，且必须注明是三者中哪一种：日志打印值不同 / 相对差超阈 / 原始张量比特不同（第三种本工具未做，需张量级取证）。",
+  "  4) 比较点数不是独立实验数（相邻步相关、同一运行被多次配对）——不得当样本量。",
+  "  5) 归因纪律：只输出 重复性要求 / 首次超阈位置 / 原因(未定位) / 配置效应(尚不能确定) / 官方验收(未闭合)。"
+ ],
+ "inherited_criteria": {
+  "window": {
+   "first_step": 1,
+   "last_step": 100
+  },
+  "per_step_rel_pct": 2.0,
+  "relative_diff_definition": "abs(a-b)/abs(a)，a 为配对前一组；分母为 0 记 undecidable 并上报",
+  "fail_closed": [
+   "长度不等⇒INVALID(length_mismatch)",
+   "非有限值⇒INVALID(non_finite)",
+   "缺完整步号集合/非 1..N 连续/与声明步数不符⇒steps_unverified 且拒绝给『满足』"
+  ]
+ },
+ "arms_v2": {
+  "P0": "同配置重复（出厂 A，deter=false）—— 已在 v1 轮执行（2×100 步）",
+  "P1": "num_workers=1（出厂 A，deter=false）—— 已在 v1 轮执行（2×8 步，仅探索）",
+  "P2": "training.use_deter_comp=true —— **本轮执行（2×100 步，原协议不截断）**",
+  "P3": "UNVERIFIED（栈内无前向-only/不更新 的现成开关；不猜实现）",
+  "e": "固定完整状态的一步回放（同输入/参数/buffers/优化器状态/RNG/学习率 → 分别比前向、梯度、一次更新）—— **待建**"
+ },
+ "results_2026_09_22": {
+  "P0_同臂_出厂配置": {
+   "pair_00A_03A": {
+    "loss_over": "90/100",
+    "grad_norm_over": "88/100",
+    "first_over_step": 4
+   },
+   "pair_00A_04A": {
+    "loss_over": "93/100",
+    "grad_norm_over": "89/100",
+    "first_over_step": 3
+   },
+   "verdict": "重复性要求（完整窗口 1..100，阈值 2%）：**未满足**"
+  },
+  "P2_同臂_确定性路径": {
+   "pair_P2r1_P2r2": {
+    "loss_over": "0/100",
+    "grad_norm_over": "0/100",
+    "max_pct": 0.0
+   },
+   "effective_config_evidence": "运行日志内的配置 dump 显示 use_deter_comp: True（两轮皆是）——『键存在≠功能生效』已取证",
+   "verdict": "**完全重复**（该确定性路径下）；按裁决口径只表述为『**该确定性诊断路径改善了重复性**』，不得表述为『定位到某个算子』"
+  },
+  "P2_vs_出厂": {
+   "loss_over": "89–95/100",
+   "first_over_step": "多处为 4",
+   "max_pct": "最高 7719%（小分母放大）",
+   "关键限定": "**第 1 步 loss 就不同**：deter=true 为 0.1169518、deter=false 为 0.1154926 ⇒ 该开关**改变了计算本身**，不是『同数学、仅更可复现』⇒ **只能作诊断，不能当出货配置替换**"
+  },
+  "输入侧取证": {
+   "method": "抽取每份 train.log 的启动输入 dump（input_ids/label_ids/labels/pixel/image_grid 等 19 行）做哈希",
+   "result": "四份日志（00A/03A/P2r1/P2r2）全部 sha256=ec701fb9d5ebd668 ⇒ **启动输入 dump 完全相同**",
+   "implication": "**第一处不同不在数据侧**（打印精度内）；结合 deter 的效果，分歧被压到 `use_deter_comp` 门控的**计算路径**上",
+   "limit": "★ 这 19 行只是**启动 dump**，**不是每步 batch 指纹** ⇒ 可排除『启动输入不同』，**不可**宣布『每步数据都相同』"
+  }
+ },
+ "attribution_boundary": [
+  "不宣布『任何人/官方基线无法复现』；也不因『开启确定性后仍分叉』给平台定责。",
+  "要支持『某底层组件非确定』需同输入同状态的最小复现，并限定到该组件与条件，不得泛化。",
+  "『换分配器/换 worker 后稳定』不得直接解释为正常平台性质（可能暴露未初始化读取、生命周期或同步问题）。"
+ ],
+ "next_actions": [
+  "① ~~建 e：固定完整状态的一步回放~~ **已由『落盘权重对照 + 正对照』取代**（无需框架内部接口，且已给出正对照）；如需算子级归因，再考虑分段回放",
+  "② 每步 batch 指纹（当前只有启动 dump）：把 sampler→collator 的实际张量摘要落盘，回答『第一处不同是否为每步输入』",
+  "③ 归档证据缺口：各 run 的 train.log/driver.log/实际配置/代码-数据-权重指纹",
+  "④ 交付侧：人工 5 项（G4/G7/G11/G17/G18）"
+ ],
+ "evidence_chain_2026_09_22": [
+  "① 启动输入 dump：四份日志（00A/03A/P2r1/P2r2）哈希完全相同 ⇒ 数据侧在打印精度内一致",
+  "② 同配置内（deter=false）：第 1 步 loss 打印相同、**第 1 步 grad_norm 即不同**（47.326/47.34/47.337）⇒ 分歧首次出现在**梯度**上",
+  "③ 落盘权重（100 步累积）：320/473 张量不同、量级均匀（1e-4~1e-3）、无非有限值 ⇒ 与**全局归约/累加顺序类**非确定性形态一致",
+  "④ 开 use_deter_comp=true：100 步 max=0.00%、连第 1 步 grad_norm 都一致 ⇒ 该非确定性**可被门控消除**；但它改变前向（step1 loss 0.1154926→0.1169518）⇒ **只能作诊断，不能当出货配置**",
+  "⑤ 由此收窄：e（固定状态一步回放）只需在**第 1 步**比较前向/局部梯度/一次更新，实验量降为 1–2 次 1 步",
+  "★ 交付可写结论：同配置重复未满足完整窗口逐点一致性；证据指向反向/梯度路径的**归约类**非确定性（形态一致，未做算子级归因）；该现象可由 use_deter_comp 门控消除，但开启会改变前向计算，故仅作诊断。"
+ ],
+ "diagnostic_tools": {
+  "note": "★ 这些是**诊断**工具，**不进**推送前闸门（闸门只跑本地可复现的检查；它们需要真机产物）。登记在此是为了让结论可追溯到具体工具与命令。",
+  "tools": [
+   {
+    "name": "numeric_diag_v2.py",
+    "purpose": "按协议做逐步数值裁决（三层状态、窗口不缩、归因纪律）",
+    "gate": false
+   },
+   {
+    "name": "logs_to_results.py",
+    "purpose": "train.log → results.json（含完整步号集合，供认证）",
+    "gate": false
+   },
+   {
+    "name": "localize_first_diff.py",
+    "purpose": "分开看 loss/grad_norm，判断分歧先进前向还是反向",
+    "gate": false
+   },
+   {
+    "name": "compare_ckpt.py",
+    "purpose": "逐张量比对两次运行的落盘权重（不需框架接口）",
+    "gate": false
+   },
+   {
+    "name": "check_source_consistency.py",
+    "purpose": "交付源码包 vs Skill 同名文件内容一致",
+    "gate": true
+   },
+   {
+    "name": "safe_pack_sync.py --verify-only",
+    "purpose": "zip/两处解包副本/活副本三方哈希一致",
+    "gate": true
+   }
+  ]
+ },
+ "positive_control_2026_09_22": {
+  "object": "use_deter_comp=true 两次独立 100 步运行（保留 checkpoint）",
+  "ckpt_result": "473/473 张量逐位相同（不同=0）",
+  "contrast": "use_deter_comp=false 两次运行：320/473 张量不同",
+  "implication": [
+   "方法灵敏度已证明（该相同时确实报相同）",
+   "该非确定性被 use_deter_comp 完整门控（逐步量 + 落盘权重两个可观测量同时成立）"
+  ],
+  "limits": [
+   "不做算子级归因",
+   "该开关改变前向计算 ⇒ 只能作诊断，不能当出货配置"
+  ]
+ },
+ "reanalysis_2026_09_22_r2": {
+  "note": "★ 本轮**只修工具、不改判据**：判据仍以 inherited_criteria 为准（一字未动）。本节记录'修好分析器后，用归档日志重跑历史产物'的结果，用于证明**历史裁决没有被修复翻转**。",
+  "why": [
+   "外部复核实测指出：第一版 v2 分析器会把坏例**打印**成 INVALID，却**汇总**成『满足』（NaN / 自报 8 步但序列仅 2 步 / 零分母 三种情形都中招）。",
+   "⇒ 先修工具，再用**归档产物**重跑，验证 P0（未满足）与 P2（满足）两条历史结论**不变**。"
+  ],
+  "commands": [
+   "python logs_to_results.py --out _reanalysis/results_p0.json --data-identity mock_1img_cutoff1024_dp2_nonofficial 00_A#A=…/_00_A__train.log 03_A#A=…/_03_A__train.log 04_A#A=…/_04_A__train.log",
+   "python logs_to_results.py --out _reanalysis/results_p2.json --data-identity mock_1img_cutoff1024_dp2_nonofficial P2r1#P2=…/run1__train.log P2r2#P2=…/run2__train.log",
+   "python numeric_diag_v2.py --protocol protocols/numeric_diag_phase1b_v2.json --results _reanalysis/results_p0.json",
+   "python numeric_diag_v2.py --protocol protocols/numeric_diag_phase1b_v2.json --results _reanalysis/results_p2.json"
+  ],
+  "source": "远端证据_20260922/logs/（归档 train.log，本轮**未连远端**）",
+  "p0_verdict": {
+   "verdict": "未满足",
+   "rc": 0,
+   "window": "1..100",
+   "thr_pct": 2.0,
+   "pairs": {
+    "00_A vs 03_A": {
+     "loss_over": "90/100",
+     "grad_norm_over": "88/100",
+     "first_over_step": 4
+    },
+    "00_A vs 04_A": {
+     "loss_over": "93/100",
+     "grad_norm_over": "89/100",
+     "first_over_step": 3
+    },
+    "03_A vs 04_A": {
+     "loss_over": "86/100",
+     "grad_norm_over": "92/100",
+     "first_over_step": 4,
+     "note": "★ 本对是**本轮新增**（旧记录只登记了两对）；同臂 538/600 比较点超阈"
+    }
+   },
+   "matches_archived_record": "是（90/100 与 93/100、首次超阈步 4 与 3 逐项一致）"
+  },
+  "p2_verdict": {
+   "verdict": "满足",
+   "rc": 0,
+   "pairs": {
+    "P2r1 vs P2r2": {
+     "loss_over": "0/100",
+     "grad_norm_over": "0/100",
+     "max_pct": 0.0
+    }
+   },
+   "matches_archived_record": "是（0/100、0/100、max 0.00%）"
+  },
+  "identity_now_derived": {
+   "运行状态": "status=completed(100/100)（由日志末步与声明总步数导出，另扫致命标记）",
+   "配置身份": "config_sha256=dump_<16>（对日志的**有效配置 dump** 归一化后取摘要）",
+   "数据身份": "data_identity=**必须显式声明**（由 --data-identity 传入，不由日志推断）",
+   "边界": "配置身份=『该日志打印出来的有效配置』的摘要，**不是**『实际生效配置』的证明；dump 区段按首个 iteration 行截取（启发式），已记录行数（230）供核对。"
+  },
+  "new_capability_single_variable_evidence": {
+   "what": "配置身份现在能**直接从产物**给出『单变量』证据：",
+   "A_arm_three_runs": "dump_abe2f33e5286dd21（00_A / 03_A / 04_A **同一身份**）",
+   "P2_two_runs": "dump_364d2c6bfb7349ea（P2r1 / P2r2 同一身份）",
+   "A_vs_P2_diff_keys": [
+    "use_deter_comp（A=False，P2=True）"
+   ],
+   "key_point": "差异**只剩被声明的那个键** ⇒ 与协议声明的 delta 一致（工具给出的、不是申明的）。",
+   "false_distinction_fixed": "★ 归一化前三个 A 臂给出**三个不同摘要**（差异键只有 `save` 输出路径）——若不修，'同配置三次运行'会被判成三个不同配置（假区分 = 另一种错判）。现按白名单显式排除纯输出路径键（`save`），并在产物里登记 config_excluded_keys。"
+  },
+  "recorded_at": "2026-09-22 09:52:54",
+  "recorded_by": "_record_reanalysis.py（写盘前备份、写盘后回读校验）"
+ }
+}

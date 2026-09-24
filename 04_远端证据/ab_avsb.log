@@ -1,0 +1,13 @@
+T63_START out=/root/ops/AB_AVSB_20260921 steps=100 order=A,B,B,A,A,B
+T63_GBS a=8 b=8（红线 8）
+T63_DECLARED ['features.enable_activation_offload', 'features.enable_chunk_loss', 'features.recompute', 'model.skip_flash_attn_recompute', 'model.skip_gdn_recompute', 'parallel.fsdp_plan.pregather', 'parallel.fsdp_plan.reshard_after_forward']
+T63_ACTUAL   ['features.enable_activation_offload', 'features.enable_chunk_loss', 'features.recompute', 'model.skip_flash_attn_recompute', 'model.skip_gdn_recompute', 'parallel.fsdp_plan.pregather', 'parallel.fsdp_plan.reshard_after_forward']
+T63_END 00_A variant=A valid=True steps=100 win_med=418.6 samples_per_s=19.111323459149546 wall=130s
+T63_END 01_B variant=B valid=True steps=100 win_med=521.45 samples_per_s=15.341835267043818 wall=149s
+T63_END 02_B variant=B valid=True steps=100 win_med=522.8499999999999 samples_per_s=15.300755474801571 wall=145s
+T63_END 03_A variant=A valid=True steps=100 win_med=418.0 samples_per_s=19.138755980861244 wall=137s
+T63_END 04_A variant=A valid=True steps=100 win_med=420.5 samples_per_s=19.024970273483948 wall=131s
+T63_END 05_B variant=B valid=True steps=100 win_med=519.4000000000001 samples_per_s=15.402387370042353 wall=145s
+T63_RESULT n_A=3 n_B=3 drift=0.6 mean_delta_pct=24.391 ci95=[22.411, 26.372]
+T63_VERDICT NO_GAIN — B 显著更慢：配对差 +24.39%（区间 [22.411, 26.372] 不含 0）
+T63_OK out=/root/ops/AB_AVSB_20260921

@@ -1,0 +1,97 @@
+{
+ "schema": "dsh.protocol.determinism_isolation.v1",
+ "frozen_at": "2026-09-22",
+ "note": "判据先冻结：用既有的 numeric_diag 口径（窗口 1..100、逐点相对差 2%、同臂配对）判重复性。本实验的目的是把 use_deter_comp=true 里的三个机制拆开：HCCL_DETERMINISTIC / CLOSE_MATMUL_K_SHIFT / torch.use_deterministic_algorithms(True)。",
+ "question": "恢复同臂重复性的，究竟是哪一个机制？",
+ "why": [
+  "已证据：use_deter_comp=true 时同臂 0/100 超阈、checkpoint 473/473 逐位相同（归档 P2）；而 use_deter_comp=false 时超阈 90–93/100（P0）。",
+  "该开关最终调用 mindspeed/fsdp/utils/random.py 的 set_deterministic_algorithms()，它一次设三样东西：os.environ['HCCL_DETERMINISTIC']='True'、os.environ['CLOSE_MATMUL_K_SHIFT']='1'、torch.use_deterministic_algorithms(True)。",
+  "三者作用面不同：前两个是 NPU/HCCL 侧算子级开关，第三个是 PyTorch 分派层开关 ⇒ 拆开测试才知道该往哪里归因。"
+ ],
+ "criteria": {
+  "repeatability": "同臂两轮（同配置、同环境）在完整窗口 1..100 上逐点相对差 |a-b|/|a| 的超阈点数；=0 ⇒ 满足（口径与 numeric_diag_phase1b_v2.json 一致）",
+  "win": "超阈 0/200 ⇒ 该机制单独即可恢复重复性；与对照同量级（≈186–187/200）⇒ 该机制单独无效",
+  "fail_closed": [
+   "缺 iter_ms 行或步数≠100 ⇒ 该轮无效",
+   "两轮必须在同一批次内完成，否则不与对照比较"
+  ]
+ },
+ "design": {
+  "arms": {
+   "v1": "仅 export HCCL_DETERMINISTIC=True",
+   "v2": "仅 export CLOSE_MATMUL_K_SHIFT=1",
+   "ctl": "两个都不设（use_deter_comp=false，即当日批次4 基线两轮）"
+  },
+  "repeats_per_arm": 2,
+  "env_visible_check": "每轮启动行打印实际值（RUN_START ... HCCL=True/False KSHIFT=...）⇒ 证明变量确实进了进程环境",
+  "protocol": "100 步、几何不变（mbs4 × gas1 × world2 = GBS8）、无 profiling、trainer.py 原入口"
+ },
+ "results_2026_09_22": {
+  "base": "/root/ops/detiso_20260922_124537",
+  "all_rc": "4/4 train_rc=0",
+  "verdicts": {
+   "v1_only_hccl": {
+    "windows": "1..100",
+    "over": 187,
+    "compared": 200,
+    "verdict": "未满足"
+   },
+   "v2_only_kshift": {
+    "windows": "1..100",
+    "over": 186,
+    "compared": 200,
+    "verdict": "未满足"
+   },
+   "ctl_neither": {
+    "windows": "1..100",
+    "over": 186,
+    "compared": 200,
+    "verdict": "未满足"
+   }
+  },
+  "conclusion": "★ 单独 export 这两个环境变量**都不足以**恢复重复性：三者（v1 187/200、v2 186/200、对照 186/200）在噪声范围内不可区分。⇒ 改善只能来自 set_deterministic_algorithms() 的其余部分（尤其 torch.use_deterministic_algorithms(True)）或三者的**组合**。",
+  "boundary": "本实验只证明『单独 export 无效』；**不能**证明『这两个变量本身无用』——框架可能在更晚的时机或以其它名字传递它们（本轮只做了启动前 export，未做框架内部传递链的取证）。",
+  "next": "下一步用 sitecustomize.py 在解释器启动时只设 torch.use_deterministic_algorithms(True)（不设两个 env），并加一条『三者全设』的正对照（预期能复现 0/100）以验证该注入手段本身有效。"
+ },
+ "status": "criteria_frozen_and_executed（负结果已确认；组合项待测）",
+ "results_detiso3_2026_09_22": {
+  "why": "上一轮（v1/v2 + 对照）证明单独 export 两个 NPU 环境变量**都不足以**恢复重复性；剩两个可能：第三个机制（torch 分派层开关），或三者组合。本轮用 `sitecustomize.py` 在解释器启动时注入 torch 层开关，并加『三者全设』正对照验证注入手段本身有效。",
+  "base": "/root/ops/detiso3_20260922_125603",
+  "injection_verification": {
+   "marker": "sitecustomize 在每个进程启动时打印 `DETSC active torch.use_deterministic_algorithms(True)`",
+   "counts": {
+    "v3_r1": 3,
+    "v3_r2": 3,
+    "v4_r1": 3,
+    "v4_r2": 3,
+    "DETSC FAILED": 0
+   },
+   "meaning": "3 = torchrun 主进程 + 2 个 rank worker 各一行 ⇒ 注入**确实生效**（不是静默失败）"
+  },
+  "results": {
+   "v3_torch_flag_only": {
+    "over": 0,
+    "compared": 200,
+    "verdict": "满足"
+   },
+   "v4_all_three_positive_control": {
+    "over": 0,
+    "compared": 200,
+    "verdict": "满足"
+   }
+  },
+  "conclusion": "★★ **关键机制是 `torch.use_deterministic_algorithms(True)`**：只设它（不设任何 NPU 环境变量）就能把同臂超阈从 186–187/200 降到 **0/200**；而单独 export `HCCL_DETERMINISTIC=True` 或 `CLOSE_MATMUL_K_SHIFT=1` 都**与对照无差别**。⇒ 此前『改善来自 HCCL 确定性 / matmul K-shift』的推论**被证伪**（至少对『启动前 export』这一种设置方式而言）。",
+  "positive_control_validity": "v4（三者全设）同样 0/200 ⇒ 说明注入手段有效，因此 v3 的『有效』**不是**注入失败造成的假象（没有这条正对照就不能下结论 —— 这是上一轮坑的教训）。",
+  "mechanistic_implication": [
+   "PyTorch 的确定性模式会改变**算子分派**（选择确定性实现）⇒ 这从机制上解释了为什么 `use_deter_comp=true` 时**第 1 步 loss 就不同**（0.1154926 → 0.1169518）：前向本身被换成了另一组实现。",
+   "与一步回放的结论相容：不加该开关时 **C1（前向）逐字节相同、C3（通信后梯度）不同** ⇒ 非确定性出在**反向**；而打开该开关后前向也换了实现（所以 loss 变化）但仍然可重复。",
+   "⇒ 对交付的实际含义不变：该开关**只能作诊断**（它改变数值），但它现在是**唯一被隔离验证过的**『能让同臂重复』的机制。"
+  ],
+  "boundary": [
+   "本结论只覆盖『启动前 export 无效 / 解释器启动时注入 torch 开关有效』这两种设置方式；框架内部（`set_deterministic_algorithms()` 里）三者是同一次调用里设置的，无法据此推断『NPU 环境变量在框架内部也无用』。",
+   "仍未定位到**具体算子/通信**（C2 通信前局部梯度在 FSDP2 下不可观测）；本轮只回答『哪个开关是机制』。",
+   "同机 mock 数据、100 步窗口；不涉及长程与官方数据。"
+  ],
+  "status": "criteria_frozen_and_executed（机制已隔离：torch 层开关为关键；两个 env 单独无效）"
+ }
+}

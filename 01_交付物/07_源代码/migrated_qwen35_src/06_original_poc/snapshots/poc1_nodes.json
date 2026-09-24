@@ -1,0 +1,206 @@
+{
+  "linear_attn_GatedDeltaNet": [
+    {
+      "line": 230,
+      "sym": "torch_causal_conv1d_update"
+    },
+    {
+      "line": 254,
+      "sym": "torch_chunk_gated_delta_rule"
+    },
+    {
+      "line": 380,
+      "sym": "Qwen3_5GatedDeltaNet"
+    },
+    {
+      "line": 75,
+      "sym": "causal_conv1d_fn"
+    },
+    {
+      "line": 75,
+      "sym": "causal_conv1d_update"
+    },
+    {
+      "line": 81,
+      "sym": "chunk_gated_delta_rule"
+    },
+    {
+      "line": 77,
+      "sym": "causal_conv1d_update"
+    },
+    {
+      "line": 77,
+      "sym": "causal_conv1d_fn"
+    },
+    {
+      "line": 83,
+      "sym": "chunk_gated_delta_rule"
+    },
+    {
+      "line": 226,
+      "sym": "causal_conv1d_fn"
+    },
+    {
+      "line": 226,
+      "sym": "causal_conv1d_update"
+    },
+    {
+      "line": 226,
+      "sym": "chunk_gated_delta_rule"
+    },
+    {
+      "line": 427,
+      "sym": "causal_conv1d_fn"
+    },
+    {
+      "line": 427,
+      "sym": "causal_conv1d_fn"
+    },
+    {
+      "line": 428,
+      "sym": "causal_conv1d_update"
+    },
+    {
+      "line": 429,
+      "sym": "chunk_gated_delta_rule"
+    },
+    {
+      "line": 428,
+      "sym": "causal_conv1d_update"
+    },
+    {
+      "line": 428,
+      "sym": "torch_causal_conv1d_update"
+    },
+    {
+      "line": 429,
+      "sym": "chunk_gated_delta_rule"
+    },
+    {
+      "line": 429,
+      "sym": "torch_chunk_gated_delta_rule"
+    },
+    {
+      "line": 841,
+      "sym": "Qwen3_5GatedDeltaNet"
+    },
+    {
+      "line": 481,
+      "sym": "causal_conv1d_update"
+    },
+    {
+      "line": 498,
+      "sym": "causal_conv1d_fn"
+    },
+    {
+      "line": 545,
+      "sym": "chunk_gated_delta_rule"
+    },
+    {
+      "line": 772,
+      "sym": "Qwen3_5GatedDeltaNet"
+    },
+    {
+      "line": 499,
+      "sym": "causal_conv1d_fn"
+    }
+  ],
+  "full_attn": [
+    {
+      "line": 655,
+      "sym": "Qwen3_5Attention"
+    },
+    {
+      "line": 833,
+      "sym": "Qwen3_5Attention"
+    },
+    {
+      "line": 774,
+      "sym": "Qwen3_5Attention"
+    }
+  ],
+  "vision_3d_conv_patch": [
+    {
+      "line": 869,
+      "sym": "temporal_patch_size"
+    },
+    {
+      "line": 869,
+      "sym": "temporal_patch_size"
+    },
+    {
+      "line": 1044,
+      "sym": "patch_embed"
+    },
+    {
+      "line": 873,
+      "sym": "temporal_patch_size"
+    },
+    {
+      "line": 874,
+      "sym": "Conv3d"
+    },
+    {
+      "line": 879,
+      "sym": "temporal_patch_size"
+    },
+    {
+      "line": 1109,
+      "sym": "patch_embed"
+    }
+  ],
+  "custom_act_or_norm": [
+    {
+      "line": 195,
+      "sym": "Qwen3_5RMSNormGated"
+    },
+    {
+      "line": 746,
+      "sym": "Qwen3_5RMSNorm"
+    },
+    {
+      "line": 80,
+      "sym": "FusedRMSNormGated"
+    },
+    {
+      "line": 84,
+      "sym": "FusedRMSNormGated"
+    },
+    {
+      "line": 679,
+      "sym": "Qwen3_5RMSNorm"
+    },
+    {
+      "line": 680,
+      "sym": "Qwen3_5RMSNorm"
+    },
+    {
+      "line": 776,
+      "sym": "Qwen3_5RMSNorm"
+    },
+    {
+      "line": 777,
+      "sym": "Qwen3_5RMSNorm"
+    },
+    {
+      "line": 1157,
+      "sym": "Qwen3_5RMSNorm"
+    },
+    {
+      "line": 417,
+      "sym": "FusedRMSNormGated"
+    },
+    {
+      "line": 416,
+      "sym": "Qwen3_5RMSNormGated"
+    },
+    {
+      "line": 418,
+      "sym": "FusedRMSNormGated"
+    },
+    {
+      "line": 845,
+      "sym": "Qwen3_5RMSNorm"
+    }
+  ]
+}

@@ -1,0 +1,629 @@
+W0910 10:06:11.862000 11326 torch/distributed/run.py:766] 
+W0910 10:06:11.862000 11326 torch/distributed/run.py:766] *****************************************
+W0910 10:06:11.862000 11326 torch/distributed/run.py:766] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0910 10:06:11.862000 11326 torch/distributed/run.py:766] *****************************************
+[INFO] Starting configuration loading...
+[INFO] Loaded configuration file: examples/qwen3_5/e4b_final100.yaml
+[WARNING] Field 'preprocess_parameters' exists but is not a BaseArguments subclass: typing.Optional[mindspeed_mm.fsdp.data.data_utils.func_utils.model_args.ProcessorArguments]
+[INFO] Automatically registered YAML field: data.dataset_param.preprocess_parameters.model_name_or_path (type: <class 'str'>, value: /root/Qwen3.5-0.8B-hf)
+[WARNING] Field 'preprocess_parameters' exists but is not a BaseArguments subclass: typing.Optional[mindspeed_mm.fsdp.data.data_utils.func_utils.model_args.ProcessorArguments]
+[INFO] Automatically registered YAML field: data.dataset_param.preprocess_parameters.use_fast_tokenizer (type: <class 'bool'>, value: True)
+[WARNING] Field 'preprocess_parameters' exists but is not a BaseArguments subclass: typing.Optional[mindspeed_mm.fsdp.data.data_utils.func_utils.model_args.ProcessorArguments]
+[INFO] Automatically registered YAML field: data.dataset_param.preprocess_parameters.split_special_tokens (type: <class 'bool'>, value: False)
+[WARNING] Field 'preprocess_parameters' exists but is not a BaseArguments subclass: typing.Optional[mindspeed_mm.fsdp.data.data_utils.func_utils.model_args.ProcessorArguments]
+[INFO] Automatically registered YAML field: data.dataset_param.preprocess_parameters.image_max_pixels (type: <class 'int'>, value: 262144)
+[WARNING] Field 'preprocess_parameters' exists but is not a BaseArguments subclass: typing.Optional[mindspeed_mm.fsdp.data.data_utils.func_utils.model_args.ProcessorArguments]
+[INFO] Automatically registered YAML field: data.dataset_param.preprocess_parameters.image_min_pixels (type: <class 'int'>, value: 1024)
+[WARNING] Field 'preprocess_parameters' exists but is not a BaseArguments subclass: typing.Optional[mindspeed_mm.fsdp.data.data_utils.func_utils.model_args.ProcessorArguments]
+[INFO] Automatically registered YAML field: data.dataset_param.preprocess_parameters.video_max_pixels (type: <class 'int'>, value: 16384)
+[WARNING] Field 'preprocess_parameters' exists but is not a BaseArguments subclass: typing.Optional[mindspeed_mm.fsdp.data.data_utils.func_utils.model_args.ProcessorArguments]
+[INFO] Automatically registered YAML field: data.dataset_param.preprocess_parameters.video_min_pixels (type: <class 'int'>, value: 0)
+[WARNING] Field 'preprocess_parameters' exists but is not a BaseArguments subclass: typing.Optional[mindspeed_mm.fsdp.data.data_utils.func_utils.model_args.ProcessorArguments]
+[INFO] Automatically registered YAML field: data.dataset_param.preprocess_parameters.video_fps (type: <class 'float'>, value: 2.0)
+[WARNING] Field 'preprocess_parameters' exists but is not a BaseArguments subclass: typing.Optional[mindspeed_mm.fsdp.data.data_utils.func_utils.model_args.ProcessorArguments]
+[INFO] Automatically registered YAML field: data.dataset_param.preprocess_parameters.video_maxlen (type: <class 'int'>, value: 64)
+[INFO] Automatically registered YAML field: model.gdn_implementation (type: <class 'str'>, value: triton)
+[INFO] Automatically registered YAML field: model.causal_conv1d_implementation (type: <class 'str'>, value: triton)
+[INFO] Automatically registered YAML field: model.skip_gdn_recompute (type: <class 'bool'>, value: False)
+[INFO] Automatically registered YAML field: model.skip_flash_attn_recompute (type: <class 'bool'>, value: False)
+[INFO] Automatically registered YAML field: features.recompute (type: <class 'bool'>, value: False)
+============================================================
+BaseArguments Configuration Manager Summary
+============================================================
+
+Configuration class: Arguments
+Configuration file: examples/qwen3_5/e4b_final100.yaml
+Allow YAML extensions: True
+Allow CLI override: True
+Strict CLI validation: True
+Allow registering YAML fields: True
+
+Defined field count: 208
+Dynamic field count: 14
+Total field count: 222
+
+
+============ Configuration Details ============
+parallel:
+  data_parallel_size: 2
+  fully_shard_parallel_size: 2
+  fsdp_plan:
+    ignored_modules: []
+    apply_modules: ['model.visual', 'model.visual.blocks.{*}', 'model.language_model.embed_tokens', 'model.language_model', 'model.language_model.layers.{*}', 'lm_head', 'mtp']
+    param_dtype: bf16
+    reduce_dtype: fp32
+    output_dtype: None
+    cast_forward_inputs: True
+    reshard_after_forward: False
+    num_to_forward_prefetch: 1
+    num_to_backward_prefetch: 1
+    pregather: True
+    hook_modules: None
+    cpu_offload: False
+  tensor_parallel_size: 1
+  tp_plan:
+    colwise_parallel: []
+    rowwise_parallel: []
+    sequence_parallel: []
+  ring_attention_size: 1
+  ulysses_parallel_size: 1
+  expert_parallel_size: 1
+  expert_fully_shard_parallel_size: 2
+  ep_plan:
+    apply_modules: []
+    use_npu_fused_ops: True
+    dispatcher: alltoall
+    apply_efsdp_modules: []
+  recompute: False
+  recompute_plan:
+    apply_modules: []
+    use_reentrant: False
+  local_rank: 0
+  global_rank: 0
+  world_size: 2
+model:
+  model_id: qwen3_5
+  model_name_or_path: /root/Qwen3.5-0.8B-hf
+  trust_remote_code: True
+  attn_implementation: flash_attention_2
+  freeze: ['model.visual']
+  mtp_num_layers: 0
+  mtp_loss_scaling_factor: 0.1
+  gdn_implementation: triton
+  causal_conv1d_implementation: triton
+  skip_gdn_recompute: False
+  skip_flash_attn_recompute: False
+data:
+  dataset_param:
+    dataset_type: huggingface
+    basic_parameters:
+      cache_dir: ./cache_dir/
+      template: qwen3_vl_nothink
+      chat_template: None
+      enable_thinking: False
+      dataset_dir: /root/data/coco
+      dataset: ['/root/data/output_llava_coco_data.json']
+      cutoff_len: 1024
+      train_on_prompt: False
+      mask_history: False
+      streaming: False
+      overwrite_cache: False
+      preprocessing_batch_size: 1000
+      preprocessing_num_workers: 16
+      max_samples: None
+      tool_format: None
+      val_dataset: None
+      val_max_samples: None
+      val_rate: None
+      packing: None
+      neat_packing: False
+      preprocess_on_fly: True
+      async_preprocess: False
+      async_preprocess_buffer_size: None
+      stage: sft
+    preprocess_parameters:
+      model_name_or_path: /root/Qwen3.5-0.8B-hf
+      use_fast_tokenizer: True
+      split_special_tokens: False
+      image_resolution: 512
+      video_resolution: 128
+      image_max_pixels: 262144
+      image_min_pixels: 1024
+      video_max_pixels: 16384
+      video_min_pixels: 0
+      video_fps: 2.0
+      video_maxlen: 64
+      image_do_pan_and_scan: False
+      crop_to_patches: False
+      use_audio_in_video: False
+      audio_sampling_rate: 16000
+      trust_remote_code: False
+    attr:
+      ranking: False
+      system: None
+      images: images
+      videos: None
+      audios: None
+      prompt: None
+      query: None
+      response: None
+      history: None
+      messages: messages
+      tools: None
+      role_tag: role
+      content_tag: content
+      user_tag: user
+      assistant_tag: assistant
+      observation_tag: observation
+      function_tag: function_call
+      system_tag: system
+      chosen: None
+      rejected: None
+      formatting: sharegpt
+  val_dataset_param: None
+  dataloader_param:
+    dataloader_mode: sampler
+    sampler_type: BaseRandomBatchSampler
+    shuffle: False
+    drop_last: True
+    pin_memory: True
+    collate_param:
+      collator_id: None
+      model_name: qwen3vl
+      ignore_pad_token_for_loss: True
+      pad_to_multiple_of: 8
+    num_workers: 8
+    enable_preload: False
+training:
+  profile:
+    enable: False
+    start_step: 1
+    end_step: 2
+    save_path: ./profiling
+    record_shapes: True
+    with_memory: True
+    with_stack: True
+    ranks: [0]
+    _train_steps: -1
+    local_rank: 0
+    global_rank: 0
+    world_size: 2
+    profile_this_rank: False
+  lora:
+    enable: False
+    rank: 8
+    alpha: 16
+    target_modules: ['q_proj', 'k_proj', 'v_proj']
+    dropout: 0.0
+    init_lora_weights: True
+    pretrained_lora_path: None
+    lora_target_modules_support: None
+    disable_peft_moe_conversion: True
+  lr: 1e-05
+  lr_min: 0.0
+  lr_start: 0.0
+  weight_decay: 0.0
+  no_decay_modules: []
+  no_decay_params: []
+  optimizer: adamw
+  mem_fraction_static: 0.8
+  matched_adamw_rms: 0.2
+  muon_momentum: 0.95
+  ns_steps: 5
+  adam_fused: True
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_eps: 1e-08
+  clip_grad: 0.0
+  clip_grad_foreach: True
+  micro_batch_size: 4
+  gradient_accumulation_steps: 1
+  lr_warmup_ratio: 0.1
+  lr_decay_style: cosine
+  lr_decay_ratio: 1.0
+  enable_full_determinism: False
+  ckpt_manager: dcp
+  save_async: False
+  save_ckpt_dtype: None
+  load_checkpoint_path: None
+  save_steps: 0
+  seed: 42
+  max_steps: None
+  init_model_with_meta_device: True
+  train_iters: 100
+  train_epochs: None
+  load: /root/Qwen3.5-0.8B-dcp
+  load_format: auto
+  save_format: auto
+  load_strict: False
+  load_rank0_and_broadcast: False
+  no_load_optim: True
+  no_load_rng: True
+  save: ./save_path
+  no_save_optim: True
+  no_save_rng: True
+  log_interval: 1
+  save_interval: 10000
+  val_interval: 0
+  val_micro_batch_size: None
+  use_deter_comp: False
+  allow_hf32: None
+  plugin: ['mindspeed_mm/fsdp/models/qwen3_5', 'mindspeed_mm/fsdp/data/datasets/huggingface']
+  lr_scaling_plan: None
+  quantization_plan: QuantizeConfig(recipe_name=None, apply_modules=[], ignored_modules=[], quant_converters=[], extra_args={}, enable_fsdp_low_precision_all_gather=True, fsdp_low_precision_all_gather_mode='on-demand')
+  _train_steps: -1
+  local_rank: 0
+  global_rank: 0
+  world_size: 2
+  global_batch_size: 8
+tools:
+  profile:
+    enable: False
+    profile_type: static
+    ranks: [0]
+    static_param:
+      level: level1
+      with_stack: False
+      with_memory: False
+      record_shapes: False
+      with_cpu: True
+      save_path: ./profiling
+      start_step: 10
+      end_step: 11
+      data_simplification: False
+      aic_metrics_type: PipeUtilization
+      analyse_flag: True
+  memory_profile:
+    enable: False
+    start_step: 1
+    end_step: 2
+    save_path: ./memory_snapshot
+    dump_ranks: [0]
+    stacks: all
+    max_entries: None
+    mem_info: False
+features:
+  recompute_plan:
+    apply_modules: ['model.visual.blocks.{*}', 'model.language_model.layers.{*}']
+    use_reentrant: False
+  loss_cfg:
+    loss_type: default
+    router_aux_loss_coef: 0.0
+    router_aux_loss_offload: False
+  enable_chunk_loss: False
+  enable_dynamic_chunk_loss: False
+  chunkloss_plan:
+    apply_module: lm_head
+    chunk_size: 1024
+    total_chunk_size: 4096
+  enable_activation_offload: False
+  activation_offload_plan:
+    apply_modules: ['model.visual.blocks.{*}', 'model.language_model.layers.{*}']
+  enable_chunk_mbs: False
+  chunkmbs_plan:
+    apply_modules: ['model.language_model.layers.{*}']
+    chunk_mbs: 2
+    batch_dim: 0
+    chunk_arg_indexs: [0]
+    chunk_kwarg_names: ['position_embeddings', 'position_ids', 'rope_deltas', 'attention_mask']
+  enable_ep_balance: False
+  ep_balance_plan:
+    max_dup_experts_num: 2
+  skip_moe_pad_tokens: False
+  recompute: False
+data.dataset_param.preprocess_parameters.model_name_or_path: /root/Qwen3.5-0.8B-hf
+data.dataset_param.preprocess_parameters.use_fast_tokenizer: True
+data.dataset_param.preprocess_parameters.split_special_tokens: False
+data.dataset_param.preprocess_parameters.image_max_pixels: 262144
+data.dataset_param.preprocess_parameters.image_min_pixels: 1024
+data.dataset_param.preprocess_parameters.video_max_pixels: 16384
+data.dataset_param.preprocess_parameters.video_min_pixels: 0
+data.dataset_param.preprocess_parameters.video_fps: 2.0
+data.dataset_param.preprocess_parameters.video_maxlen: 64
+
+
+============ Dynamic Fields ============
+ data.dataset_param.preprocess_parameters.image_max_pixels
+ data.dataset_param.preprocess_parameters.image_min_pixels
+ data.dataset_param.preprocess_parameters.model_name_or_path
+ data.dataset_param.preprocess_parameters.split_special_tokens
+ data.dataset_param.preprocess_parameters.use_fast_tokenizer
+ data.dataset_param.preprocess_parameters.video_fps
+ data.dataset_param.preprocess_parameters.video_max_pixels
+ data.dataset_param.preprocess_parameters.video_maxlen
+ data.dataset_param.preprocess_parameters.video_min_pixels
+ features.recompute
+ model.causal_conv1d_implementation
+ model.gdn_implementation
+ model.skip_flash_attn_recompute
+ model.skip_gdn_recompute
+============================================================
+Successfully imported: mindspeed_mm.fsdp.models.qwen3_5
+Successfully imported: mindspeed_mm.fsdp.data.datasets.huggingface
+[Rank 1 | Local Rank 1] 2026-09-10 10:06:19,632 INFO [datasets:114] => Disabling Tensorflow because USE_TORCH is set
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:19,704 INFO [datasets:114] => Disabling Tensorflow because USE_TORCH is set
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,042 INFO [mindspeed_mm.fsdp.distributed.parallel_state:87] => Parallel state initialized:
+ [dp] = True | Group size: 2 | device mesh:DeviceMesh('npu', [0, 1], mesh_dim_names=('dp',)) 
+[cp] = False | Group size: 1 | device mesh:DeviceMesh('npu', [0], mesh_dim_names=('cp',)) 
+[ulysses] = False | Group size: 1 | device mesh:DeviceMesh('npu', [0], mesh_dim_names=('ulysses',)) 
+[ring] = False | Group size: 1 | device mesh:DeviceMesh('npu', [0], mesh_dim_names=('ring',)) 
+[tp] = False | Group size: 1 | device mesh:DeviceMesh('npu', [0], mesh_dim_names=('tp',)) 
+[edp] = False | Group size: 1 | device mesh:DeviceMesh('npu', [0], mesh_dim_names=('edp',)) 
+[efsdp] = True | Group size: 2 | device mesh:DeviceMesh('npu', [0, 1], mesh_dim_names=('efsdp',)) 
+[ep] = False | Group size: 1 | device mesh:DeviceMesh('npu', [0], mesh_dim_names=('ep',)) 
+[fsdp] = True | Group size: 2 | device mesh:DeviceMesh('npu', [0, 1], mesh_dim_names=('dp_shard_cp',)) 
+
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,042 INFO [mindspeed_mm.fsdp.models.modelhub:48] => > Loading AutoConfig from /root/Qwen3.5-0.8B-hf...
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,044 INFO [mindspeed_mm.fsdp.models.modelhub:48] => Building transformers model from configuration...
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,081 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 1 | Local Rank 1] 2026-09-10 10:06:20,160 WARNING [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:327] => The fast path is not available because one of the required library is not installed. Falling back to torch implementation.
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,177 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,177 WARNING [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:327] => The fast path is not available because one of the required library is not installed. Falling back to torch implementation.
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,179 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,179 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,180 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,180 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,182 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,182 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,184 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,184 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,185 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,185 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,191 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,191 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,192 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,192 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,194 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,194 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,196 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,196 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,197 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,198 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,199 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,199 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,201 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,201 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,203 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,203 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,204 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,204 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,207 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,207 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,208 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,208 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,209 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,209 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,294 INFO [mindspeed_mm.fsdp.models.modelhub:48] => freezing module model.visual...
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,549 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual set forward prefetch: ['model.visual.blocks.0']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,549 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.0 set forward prefetch: ['model.visual.blocks.1']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,550 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.1 set forward prefetch: ['model.visual.blocks.2']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,550 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.2 set forward prefetch: ['model.visual.blocks.3']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,550 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.3 set forward prefetch: ['model.visual.blocks.4']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,550 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.4 set forward prefetch: ['model.visual.blocks.5']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,550 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.5 set forward prefetch: ['model.visual.blocks.6']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,550 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.6 set forward prefetch: ['model.visual.blocks.7']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,550 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.7 set forward prefetch: ['model.visual.blocks.8']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,550 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.8 set forward prefetch: ['model.visual.blocks.9']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,551 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.9 set forward prefetch: ['model.visual.blocks.10']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,551 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.10 set forward prefetch: ['model.visual.blocks.11']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,551 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.11 set forward prefetch: ['model.language_model.embed_tokens']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,551 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.embed_tokens set forward prefetch: ['model.language_model']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,551 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model set forward prefetch: ['model.language_model.layers.0']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,552 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.0 set forward prefetch: ['model.language_model.layers.1']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,552 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.1 set forward prefetch: ['model.language_model.layers.2']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,552 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.2 set forward prefetch: ['model.language_model.layers.3']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,552 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.3 set forward prefetch: ['model.language_model.layers.4']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,553 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.4 set forward prefetch: ['model.language_model.layers.5']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,553 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.5 set forward prefetch: ['model.language_model.layers.6']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,553 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.6 set forward prefetch: ['model.language_model.layers.7']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,554 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.7 set forward prefetch: ['model.language_model.layers.8']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,554 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.8 set forward prefetch: ['model.language_model.layers.9']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,555 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.9 set forward prefetch: ['model.language_model.layers.10']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,555 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.10 set forward prefetch: ['model.language_model.layers.11']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,556 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.11 set forward prefetch: ['model.language_model.layers.12']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,556 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.12 set forward prefetch: ['model.language_model.layers.13']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,557 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.13 set forward prefetch: ['model.language_model.layers.14']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,557 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.14 set forward prefetch: ['model.language_model.layers.15']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,558 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.15 set forward prefetch: ['model.language_model.layers.16']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,558 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.16 set forward prefetch: ['model.language_model.layers.17']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,559 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.17 set forward prefetch: ['model.language_model.layers.18']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,560 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.18 set forward prefetch: ['model.language_model.layers.19']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,560 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.19 set forward prefetch: ['model.language_model.layers.20']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,561 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.20 set forward prefetch: ['model.language_model.layers.21']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,562 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.21 set forward prefetch: ['model.language_model.layers.22']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,562 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.22 set forward prefetch: ['model.language_model.layers.23']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,563 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.23 set forward prefetch: ['lm_head']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,574 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => lm_head set backward prefetch: ['model.language_model']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,575 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model set backward prefetch: ['model.language_model.layers.23']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,575 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.23 set backward prefetch: ['model.language_model.layers.22']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,576 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.22 set backward prefetch: ['model.language_model.layers.21']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,577 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.21 set backward prefetch: ['model.language_model.layers.20']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,577 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.20 set backward prefetch: ['model.language_model.layers.19']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,578 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.19 set backward prefetch: ['model.language_model.layers.18']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,579 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.18 set backward prefetch: ['model.language_model.layers.17']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,579 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.17 set backward prefetch: ['model.language_model.layers.16']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,580 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.16 set backward prefetch: ['model.language_model.layers.15']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,580 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.15 set backward prefetch: ['model.language_model.layers.14']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,581 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.14 set backward prefetch: ['model.language_model.layers.13']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,581 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.13 set backward prefetch: ['model.language_model.layers.12']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,582 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.12 set backward prefetch: ['model.language_model.layers.11']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,582 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.11 set backward prefetch: ['model.language_model.layers.10']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,583 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.10 set backward prefetch: ['model.language_model.layers.9']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,583 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.9 set backward prefetch: ['model.language_model.layers.8']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,585 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.8 set backward prefetch: ['model.language_model.layers.7']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,586 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.7 set backward prefetch: ['model.language_model.layers.6']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,586 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.6 set backward prefetch: ['model.language_model.layers.5']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,587 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.5 set backward prefetch: ['model.language_model.layers.4']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,587 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.4 set backward prefetch: ['model.language_model.layers.3']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,587 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.3 set backward prefetch: ['model.language_model.layers.2']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,587 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.2 set backward prefetch: ['model.language_model.layers.1']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,588 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.1 set backward prefetch: ['model.language_model.layers.0']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,588 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.layers.0 set backward prefetch: ['model.language_model.embed_tokens']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,588 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.language_model.embed_tokens set backward prefetch: ['model.visual']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,588 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual set backward prefetch: ['model.visual.blocks.11']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,588 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.11 set backward prefetch: ['model.visual.blocks.10']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,588 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.10 set backward prefetch: ['model.visual.blocks.9']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,589 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.9 set backward prefetch: ['model.visual.blocks.8']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,589 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.8 set backward prefetch: ['model.visual.blocks.7']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,589 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.7 set backward prefetch: ['model.visual.blocks.6']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,589 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.6 set backward prefetch: ['model.visual.blocks.5']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,589 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.5 set backward prefetch: ['model.visual.blocks.4']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,589 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.4 set backward prefetch: ['model.visual.blocks.3']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,589 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.3 set backward prefetch: ['model.visual.blocks.2']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,589 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.2 set backward prefetch: ['model.visual.blocks.1']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,589 INFO [mindspeed_mm.fsdp.distributed.fully_shard_parallel:48] => model.visual.blocks.1 set backward prefetch: ['model.visual.blocks.0']
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:20,824 INFO [__main__:48] => Prepare data
+2026-09-10 10:06:24,087 - template - 756 - INFO - Replace eos token: <|im_end|>
+[Rank 1 | Local Rank 1] 2026-09-10 10:06:24,087 INFO [mindspeed_mm.fsdp.data.data_utils.func_utils.template:756] => Replace eos token: <|im_end|>
+2026-09-10 10:06:24,272 - template - 756 - INFO - Replace eos token: <|im_end|>
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:24,272 INFO [mindspeed_mm.fsdp.data.data_utils.func_utils.template:756] => Replace eos token: <|im_end|>
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:25,052 INFO [httpx:1025] => HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/json/json.py "HTTP/1.1 200 OK"
+training example:
+input_ids:
+[248045, 846, 198, 248053, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248056, 248054, 198, 3710, 513, 279, 7736, 314, 279, 5647, 303, 279, 2099, 30, 248046, 198, 248045, 74455, 198, 760, 5647, 303, 279, 2099, 369, 4022, 321, 2438, 13, 248046, 198, 248045, 846, 198, 3710, 4416, 628, 381, 3753, 383, 279, 1142, 314, 279, 5647, 30, 248046, 198, 248045, 74455, 198, 760, 1142, 314, 279, 5647, 4275, 449, 31604, 13, 248046, 198, 248045, 846, 198, 3742, 279, 5647, 9550, 1441, 279, 8329, 466, 12854, 974, 310, 279, 3008, 30, 248046, 198, 248045, 74455, 198, 760, 5647, 369, 9550, 1441, 279, 8329, 11, 864, 369, 36947, 440, 1208, 321, 975, 11145, 13, 248046, 198]
+inputs:
+<|im_start|>user
+<|vision_start|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|image_pad|><|vision_end|>
+What are the colors of the bus in the image?<|im_end|>
+<|im_start|>assistant
+The bus in the image is white and red.<|im_end|>
+<|im_start|>user
+What feature can be seen on the back of the bus?<|im_end|>
+<|im_start|>assistant
+The back of the bus features an advertisement.<|im_end|>
+<|im_start|>user
+Is the bus driving down the street or pulled off to the side?<|im_end|>
+<|im_start|>assistant
+The bus is driving down the street, which is crowded with people and other vehicles.<|im_end|>
+
+label_ids:
+[-100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, 760, 5647, 303, 279, 2099, 369, 4022, 321, 2438, 13, 248046, 198, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, 760, 1142, 314, 279, 5647, 4275, 449, 31604, 13, 248046, 198, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, 760, 5647, 369, 9550, 1441, 279, 8329, 11, 864, 369, 36947, 440, 1208, 321, 975, 11145, 13, 248046, 198]
+labels:
+The bus in the image is white and red.<|im_end|>
+The back of the bus features an advertisement.<|im_end|>
+The bus is driving down the street, which is crowded with people and other vehicles.<|im_end|>
+
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:26,414 WARNING [mindspeed_mm.fsdp.data.dataloader.data_collator:177] => model_name is deprecated and will be removed in a future version. Please use collator_id instead. Available collator_ids: llm_pretrain, qwen3asr, qwen3omni, qwen3vl, step3_vl.
+[Rank 1 | Local Rank 1] 2026-09-10 10:06:27,210 INFO [httpx:1025] => HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/json/json.py "HTTP/1.1 200 OK"
+[Rank 1 | Local Rank 1] 2026-09-10 10:06:27,452 WARNING [mindspeed_mm.fsdp.data.dataloader.data_collator:177] => model_name is deprecated and will be removed in a future version. Please use collator_id instead. Available collator_ids: llm_pretrain, qwen3asr, qwen3omni, qwen3vl, step3_vl.
+2026-09-10 10:06:29,987 - template - 756 - INFO - Replace eos token: <|im_end|>
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:29,987 INFO [mindspeed_mm.fsdp.data.data_utils.func_utils.template:756] => Replace eos token: <|im_end|>
+2026-09-10 10:06:30,879 - template - 756 - INFO - Replace eos token: <|im_end|>
+[Rank 1 | Local Rank 1] 2026-09-10 10:06:30,879 INFO [mindspeed_mm.fsdp.data.data_utils.func_utils.template:756] => Replace eos token: <|im_end|>
+/usr/local/lib/python3.10/dist-packages/torch_npu/distributed/distributed_c10d.py:110: UserWarning: HCCL doesn't support gather at the moment. Implemented with allgather instead.
+  warnings.warn("HCCL doesn't support gather at the moment. Implemented with allgather instead.")
+[rank1]:[W910 10:06:31.676843430 compiler_depend.ts:335] Warning: Cannot create tensor with interal format while allow_internel_format=False, tensor will be created with base format. (function operator())
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:32,114 INFO [mindspeed_mm.fsdp.checkpoint.dcp_checkpointer:48] => Loaded checkpoint from /root/Qwen3.5-0.8B-dcp/release
+[2026-09-10 10:06:32] [WARNING] [11470] profiler.py: Invalid parameter export_type: None, reset it to text.
+[2026-09-10 10:06:32] [WARNING] [11470] profiler.py: Profiler won't be using warmup, this can skew profiler results
+[rank0]:[W910 10:06:33.504758350 compiler_depend.ts:335] Warning: Cannot create tensor with interal format while allow_internel_format=False, tensor will be created with base format. (function operator())
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:38,819 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:38] iteration        1/     100 | consumed samples:            8 | elapsed time per iteration (ms): 6699.4 | learning rate: 0.000000E+00 | global batch size:     8 | loss: 1.924621E+00 | grad norm: 134.260 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:39,577 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:39] iteration        2/     100 | consumed samples:           16 | elapsed time per iteration (ms): 756.9 | learning rate: 1.000000E-06 | global batch size:     8 | loss: 1.791238E+00 | grad norm: 112.702 |
+[Rank 0] (after 2 iterations) memory (MB) | allocated: 4501.79541015625 | max allocated: 17692.36767578125 | reserved: 19694.0 | max reserved: 19694.0
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:40,025 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:40] iteration        3/     100 | consumed samples:           24 | elapsed time per iteration (ms): 446.4 | learning rate: 2.000000E-06 | global batch size:     8 | loss: 1.783869E+00 | grad norm: 88.697 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:40,520 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:40] iteration        4/     100 | consumed samples:           32 | elapsed time per iteration (ms): 494.2 | learning rate: 3.000000E-06 | global batch size:     8 | loss: 1.506153E+00 | grad norm: 57.649 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:41,016 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:41] iteration        5/     100 | consumed samples:           40 | elapsed time per iteration (ms): 495.0 | learning rate: 4.000000E-06 | global batch size:     8 | loss: 1.407153E+00 | grad norm: 23.014 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:41,454 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:41] iteration        6/     100 | consumed samples:           48 | elapsed time per iteration (ms): 436.8 | learning rate: 5.000000E-06 | global batch size:     8 | loss: 1.499328E+00 | grad norm: 15.790 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:41,954 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:41] iteration        7/     100 | consumed samples:           56 | elapsed time per iteration (ms): 499.6 | learning rate: 6.000000E-06 | global batch size:     8 | loss: 1.394278E+00 | grad norm: 15.666 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:42,371 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:42] iteration        8/     100 | consumed samples:           64 | elapsed time per iteration (ms): 415.3 | learning rate: 7.000000E-06 | global batch size:     8 | loss: 1.464712E+00 | grad norm: 12.647 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:42,893 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:42] iteration        9/     100 | consumed samples:           72 | elapsed time per iteration (ms): 521.2 | learning rate: 8.000000E-06 | global batch size:     8 | loss: 1.267649E+00 | grad norm: 12.815 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:43,434 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:43] iteration       10/     100 | consumed samples:           80 | elapsed time per iteration (ms): 540.4 | learning rate: 9.000000E-06 | global batch size:     8 | loss: 1.406928E+00 | grad norm: 10.876 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:43,862 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:43] iteration       11/     100 | consumed samples:           88 | elapsed time per iteration (ms): 427.1 | learning rate: 1.000000E-05 | global batch size:     8 | loss: 1.434886E+00 | grad norm: 12.104 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:44,397 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:44] iteration       12/     100 | consumed samples:           96 | elapsed time per iteration (ms): 534.5 | learning rate: 9.996954E-06 | global batch size:     8 | loss: 1.402380E+00 | grad norm: 11.462 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:44,824 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:44] iteration       13/     100 | consumed samples:          104 | elapsed time per iteration (ms): 425.2 | learning rate: 9.987820E-06 | global batch size:     8 | loss: 1.466555E+00 | grad norm: 10.055 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:45,266 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:45] iteration       14/     100 | consumed samples:          112 | elapsed time per iteration (ms): 441.2 | learning rate: 9.972609E-06 | global batch size:     8 | loss: 1.472093E+00 | grad norm: 11.245 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:45,779 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:45] iteration       15/     100 | consumed samples:          120 | elapsed time per iteration (ms): 512.2 | learning rate: 9.951340E-06 | global batch size:     8 | loss: 1.419261E+00 | grad norm: 9.822 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:46,183 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:46] iteration       16/     100 | consumed samples:          128 | elapsed time per iteration (ms): 403.6 | learning rate: 9.924039E-06 | global batch size:     8 | loss: 1.430511E+00 | grad norm: 11.282 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:46,607 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:46] iteration       17/     100 | consumed samples:          136 | elapsed time per iteration (ms): 422.4 | learning rate: 9.890738E-06 | global batch size:     8 | loss: 1.410810E+00 | grad norm: 10.318 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:47,026 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:47] iteration       18/     100 | consumed samples:          144 | elapsed time per iteration (ms): 418.3 | learning rate: 9.851479E-06 | global batch size:     8 | loss: 1.380086E+00 | grad norm: 11.885 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:47,444 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:47] iteration       19/     100 | consumed samples:          152 | elapsed time per iteration (ms): 417.2 | learning rate: 9.806308E-06 | global batch size:     8 | loss: 1.460446E+00 | grad norm: 10.004 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:47,867 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:47] iteration       20/     100 | consumed samples:          160 | elapsed time per iteration (ms): 421.6 | learning rate: 9.755283E-06 | global batch size:     8 | loss: 1.349175E+00 | grad norm: 10.365 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:48,266 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:48] iteration       21/     100 | consumed samples:          168 | elapsed time per iteration (ms): 398.6 | learning rate: 9.698463E-06 | global batch size:     8 | loss: 1.255066E+00 | grad norm: 10.719 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:48,696 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:48] iteration       22/     100 | consumed samples:          176 | elapsed time per iteration (ms): 429.0 | learning rate: 9.635919E-06 | global batch size:     8 | loss: 1.431060E+00 | grad norm: 9.802 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:49,099 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:49] iteration       23/     100 | consumed samples:          184 | elapsed time per iteration (ms): 402.0 | learning rate: 9.567727E-06 | global batch size:     8 | loss: 1.479235E+00 | grad norm: 11.543 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:49,517 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:49] iteration       24/     100 | consumed samples:          192 | elapsed time per iteration (ms): 417.0 | learning rate: 9.493970E-06 | global batch size:     8 | loss: 1.482061E+00 | grad norm: 9.780 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:49,925 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:49] iteration       25/     100 | consumed samples:          200 | elapsed time per iteration (ms): 407.7 | learning rate: 9.414738E-06 | global batch size:     8 | loss: 1.420320E+00 | grad norm: 11.049 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:50,306 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:50] iteration       26/     100 | consumed samples:          208 | elapsed time per iteration (ms): 379.8 | learning rate: 9.330127E-06 | global batch size:     8 | loss: 1.312449E+00 | grad norm: 11.926 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:50,734 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:50] iteration       27/     100 | consumed samples:          216 | elapsed time per iteration (ms): 426.9 | learning rate: 9.240240E-06 | global batch size:     8 | loss: 1.476195E+00 | grad norm: 10.415 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:51,158 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:51] iteration       28/     100 | consumed samples:          224 | elapsed time per iteration (ms): 423.8 | learning rate: 9.145188E-06 | global batch size:     8 | loss: 1.352151E+00 | grad norm: 10.360 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:51,592 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:51] iteration       29/     100 | consumed samples:          232 | elapsed time per iteration (ms): 432.4 | learning rate: 9.045085E-06 | global batch size:     8 | loss: 1.451956E+00 | grad norm: 10.195 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:52,001 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:52] iteration       30/     100 | consumed samples:          240 | elapsed time per iteration (ms): 408.3 | learning rate: 8.940054E-06 | global batch size:     8 | loss: 1.285332E+00 | grad norm: 9.372 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:52,484 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:52] iteration       31/     100 | consumed samples:          248 | elapsed time per iteration (ms): 482.0 | learning rate: 8.830222E-06 | global batch size:     8 | loss: 1.320294E+00 | grad norm: 9.492 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:52,902 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:52] iteration       32/     100 | consumed samples:          256 | elapsed time per iteration (ms): 417.5 | learning rate: 8.715724E-06 | global batch size:     8 | loss: 1.437102E+00 | grad norm: 9.379 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:53,338 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:53] iteration       33/     100 | consumed samples:          264 | elapsed time per iteration (ms): 435.2 | learning rate: 8.596699E-06 | global batch size:     8 | loss: 1.276882E+00 | grad norm: 9.736 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:53,759 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:53] iteration       34/     100 | consumed samples:          272 | elapsed time per iteration (ms): 420.3 | learning rate: 8.473292E-06 | global batch size:     8 | loss: 1.292732E+00 | grad norm: 10.341 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:54,259 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:54] iteration       35/     100 | consumed samples:          280 | elapsed time per iteration (ms): 498.7 | learning rate: 8.345653E-06 | global batch size:     8 | loss: 1.410749E+00 | grad norm: 9.229 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:54,690 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:54] iteration       36/     100 | consumed samples:          288 | elapsed time per iteration (ms): 429.6 | learning rate: 8.213938E-06 | global batch size:     8 | loss: 1.407417E+00 | grad norm: 9.931 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:55,118 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:55] iteration       37/     100 | consumed samples:          296 | elapsed time per iteration (ms): 427.4 | learning rate: 8.078307E-06 | global batch size:     8 | loss: 1.294433E+00 | grad norm: 11.828 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:55,550 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:55] iteration       38/     100 | consumed samples:          304 | elapsed time per iteration (ms): 431.1 | learning rate: 7.938926E-06 | global batch size:     8 | loss: 1.470158E+00 | grad norm: 10.302 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:55,985 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:55] iteration       39/     100 | consumed samples:          312 | elapsed time per iteration (ms): 434.8 | learning rate: 7.795965E-06 | global batch size:     8 | loss: 1.354276E+00 | grad norm: 9.555 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:56,413 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:56] iteration       40/     100 | consumed samples:          320 | elapsed time per iteration (ms): 426.7 | learning rate: 7.649596E-06 | global batch size:     8 | loss: 1.514748E+00 | grad norm: 8.950 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:56,841 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:56] iteration       41/     100 | consumed samples:          328 | elapsed time per iteration (ms): 427.5 | learning rate: 7.500000E-06 | global batch size:     8 | loss: 1.401769E+00 | grad norm: 10.474 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:57,268 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:57] iteration       42/     100 | consumed samples:          336 | elapsed time per iteration (ms): 425.5 | learning rate: 7.347358E-06 | global batch size:     8 | loss: 1.288610E+00 | grad norm: 9.200 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:57,956 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:57] iteration       43/     100 | consumed samples:          344 | elapsed time per iteration (ms): 687.5 | learning rate: 7.191856E-06 | global batch size:     8 | loss: 1.322055E+00 | grad norm: 10.310 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:58,392 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:58] iteration       44/     100 | consumed samples:          352 | elapsed time per iteration (ms): 434.8 | learning rate: 7.033683E-06 | global batch size:     8 | loss: 1.358778E+00 | grad norm: 11.078 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:58,804 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:58] iteration       45/     100 | consumed samples:          360 | elapsed time per iteration (ms): 411.2 | learning rate: 6.873033E-06 | global batch size:     8 | loss: 1.289471E+00 | grad norm: 9.466 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:59,199 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:59] iteration       46/     100 | consumed samples:          368 | elapsed time per iteration (ms): 394.1 | learning rate: 6.710101E-06 | global batch size:     8 | loss: 1.330112E+00 | grad norm: 10.449 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:06:59,618 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:06:59] iteration       47/     100 | consumed samples:          376 | elapsed time per iteration (ms): 418.0 | learning rate: 6.545085E-06 | global batch size:     8 | loss: 1.389744E+00 | grad norm: 10.828 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:00,036 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:00] iteration       48/     100 | consumed samples:          384 | elapsed time per iteration (ms): 417.1 | learning rate: 6.378187E-06 | global batch size:     8 | loss: 1.470739E+00 | grad norm: 9.599 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:00,450 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:00] iteration       49/     100 | consumed samples:          392 | elapsed time per iteration (ms): 413.2 | learning rate: 6.209609E-06 | global batch size:     8 | loss: 1.272147E+00 | grad norm: 10.066 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:01,093 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:01] iteration       50/     100 | consumed samples:          400 | elapsed time per iteration (ms): 643.0 | learning rate: 6.039558E-06 | global batch size:     8 | loss: 1.286628E+00 | grad norm: 9.138 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:01,513 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:01] iteration       51/     100 | consumed samples:          408 | elapsed time per iteration (ms): 418.2 | learning rate: 5.868241E-06 | global batch size:     8 | loss: 1.360852E+00 | grad norm: 9.252 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:01,945 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:01] iteration       52/     100 | consumed samples:          416 | elapsed time per iteration (ms): 431.3 | learning rate: 5.695866E-06 | global batch size:     8 | loss: 1.557105E+00 | grad norm: 9.377 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:02,359 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:02] iteration       53/     100 | consumed samples:          424 | elapsed time per iteration (ms): 413.2 | learning rate: 5.522642E-06 | global batch size:     8 | loss: 1.303965E+00 | grad norm: 10.076 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:02,779 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:02] iteration       54/     100 | consumed samples:          432 | elapsed time per iteration (ms): 419.3 | learning rate: 5.348782E-06 | global batch size:     8 | loss: 1.278784E+00 | grad norm: 9.573 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:03,192 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:03] iteration       55/     100 | consumed samples:          440 | elapsed time per iteration (ms): 411.9 | learning rate: 5.174497E-06 | global batch size:     8 | loss: 1.300990E+00 | grad norm: 10.604 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:03,626 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:03] iteration       56/     100 | consumed samples:          448 | elapsed time per iteration (ms): 433.1 | learning rate: 5.000000E-06 | global batch size:     8 | loss: 1.402128E+00 | grad norm: 9.481 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:04,064 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:04] iteration       57/     100 | consumed samples:          456 | elapsed time per iteration (ms): 437.7 | learning rate: 4.825503E-06 | global batch size:     8 | loss: 1.393018E+00 | grad norm: 9.644 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:04,482 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:04] iteration       58/     100 | consumed samples:          464 | elapsed time per iteration (ms): 416.9 | learning rate: 4.651218E-06 | global batch size:     8 | loss: 1.377542E+00 | grad norm: 8.861 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:04,879 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:04] iteration       59/     100 | consumed samples:          472 | elapsed time per iteration (ms): 395.5 | learning rate: 4.477358E-06 | global batch size:     8 | loss: 1.211915E+00 | grad norm: 10.237 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:05,272 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:05] iteration       60/     100 | consumed samples:          480 | elapsed time per iteration (ms): 392.6 | learning rate: 4.304134E-06 | global batch size:     8 | loss: 1.269879E+00 | grad norm: 10.532 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:05,668 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:05] iteration       61/     100 | consumed samples:          488 | elapsed time per iteration (ms): 394.9 | learning rate: 4.131759E-06 | global batch size:     8 | loss: 1.301453E+00 | grad norm: 9.548 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:06,086 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:06] iteration       62/     100 | consumed samples:          496 | elapsed time per iteration (ms): 416.9 | learning rate: 3.960442E-06 | global batch size:     8 | loss: 1.175144E+00 | grad norm: 11.458 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:06,497 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:06] iteration       63/     100 | consumed samples:          504 | elapsed time per iteration (ms): 410.7 | learning rate: 3.790391E-06 | global batch size:     8 | loss: 1.407577E+00 | grad norm: 9.719 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:06,917 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:06] iteration       64/     100 | consumed samples:          512 | elapsed time per iteration (ms): 418.5 | learning rate: 3.621813E-06 | global batch size:     8 | loss: 1.333787E+00 | grad norm: 10.392 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:07,310 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:07] iteration       65/     100 | consumed samples:          520 | elapsed time per iteration (ms): 392.3 | learning rate: 3.454915E-06 | global batch size:     8 | loss: 1.297108E+00 | grad norm: 10.470 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:07,735 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:07] iteration       66/     100 | consumed samples:          528 | elapsed time per iteration (ms): 424.3 | learning rate: 3.289899E-06 | global batch size:     8 | loss: 1.416344E+00 | grad norm: 9.587 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:08,163 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:08] iteration       67/     100 | consumed samples:          536 | elapsed time per iteration (ms): 427.4 | learning rate: 3.126967E-06 | global batch size:     8 | loss: 1.294969E+00 | grad norm: 9.848 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:08,589 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:08] iteration       68/     100 | consumed samples:          544 | elapsed time per iteration (ms): 425.1 | learning rate: 2.966317E-06 | global batch size:     8 | loss: 1.509635E+00 | grad norm: 10.319 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:09,033 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:09] iteration       69/     100 | consumed samples:          552 | elapsed time per iteration (ms): 443.3 | learning rate: 2.808144E-06 | global batch size:     8 | loss: 1.424917E+00 | grad norm: 9.366 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:09,436 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:09] iteration       70/     100 | consumed samples:          560 | elapsed time per iteration (ms): 401.3 | learning rate: 2.652642E-06 | global batch size:     8 | loss: 1.333512E+00 | grad norm: 10.356 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:09,871 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:09] iteration       71/     100 | consumed samples:          568 | elapsed time per iteration (ms): 434.3 | learning rate: 2.500000E-06 | global batch size:     8 | loss: 1.277492E+00 | grad norm: 10.732 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:10,295 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:10] iteration       72/     100 | consumed samples:          576 | elapsed time per iteration (ms): 423.7 | learning rate: 2.350404E-06 | global batch size:     8 | loss: 1.400283E+00 | grad norm: 9.731 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:10,712 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:10] iteration       73/     100 | consumed samples:          584 | elapsed time per iteration (ms): 415.9 | learning rate: 2.204035E-06 | global batch size:     8 | loss: 1.378706E+00 | grad norm: 9.602 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:11,141 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:11] iteration       74/     100 | consumed samples:          592 | elapsed time per iteration (ms): 428.0 | learning rate: 2.061074E-06 | global batch size:     8 | loss: 1.327326E+00 | grad norm: 10.257 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:11,535 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:11] iteration       75/     100 | consumed samples:          600 | elapsed time per iteration (ms): 392.8 | learning rate: 1.921693E-06 | global batch size:     8 | loss: 1.365415E+00 | grad norm: 9.564 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:11,963 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:11] iteration       76/     100 | consumed samples:          608 | elapsed time per iteration (ms): 427.7 | learning rate: 1.786062E-06 | global batch size:     8 | loss: 1.337496E+00 | grad norm: 9.749 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:12,374 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:12] iteration       77/     100 | consumed samples:          616 | elapsed time per iteration (ms): 409.2 | learning rate: 1.654347E-06 | global batch size:     8 | loss: 1.400981E+00 | grad norm: 9.563 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:12,774 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:12] iteration       78/     100 | consumed samples:          624 | elapsed time per iteration (ms): 399.2 | learning rate: 1.526708E-06 | global batch size:     8 | loss: 1.417662E+00 | grad norm: 9.865 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:13,209 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:13] iteration       79/     100 | consumed samples:          632 | elapsed time per iteration (ms): 434.1 | learning rate: 1.403301E-06 | global batch size:     8 | loss: 1.448659E+00 | grad norm: 9.673 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:13,631 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:13] iteration       80/     100 | consumed samples:          640 | elapsed time per iteration (ms): 421.1 | learning rate: 1.284276E-06 | global batch size:     8 | loss: 1.275453E+00 | grad norm: 8.807 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:14,023 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:14] iteration       81/     100 | consumed samples:          648 | elapsed time per iteration (ms): 391.3 | learning rate: 1.169778E-06 | global batch size:     8 | loss: 1.296216E+00 | grad norm: 10.195 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:14,455 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:14] iteration       82/     100 | consumed samples:          656 | elapsed time per iteration (ms): 431.3 | learning rate: 1.059946E-06 | global batch size:     8 | loss: 1.274168E+00 | grad norm: 9.961 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:14,863 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:14] iteration       83/     100 | consumed samples:          664 | elapsed time per iteration (ms): 407.2 | learning rate: 9.549150E-07 | global batch size:     8 | loss: 1.264691E+00 | grad norm: 9.447 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:15,290 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:15] iteration       84/     100 | consumed samples:          672 | elapsed time per iteration (ms): 425.7 | learning rate: 8.548121E-07 | global batch size:     8 | loss: 1.233577E+00 | grad norm: 9.187 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:15,716 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:15] iteration       85/     100 | consumed samples:          680 | elapsed time per iteration (ms): 425.1 | learning rate: 7.597595E-07 | global batch size:     8 | loss: 1.319390E+00 | grad norm: 11.679 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:16,112 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:16] iteration       86/     100 | consumed samples:          688 | elapsed time per iteration (ms): 395.5 | learning rate: 6.698730E-07 | global batch size:     8 | loss: 1.360353E+00 | grad norm: 10.701 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:16,842 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:16] iteration       87/     100 | consumed samples:          696 | elapsed time per iteration (ms): 729.6 | learning rate: 5.852620E-07 | global batch size:     8 | loss: 1.367474E+00 | grad norm: 8.787 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:17,271 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:17] iteration       88/     100 | consumed samples:          704 | elapsed time per iteration (ms): 427.5 | learning rate: 5.060298E-07 | global batch size:     8 | loss: 1.280551E+00 | grad norm: 10.096 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:17,684 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:17] iteration       89/     100 | consumed samples:          712 | elapsed time per iteration (ms): 412.6 | learning rate: 4.322727E-07 | global batch size:     8 | loss: 1.111414E+00 | grad norm: 9.697 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:18,105 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:18] iteration       90/     100 | consumed samples:          720 | elapsed time per iteration (ms): 420.0 | learning rate: 3.640807E-07 | global batch size:     8 | loss: 1.302263E+00 | grad norm: 9.603 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:18,561 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:18] iteration       91/     100 | consumed samples:          728 | elapsed time per iteration (ms): 455.2 | learning rate: 3.015369E-07 | global batch size:     8 | loss: 1.352852E+00 | grad norm: 8.144 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:18,947 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:18] iteration       92/     100 | consumed samples:          736 | elapsed time per iteration (ms): 385.1 | learning rate: 2.447174E-07 | global batch size:     8 | loss: 1.289150E+00 | grad norm: 10.371 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:19,363 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:19] iteration       93/     100 | consumed samples:          744 | elapsed time per iteration (ms): 414.8 | learning rate: 1.936915E-07 | global batch size:     8 | loss: 1.200442E+00 | grad norm: 10.067 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:19,806 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:19] iteration       94/     100 | consumed samples:          752 | elapsed time per iteration (ms): 441.7 | learning rate: 1.485214E-07 | global batch size:     8 | loss: 1.441499E+00 | grad norm: 9.690 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:20,225 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:20] iteration       95/     100 | consumed samples:          760 | elapsed time per iteration (ms): 418.2 | learning rate: 1.092620E-07 | global batch size:     8 | loss: 1.313565E+00 | grad norm: 9.769 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:20,791 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:20] iteration       96/     100 | consumed samples:          768 | elapsed time per iteration (ms): 565.8 | learning rate: 7.596123E-08 | global batch size:     8 | loss: 1.322018E+00 | grad norm: 8.598 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:21,207 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:21] iteration       97/     100 | consumed samples:          776 | elapsed time per iteration (ms): 414.3 | learning rate: 4.865966E-08 | global batch size:     8 | loss: 1.330229E+00 | grad norm: 9.995 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:21,581 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:21] iteration       98/     100 | consumed samples:          784 | elapsed time per iteration (ms): 373.3 | learning rate: 2.739052E-08 | global batch size:     8 | loss: 1.306947E+00 | grad norm: 11.287 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:22,012 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:22] iteration       99/     100 | consumed samples:          792 | elapsed time per iteration (ms): 430.4 | learning rate: 1.217975E-08 | global batch size:     8 | loss: 1.364842E+00 | grad norm: 10.147 |
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:22,432 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-10 10:07:22] iteration      100/     100 | consumed samples:          800 | elapsed time per iteration (ms): 419.0 | learning rate: 3.045865E-09 | global batch size:     8 | loss: 1.447562E+00 | grad norm: 10.073 |
+/usr/local/lib/python3.10/dist-packages/torch/distributed/checkpoint/filesystem.py:592: UserWarning: Detected an existing checkpoint in save_path/iter_0000100/.metadata, overwriting since self.overwrite=True. Past version 2.5 of PyTorch, `overwrite` will default to False. Set this variable to True to maintain this functionality or False to raise when an existing checkpoint is found.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/torch/distributed/checkpoint/filesystem.py:592: UserWarning: Detected an existing checkpoint in save_path/iter_0000100/.metadata, overwriting since self.overwrite=True. Past version 2.5 of PyTorch, `overwrite` will default to False. Set this variable to True to maintain this functionality or False to raise when an existing checkpoint is found.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/torch/distributed/checkpoint/filesystem.py:111: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+  if tensor.storage().size() != tensor.numel():
+/usr/local/lib/python3.10/dist-packages/torch/distributed/checkpoint/filesystem.py:111: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+  if tensor.storage().size() != tensor.numel():
+[Rank 0 | Local Rank 0] 2026-09-10 10:07:28,756 INFO [mindspeed_mm.fsdp.checkpoint.dcp_checkpointer:48] => Saved checkpoint to ./save_path/iter_0000100

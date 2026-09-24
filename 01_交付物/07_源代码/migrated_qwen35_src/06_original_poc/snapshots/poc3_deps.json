@@ -1,0 +1,13 @@
+{
+  "real_run_ok": false,
+  "real_run_reason": "权重/算力未就绪: ImportError: \nQwen3_5ForConditionalGeneration requires the PyTorch library but it was not found in your environment. Check out the instructions on the\ninstallation page: https://pytorch.org/get-started/locally/ and follow the ones that match your environment.\nPlease note that you may need to restart your runtime after installation.\n",
+  "cross_check_ok": true,
+  "cross_check": "环1 静态探针已独立产出, 识别需迁移类别=['linear_attn_GatedDeltaNet', 'full_attn', 'vision_3d_conv_patch', 'custom_act_or_norm']; 与环3 运行时探针'目标类/版本未就位'同指'迁移尚未落地', 双重确认一致",
+  "deploy_gates": [
+    "mindspeed_mm/.../qwen3_5 导出目标类+处理器",
+    "transformers 与赛题基线一致",
+    "qwen_vl_utils",
+    "权重 convert_weight->dcp 并下载",
+    "实卡算力"
+  ]
+}

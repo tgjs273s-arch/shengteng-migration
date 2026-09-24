@@ -1,0 +1,195 @@
+{
+ "out": "/root/ops/ab62_20260922_141427",
+ "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+ "steps": 100,
+ "world": 2,
+ "seq": [
+  {
+   "arm": "N",
+   "MM_CAND": null
+  },
+  {
+   "arm": "C1",
+   "MM_CAND": "C1"
+  },
+  {
+   "arm": "C2",
+   "MM_CAND": "C2"
+  },
+  {
+   "arm": "C1",
+   "MM_CAND": "C1"
+  },
+  {
+   "arm": "C2",
+   "MM_CAND": "C2"
+  },
+  {
+   "arm": "N",
+   "MM_CAND": null
+  },
+  {
+   "arm": "C2",
+   "MM_CAND": "C2"
+  },
+  {
+   "arm": "N",
+   "MM_CAND": null
+  },
+  {
+   "arm": "C1",
+   "MM_CAND": "C1"
+  }
+ ],
+ "hostname": "4ac9ca3712ba",
+ "runs": [
+  {
+   "tag": "00_N",
+   "arm": "N",
+   "MM_CAND": null,
+   "rc": 0,
+   "wall_seconds": 133.4,
+   "train_log": "/root/ops/ab62_20260922_141427/00_N/train.log",
+   "driver_log": "/root/ops/ab62_20260922_141427/00_N/driver.log",
+   "config": "/root/ops/ab62_20260922_141427/00_N/config.yaml",
+   "train_log_bytes": 111596,
+   "iteration_lines": 100,
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  },
+  {
+   "tag": "01_C1",
+   "arm": "C1",
+   "MM_CAND": "C1",
+   "rc": 0,
+   "wall_seconds": 129.5,
+   "train_log": "/root/ops/ab62_20260922_141427/01_C1/train.log",
+   "driver_log": "/root/ops/ab62_20260922_141427/01_C1/driver.log",
+   "config": "/root/ops/ab62_20260922_141427/01_C1/config.yaml",
+   "train_log_bytes": 111783,
+   "iteration_lines": 100,
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  },
+  {
+   "tag": "02_C2",
+   "arm": "C2",
+   "MM_CAND": "C2",
+   "rc": 0,
+   "wall_seconds": 139.9,
+   "train_log": "/root/ops/ab62_20260922_141427/02_C2/train.log",
+   "driver_log": "/root/ops/ab62_20260922_141427/02_C2/driver.log",
+   "config": "/root/ops/ab62_20260922_141427/02_C2/config.yaml",
+   "train_log_bytes": 111605,
+   "iteration_lines": 100,
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  },
+  {
+   "tag": "03_C1",
+   "arm": "C1",
+   "MM_CAND": "C1",
+   "rc": 0,
+   "wall_seconds": 138.7,
+   "train_log": "/root/ops/ab62_20260922_141427/03_C1/train.log",
+   "driver_log": "/root/ops/ab62_20260922_141427/03_C1/driver.log",
+   "config": "/root/ops/ab62_20260922_141427/03_C1/config.yaml",
+   "train_log_bytes": 111783,
+   "iteration_lines": 100,
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  },
+  {
+   "tag": "04_C2",
+   "arm": "C2",
+   "MM_CAND": "C2",
+   "rc": 0,
+   "wall_seconds": 134.7,
+   "train_log": "/root/ops/ab62_20260922_141427/04_C2/train.log",
+   "driver_log": "/root/ops/ab62_20260922_141427/04_C2/driver.log",
+   "config": "/root/ops/ab62_20260922_141427/04_C2/config.yaml",
+   "train_log_bytes": 111606,
+   "iteration_lines": 100,
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  },
+  {
+   "tag": "05_N",
+   "arm": "N",
+   "MM_CAND": null,
+   "rc": 0,
+   "wall_seconds": 132.6,
+   "train_log": "/root/ops/ab62_20260922_141427/05_N/train.log",
+   "driver_log": "/root/ops/ab62_20260922_141427/05_N/driver.log",
+   "config": "/root/ops/ab62_20260922_141427/05_N/config.yaml",
+   "train_log_bytes": 111596,
+   "iteration_lines": 100,
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  },
+  {
+   "tag": "06_C2",
+   "arm": "C2",
+   "MM_CAND": "C2",
+   "rc": 0,
+   "wall_seconds": 130.6,
+   "train_log": "/root/ops/ab62_20260922_141427/06_C2/train.log",
+   "driver_log": "/root/ops/ab62_20260922_141427/06_C2/driver.log",
+   "config": "/root/ops/ab62_20260922_141427/06_C2/config.yaml",
+   "train_log_bytes": 111792,
+   "iteration_lines": 100,
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  },
+  {
+   "tag": "07_N",
+   "arm": "N",
+   "MM_CAND": null,
+   "rc": 0,
+   "wall_seconds": 137.5,
+   "train_log": "/root/ops/ab62_20260922_141427/07_N/train.log",
+   "driver_log": "/root/ops/ab62_20260922_141427/07_N/driver.log",
+   "config": "/root/ops/ab62_20260922_141427/07_N/config.yaml",
+   "train_log_bytes": 111592,
+   "iteration_lines": 100,
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  },
+  {
+   "tag": "08_C1",
+   "arm": "C1",
+   "MM_CAND": "C1",
+   "rc": 0,
+   "wall_seconds": 131.6,
+   "train_log": "/root/ops/ab62_20260922_141427/08_C1/train.log",
+   "driver_log": "/root/ops/ab62_20260922_141427/08_C1/driver.log",
+   "config": "/root/ops/ab62_20260922_141427/08_C1/config.yaml",
+   "train_log_bytes": 111784,
+   "iteration_lines": 100,
+   "identity": {
+    "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba",
+    "hostname": "4ac9ca3712ba"
+   }
+  }
+ ],
+ "markers": {
+  "c1_active": true,
+  "c2_active": true
+ }
+}

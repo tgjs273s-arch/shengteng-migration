@@ -1,0 +1,18 @@
+{
+ "schema": "p59null.v1",
+ "runs": 3,
+ "medians_ms": [
+  705.55,
+  715.3,
+  708.45
+ ],
+ "mean_ms": 709.77,
+ "min_ms": 705.55,
+ "max_ms": 715.3,
+ "spread_pct": 1.38,
+ "resolution_note": "同批次基线重复 3 次的最大相对差 = 1.38%；A/B 差异小于它则不可判定。",
+ "source": "§4-2 A/B 的 N 臂（MM_CAND 未设，env 门控未进入）",
+ "identity": {
+  "boot": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba"
+ }
+}

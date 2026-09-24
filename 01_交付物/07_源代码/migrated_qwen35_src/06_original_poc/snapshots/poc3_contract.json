@@ -1,0 +1,19 @@
+{
+  "scene": "工业操作规范/工艺手法判定",
+  "target_class": "Qwen3_5ForConditionalGeneration",
+  "target_repo": "Qwen/Qwen3.5-0.8B",
+  "needs": "语义+时序+常识推理(视觉 3D-Conv 看动作过程)",
+  "expected_output": {
+    "compliant": "否",
+    "step": "法兰螺栓紧固",
+    "issue": "未采用对角交叉顺序，单边连续拧紧，易致密封面受力不均",
+    "evidence": "操作者沿圆周同向连续拧紧第3、4颗螺栓",
+    "bbox": [
+      286,
+      210,
+      452,
+      372
+    ],
+    "confidence": 0.88
+  }
+}

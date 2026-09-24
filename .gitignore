@@ -1,0 +1,82 @@
+# Python environments and caches
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
+.ipynb_checkpoints/
+
+# Local tooling, editor state, and document previews
+/.codex/
+/.codex_docx_review/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
+~$*
+*.swp
+*.swo
+
+# Generated temporary and runtime output (keep examples and fixtures)
+tmp/
+/02_活副本_Skill/out/
+/03_工具链/out/
+/01_交付物/06_Skill/qwen35-ascend-migrator/out/
+*.log
+!**/examples/**/*.log
+!/04_远端证据/**/*.log
+!/01_交付物/05_原始日志/**/*.log
+
+# Reproducible delivery archives; extracted source remains trackable
+/01_交付物/**/*.zip
+# Local whole-project backup (may also contain ignored files)
+/angentSkill.rar
+
+# Local secrets and Huawei SSH session state (keep SSH source scripts)
+.env
+.env.*
+!.env.example
+!.env.template
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+id_ecdsa
+id_dsa
+id_ecdsa_sk
+id_ed25519_sk
+*.ppk
+.ssh/
+remote-token*.json
+_token/
+_run/
+secrets.local.*
+*.local.yaml
+*.local.yml
+*.local.json
+
+# Model weights, checkpoints, and local datasets; keep dataset schemas/fixtures
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+pytorch_model*.bin
+checkpoints/
+/model_weights/
+/datasets/
+/local_data/
+
+# NPU profiler and experiment runtime output
+PROF_*/
+profiler_output/
+wandb/
+runs/

@@ -1,0 +1,268 @@
+{
+ "schema": "sk04_fingerprint_observed.v1",
+ "generated_by": "fingerprint_observed.py",
+ "log": {
+  "path": "/root/qwen35-ascend-migrator/out/train/train.log",
+  "sha256": "6ba6439321981b5d9342105860ea32c7c5a9edf8415187a2207e8c7dc289d3c2",
+  "lines": 640
+ },
+ "observed": {
+  "iter_rows": {
+   "count": 100,
+   "min_iter": 1,
+   "max_iter": 100,
+   "contiguous": true,
+   "last_row_line": 634
+  },
+  "gbs": {
+   "values": [
+    8
+   ],
+   "sample_delta_per_step": [
+    8
+   ],
+   "actual_gbs": 8,
+   "note": "global batch size 行与 consumed samples 增量（官方口径每步 +8）"
+  },
+  "lr": {
+   "row_count": 100,
+   "first": 0.0,
+   "last": 3.045865e-09,
+   "sha256": "dcf40999471d110dbb3256792f9db7703fbe9a0d555c7139134fcbdb9e5a57b4"
+  },
+  "kernel": {
+   "rollback_to_cpu": [],
+   "npu_triton": [
+    {
+     "line": 368,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,541 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops"
+    },
+    {
+     "line": 370,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,640 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops"
+    },
+    {
+     "line": 372,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,641 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops"
+    },
+    {
+     "line": 373,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,641 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops"
+    },
+    {
+     "line": 374,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,643 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops"
+    },
+    {
+     "line": 375,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,643 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops"
+    },
+    {
+     "line": 376,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,645 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops"
+    },
+    {
+     "line": 377,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,645 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops"
+    },
+    {
+     "line": 378,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,646 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops"
+    },
+    {
+     "line": 379,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,646 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops"
+    },
+    {
+     "line": 380,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,648 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops"
+    },
+    {
+     "line": 381,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,648 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops"
+    },
+    {
+     "line": 382,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,650 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops"
+    },
+    {
+     "line": 383,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,650 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops"
+    },
+    {
+     "line": 384,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,651 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops"
+    },
+    {
+     "line": 385,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,651 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops"
+    },
+    {
+     "line": 386,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,652 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops"
+    },
+    {
+     "line": 387,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,652 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops"
+    },
+    {
+     "line": 388,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,654 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops"
+    },
+    {
+     "line": 389,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,654 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops"
+    },
+    {
+     "line": 390,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,656 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops"
+    },
+    {
+     "line": 391,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,656 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops"
+    },
+    {
+     "line": 392,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,657 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops"
+    },
+    {
+     "line": 393,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,657 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops"
+    },
+    {
+     "line": 394,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,659 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops"
+    },
+    {
+     "line": 395,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,659 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops"
+    },
+    {
+     "line": 396,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,660 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops"
+    },
+    {
+     "line": 397,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,660 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops"
+    },
+    {
+     "line": 398,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,661 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops"
+    },
+    {
+     "line": 399,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,662 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops"
+    },
+    {
+     "line": 400,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,664 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops"
+    },
+    {
+     "line": 401,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,664 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops"
+    },
+    {
+     "line": 402,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,665 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops"
+    },
+    {
+     "line": 403,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,665 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops"
+    },
+    {
+     "line": 404,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,666 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5 causal_conv1d use NPU triton ops"
+    },
+    {
+     "line": 405,
+     "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:13,666 INFO [mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5:48] => Qwen3_5GatedDeltaNet use NPU triton fused ops"
+    }
+   ],
+   "effective": true,
+   "effective_status": "npu_triton_active"
+  },
+  "world_from_log": {
+   "world_size": 2,
+   "world_line": 83,
+   "data_parallel_size": 2,
+   "dp_line": 48
+  },
+  "last_iter": 100,
+  "samples_final": 800,
+  "traceback_count": 0,
+  "wallclock": {
+   "first_row_ts": "2026-09-16 20:09:33",
+   "last_row_ts": "2026-09-16 20:11:26",
+   "elapsed_min": 1.9
+  },
+  "step1_lr0": {
+   "iter": 1,
+   "lr": 0.0,
+   "loss": 1.92462,
+   "grad_norm": 134.288,
+   "line": 534,
+   "loss_band": "B(预训练续训尺度)"
+  },
+  "loaded_checkpoint_evidence": [
+   {
+    "line": 530,
+    "text": "[Rank 0 | Local Rank 0] 2026-09-16 20:09:26,892 INFO [mindspeed_mm.fsdp.checkpoint.dcp_checkpointer:48] => Loaded checkpoint from /root/Qwen3.5-0.8B-dcp/release"
+   }
+  ]
+ },
+ "declared": {
+  "schema": "sk04_fingerprint_cfg.v1",
+  "path": "/root/qwen35-ascend-migrator/out/judge/fp.json",
+  "shuffle": {
+   "value": false,
+   "present": true
+  },
+  "freeze": {
+   "value": [
+    "model.visual"
+   ],
+   "present": true
+  },
+  "cutoff_len": {
+   "value": 1024,
+   "present": true
+  },
+  "mbs": {
+   "value": 4,
+   "present": true
+  },
+  "gas": {
+   "value": 1,
+   "present": true
+  },
+  "dp": {
+   "value": 2,
+   "present": true
+  },
+  "gdn_causal": {
+   "value": {
+    "gdn": "triton",
+    "causal": "triton"
+   },
+   "present": true
+  },
+  "dataset_file": {
+   "value": {
+    "file": "/root/data/output_llava_coco_data.json",
+    "dataset_dir": "/root/data/coco"
+   },
+   "present": true
+  },
+  "num_workers": {
+   "value": 8,
+   "present": true
+  },
+  "n_eff": 8,
+  "gbs_eff": 8
+ },
+ "reconciliation": {
+  "gbs_declared_vs_observed": "match",
+  "lr_vs_ref_csv": null
+ },
+ "discrepancies": []
+}

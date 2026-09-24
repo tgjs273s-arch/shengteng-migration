@@ -1,0 +1,40 @@
+{
+ "schema": "dsh.protocol.numeric.v1",
+ "frozen_at": "2026-09-22",
+ "note": "★ 判据**先于结果冻结**（外部复核建议的制度 1）。任何事后修改必须另存新协议版本，旧结果不得悄悄重解释。",
+ "object": {
+  "what": "同一工作负载下，同配置重复（A/A）与不同配置（A/B）的逐步数值轨迹一致性",
+  "why": "性能结论以'配置未改变计算结果'为前提；该前提必须先被建立或被明确否定"
+ },
+ "metrics": [
+  {"field": "loss", "direction": "absolute_diff", "unit": "1"},
+  {"field": "grad_norm", "direction": "absolute_diff", "unit": "1"}
+ ],
+ "relative_diff_definition": "abs(a - b) / abs(a)，a 为配对中的前一组（分母为 0 时该点标为不可判定，不计入分母）",
+ "window": {"first_step": 1, "last_step": 100, "note": "与计时窗口 (11..100) 不同：数值判据覆盖全部步"},
+ "thresholds": {
+  "per_step_rel_pct": 2.0,
+  "note": "沿用项目既有 2% 口径；本协议首次把它应用到**全部步**而非前两步"
+ },
+ "statistic": {
+  "unit": "一次运行；配对按索引",
+  "primary": "超过阈值的步数 / 总可比步数（逐字段分别统计）",
+  "secondary": ["最大逐点相对差", "首次分歧步号", "最坏绝对差"]
+ },
+ "decision_rule": {
+  "step_1": "先看 **同配置 A/A**：若 A/A 也大量超阈 ⇒ 该工作负载下**判据不可用**（不能用来判配置）",
+  "step_2": "A/A 通过后，才看 **A/B**：A/B 超阈 ⇒ 说明配置改变了数值轨迹，需定位（前向/梯度/更新）",
+  "step_3": "两者都超阈或都通过 ⇒ 结论只能是'未建立'或'已建立'，**不得**归因到某个开关",
+  "fail_closed": "缺少 A/A 数据时，A/B 的任何差异都**不得**判为'配置导致的错误'，只能记为未闭合"
+ },
+ "required_declaration": [
+  "实际使用的配置差异键集合（逐键）",
+  "实际 FSDP mesh / shard 解析值（当前为 auto ⇒ 未实测，须标未闭合）",
+  "样本顺序与随机状态的处理方式",
+  "是否使用确定性算子（use_deter_comp / enable_full_determinism）"
+ ],
+ "out_of_scope": [
+  "本协议不判定性能；它只判定数值一致性",
+  "本协议不用于对官方 431.3 ms 的任何比较（数据为 mock，official_comparable=false）"
+ ]
+}

@@ -1,0 +1,14 @@
+{
+ "schema": "p59null.v1",
+ "runs": 2,
+ "medians_ms": [
+  731.6,
+  716.5
+ ],
+ "mean_ms": 724.05,
+ "min_ms": 716.5,
+ "max_ms": 731.6,
+ "spread_pct": 2.11,
+ "reconstructed_from": "protocols/prefetch_depth_20260922.json -> evidence.noise_floor",
+ "note": "★ 重建件（用于本地复算验证），非远端原件"
+}

@@ -1,0 +1,37 @@
+{
+ "schema": "dsh.protocol.numeric_diag.phase1b.v1",
+ "frozen_at": "2026-09-22",
+ "note": "★ 追因阶段：判据**先于结果冻结**。本文冻结后才允许动真机；事后改判据须另存 v2 并说明为何 v1 不适用。",
+ "question": "同臂（A/A）为什么从第 3–4 步就分叉，且分叉程度与跨臂（A/B）相当？",
+ "base_config": "config/templates/qwen3_5_0_8B_recommended_A.yaml（逐字节；仅按各臂声明的 delta 派生）",
+ "arms": [
+  {"id": "P0", "delta": "无（同配置重复 2 次）",
+   "tests": "复现同臂分歧，作为判据可用性的基线", "runs": 2},
+  {"id": "P1", "delta": "data.dataloader_param.num_workers: 1（其余不变）",
+   "tests": "多 worker 取样/交错是否制造分歧", "runs": 2},
+  {"id": "P2", "delta": "tools.use_deter_comp: true（**仅作诊断**，不作为出货配置，也不得据此改出货配置）",
+   "tests": "非确定性算子是否制造分歧", "runs": 2},
+  {"id": "P3", "delta": "分段：仅前向（不更新）→ 含梯度 → 一次更新（若现有栈没有现成开关，则本臂记为 UNVERIFIED，不猜实现）",
+   "tests": "分歧出现在前向 / 梯度 / 更新哪一段", "runs": 2}
+ ],
+ "run_protocol": {
+  "steps": 8,
+  "window": {"first_step": 1, "last_step": 8},
+  "reason_for_8": "分歧自第 3–4 步起，8 步足够观察且单次 <2 分钟；不用 100 步以免把机时花在已知结论上",
+  "fixed": ["config（除声明 delta）", "seed", "初始权重", "数据文件", "GBS=8 红线", "世界大小"],
+  "must_declare": ["样本顺序如何处理", "是否启用确定性算子", "实际 mesh/shard 解析值（当前 auto ⇒ 标未闭合）"]
+ },
+ "criteria": {
+  "metric": "逐点相对差 |a−b|/|a|（a 为配对前一组）",
+  "thresholds": {"per_step_rel_pct": 2.0},
+  "rule": [
+   "P0 同臂超阈步数 > 1% ⇒ 2% 逐点判据在该负载下**不可用**（记为 CRITERION_UNUSABLE）",
+   "若 P1 或 P2 把同臂超阈压到 0 ⇒ 定位到对应因素（数据顺序 / 非确定性算子）",
+   "若 P0/P1/P2 都压不下来 ⇒ 判据不适配该栈 ⇒ 转**分段/统计**口径，并另存协议 v2（不得直接放宽阈值）",
+   "P3 分段结果只用于定位，不单独构成结论"
+  ],
+  "fail_closed": "任一臂缺运行或缺 A/A 对照 ⇒ 该臂记 UNVERIFIED，不得用其它臂的结果代替"
+ },
+ "outputs": ["每臂一份 numeric_diag 报告", "一句可证伪的结论（闭合判据，或精确限定它）"],
+ "out_of_scope": ["不产出性能结论", "不与官方 431.3 ms 比较（mock ⇒ official_comparable=false）"]
+}

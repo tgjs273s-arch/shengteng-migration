@@ -1,0 +1,91 @@
+{
+ "schema": "dsh.protocol.p2_candidate_card.v1",
+ "frozen_at": "2026-09-22",
+ "status": "CARD_INCOMPLETE_SHAPE_MISSING —— **未开工**",
+ "note": "路线 2（单设备 kernel）候选卡。★ 六项要求逐项标注**已填/缺口**；缺口未补前不得动代码。",
+ "candidate_id": "P2-CAND-02",
+ "scope_guard": "★ 用户限定：**只动这一个 kernel**，不得重写整套 GDN。",
+
+ "field_1_source_and_whether_it_runs": {
+  "status": "FILLED",
+  "kernel": "prepare_wy_repr_bwd_kernel",
+  "launcher_call_site": "/root/MindSpeed-MM/mindspeed_mm/fsdp/ops/gdn/triton/wy_fast.py(307): prepare_wy_repr_bwd",
+  "evidence_it_actually_runs": "★ 两个**独立** profile 都命中且计数一致：prof62 = 90 次 / dev_self 195,439 µs；p2shapes = 90 次 / dev_self 196,528 µs（差 0.56%）⇒ 不是「配了但没生效」",
+  "note": "调用次数 90 / 5 步 = **18 次/步**，与 GDN 层数×前反向次数吻合"
+ },
+
+ "field_2_measured_shape_dtype_stride": {
+  "status": "**FILLED**（2026-09-22 用 `_argdump_sitecustomize.py` 在解释器启动时挂 wrapper 捕获真实入参）",
+  "method": "启动时 import wy_fast 并替换其函数属性 ⇒ 任何 `from ...wy_fast import prepare_wy_repr_bwd` 都拿到打过补丁的版本；自证 `ARGDUMP_PATCHED` ×3（主进程+2 worker），落盘 2 份 JSON",
+  "captured_kwargs": {
+   "k": {"shape": [4, 1584, 16, 128], "dtype": "bfloat16", "stride": [3244032, 2048, 128, 1], "contiguous": true},
+   "v": {"shape": [4, 1584, 16, 128], "dtype": "bfloat16", "stride": [3244032, 2048, 128, 1], "contiguous": true},
+   "beta": {"shape": [4, 1584, 16], "dtype": "bfloat16", "stride": [25344, 16, 1], "contiguous": true},
+   "g": {"shape": [4, 1584, 16], "dtype": "**float32**", "stride": [25344, 16, 1], "contiguous": true},
+   "A": {"shape": [4, 1584, 16, 64], "dtype": "bfloat16", "stride": [1622016, 1024, 64, 1], "contiguous": true},
+   "dw": {"shape": [4, 1584, 16, 128], "dtype": "bfloat16", "contiguous": true},
+   "du": {"shape": [4, 1584, 16, 128], "dtype": "bfloat16", "contiguous": true},
+   "cu_seqlens": {"value": null},
+   "chunk_size": {"value": 64}
+  },
+  "reading": "★ **入参本来就是连续的**（k 的 stride 3244032/2048/128/1 正是 (4,1584,16,128) 连续布局）⇒ **不存在「入参非连续触发隐式物化」这条**；B=4、T=1584、H=16、K=V=128、BT=64、走**定长分支**（`cu_seqlens=None`）。★ `g` 是 **fp32** 而其余操作数 bf16（dtype 不对称）。"
+ },
+
+ "field_3_calls_device_time_and_critical_path": {
+  "status": "PARTIAL —— 设备耗时已填，**关键路径关系未证**",
+  "calls_per_step": 18,
+  "device_self_us_per_5_steps": 195439,
+  "device_self_us_per_step_approx": 39088,
+  "share_of_kernel_time_pct": 6.18,
+  "context": "本批 kernel 时间 ≈632 ms/步（总 3,161,607 µs / 5 步），步时 ≈708 ms ⇒ kernel 占步时 ≈89%；39 ms/步 ≈ 步时的 **5.5%**",
+  "NOT_claimed": "★ **6.18% 是 kernel 时间占比，不是端到端可省比例**；本轮主线已用一个实测例子证明这条（`chunk_o.py:443` 的 `copy_` 主机侧 133 ms/步，**设备耗时 0**，端到端实测仅 +0.77%）。"
+ },
+
+ "field_4_why_a_change_might_work": {
+  "status": "**已闭环：无被证据支持的单常量改动；剩余解法需授权（结构性）**",
+  "excluded_by_evidence": [
+   "H1「入参非连续触发隐式物化」⇒ **排除**：捕获到的 k/v/beta/g/A/dw/du **全部 `contiguous=True`**（stride 与 shape 自洽）。",
+   "H1b「wrapper 里的 transpose+contiguous 拷贝是主因」⇒ **排除**：wrapper 确有 4 次 `.transpose(1,2).contiguous()`（入口 beta/g @L298-299、出口 dbeta/dg @L332-333）+ 4 个 `empty_like`，但最大张量仅 4×1584×16（fp32 ≈405 KB / bf16 ≈202 KB），18 次/步合计 ≈20 MB/步 ⇒ **量级远不足以解释 39 ms/步**。",
+   "★ H2「`cv_kernel_num` 24→25 即可均衡」⇒ **排除（硬件前提已查清）**：`torch.npu.get_device_properties(0)` 报 **`cube_core_num=24`**、`vector_core_num=48`、`multi_processor_count=48` ⇒ `cv_kernel_num=24` **正是 cube 核数**；`NT=25` 分给 24 个 cube 单元必然有一个单元承担 2 个 chunk（2× 不均），而 `grid=25` 时第 25 个 program **要在同一批 24 个单元上排队**⇒ **仍是 2 个单位时间，无效改动**。"
+  ],
+  "kernel_body_fact": {
+   "read": "wy_fast.py L18-143（kernel 本体）",
+   "structure": "`core_id=program_id(0)`；`base=NT//total_cores`、`rem=NT%total_cores`；外层 `for idx in range(start, start+chunks_this_pid)`（按 **NT** 分片），内层 `for i_b in range(B)`(4) → `for i_h in range(H)`(16) → `for i_k in range(cdiv(K,BK))`(1)",
+   "coverage": "★ **覆盖正确**（25 个 chunk 全部被处理，不是欠并行）——问题是**粒度**：分片轴只有 NT=25，而核有 24 个。"
+  },
+  "remaining_only_option": {
+   "what": "把外层分片轴从 **NT=25** 换成 **NT×B=100**（或 NT×H），让工作单元数 ≫ 24 ⇒ 不均衡从 2× 降到 ≈1.2×（100/24≈4.2 波）",
+   "why_needs_authorization": "★ 这是**改并行结构**（一个 kernel 内的循环/索引重排），已触及用户「不要重写整套 GDN」的边界 ⇒ **必须显式授权**才能动手",
+   "cost_if_authorized": "≈15–20 分钟卡时（确定性模式单步逐字节比对 + 固定区组 A/B）"
+  },
+  "rule": "★ 本卡**无任何可通过「改一个常量」实现的方案**；在授权前**不开工**。"
+ },
+
+ "field_5_semantics_that_could_change": {
+  "status": "GAP（依赖 field_4 定稿）",
+  "known_risks": [
+   "数值：改块大小/归约顺序会改变浮点结合律 ⇒ **必须**过 protocols/candidate_tolerance_20260922.json（rtol=1e-5×absmax；A/A 在确定性模式下为逐字节相同，故任何差异都可归因于改动）",
+   "布局：改 stride/物化会改变后续 kernel 的入参布局 ⇒ 可能把时间搬到别处（路线 1 的教训）",
+   "内存：块大小↑会抬显存峰值；本配置**尚无**可信显存预算（旧 8.5 GB 已证错，实测 `max allocated` 40,898.24 MB）",
+   "观测语义：**不得**用删除 grad_norm / DP 平均 loss 换速度（坑 216 已立规矩）"
+  ]
+ },
+
+ "field_6_positive_negative_fallback": {
+  "status": "PARTIAL",
+  "positive_case": "同一检查点 iter_0000030、确定性模式两侧同开、单步回放 ⇒ 与既有确定性基线**逐字节相同**（这是 P2-CAND-01 已跑通的流程，可直接复用）",
+  "negative_cases": [
+   "shape/stride 与假设不符 ⇒ 撤回假设",
+   "数值超过冻结容差 ⇒ `NUMERIC_DIVERGED`，不得进性能确认",
+   "端到端区间下界 < 5% ⇒ `PERFORMANCE_NOT_MET`，**留档负结果并停止**（P2-CAND-01 的先例）",
+   "框架改动未还原 / 臂状态未断言 ⇒ 拒绝该批次（坑 217）"
+  ],
+  "fallback": "① 全部改动集中在单文件、被 `_p2_patch.py` 风格的锚点补丁管理（备份 + 锚点唯一性断言 + py_compile 闸门 + 逐字节还原核对）；② 端到端 A/B 按固定区组（N,C1,C1,N,N,C1）+ 先量噪声 + 62 判；③ 负结果留档不销毁。"
+ },
+
+ "open_before_start": [
+  "★ 补 field_2（shape/dtype/stride）—— 唯一的关键缺口",
+  "读完 `wy_fast.py:307` 的 wrapper 与该 kernel 源码，把 field_4 从「假设」升级为「证据支持的改动」",
+  "确认显存预算（旧 8.5 GB 已证错），否则任何抬峰值的改动都不能上"
+ ]
+}

@@ -1,0 +1,112 @@
+=== 谁在用 dataloader_provider ===
+mindspeed_mm/fsdp/tasks/cosyvoice3/train.py:35:    trainer = Trainer(args=args, dataloader_provider=get_cosyvoice_dataloader)
+mindspeed_mm/fsdp/train/trainer.py:54:        self, args: Arguments, model_provider: Optional[Callable] = None, dataloader_provider: Optional[Callable] = None
+mindspeed_mm/fsdp/train/trainer.py:62:            dataloader_provider: Optional custom function to provide the dataloader
+mindspeed_mm/fsdp/train/trainer.py:78:        dataloader_result = self.get_dataloader() if dataloader_provider is None else dataloader_provider(args)
+mindspeed_mm/fsdp/train/trainer.py:118:                    f"3. Provide a custom dataloader_provider that returns a dataloader with __len__"
+=== trainer.py 339-400（get_dataloader 本体）===
+    def get_dataloader(self):
+        """Build training dataloader with proper parallel partitioning.
+        Returns:
+            tuple: (train_dataloader, val_dataloader) where val_dataloader may be None
+        """
+        args = self.args
+        print_rank(logger.info, "Prepare data")
+        data_config = args.data
+        ps = get_parallel_state()
+
+        datasets = build_mm_dataset(data_config.dataset_param)
+
+        # datasets can be (train_dataset, val_dataset) or just train_dataset
+        if isinstance(datasets, tuple):
+            train_dataset = datasets[0]
+            val_dataset = datasets[1] if len(datasets) > 1 else None
+        else:
+            train_dataset, val_dataset = datasets, None
+
+        val_enabled = args.training.val_interval > 0
+
+        # Explicit validation dataset from config has higher priority.
+        val_dataset_param = data_config.val_dataset_param if val_enabled else None
+        if val_enabled and val_dataset_param is not None:
+            val_dataset = build_mm_dataset(val_dataset_param)
+            if isinstance(val_dataset, tuple):
+                val_dataset = val_dataset[0]
+
+        train_dataloader_param = data_config.dataloader_param.to_dict()
+        train_dataloader_param.update(
+            {
+                "batch_size": args.training.micro_batch_size,
+                "seed": args.training.seed,
+            }
+        )
+        build_dataloader = partial(
+            build_mm_dataloader,
+            dataloader_param=train_dataloader_param,
+            process_group=ps.get_dp_group(),
+            dataset_param=data_config.dataset_param,
+            model=self.model,
+        )
+        train_dataloader = build_dataloader(train_dataset)
+
+        if args.features.loss_cfg.loss_type == "per_token_loss":
+            train_dataloader = PrefetchGradAccDataLoader(
+                train_dataloader, grad_acc_step=args.training.gradient_accumulation_steps
+            )
+
+        # Build validation dataloader if available.
+        val_dataloader = None
+        if val_enabled and val_dataset is not None:
+            val_dataloader_param = data_config.dataloader_param.to_dict()
+            val_dataloader_param.update(
+                {
+                    "batch_size": args.training.val_micro_batch_size or args.training.micro_batch_size,
+                    "seed": args.training.seed,
+                    "shuffle": False,
+                    "drop_last": False,
+                }
+            )
+
+=== prepare_base_dataloader 签名与主体头 ===
+def prepare_base_dataloader(
+    dataset,
+    batch_size=1,
+    shuffle=False,
+    seed=1024,
+    drop_last=False,
+    pin_memory=False,
+    num_workers=0,
+    prefetch_factor=None,
+    persistent_workers=None,
+    collate_param=None,
+    dataset_param=None,
+    **kwargs,
+):
+    """
+    Prepare a dataloader for distributed training. The dataloader will be wrapped by
+    `torch.utils.data.DataLoader`.
+
+    Args:
+        dataset (`torch.utils.data.Dataset`): The dataset to be loaded.
+        shuffle (bool, optional): Whether to shuffle the dataset. Defaults to False.
+        seed (int, optional): Random worker seed for sampling, defaults to 1024.
+        drop_last (bool, optional): Set to True to drop the last incomplete batch, if the dataset size
+            is not divisible by the batch size. If False and the size of dataset is not divisible by
+            the batch size, then the last batch will be smaller, defaults to False.
+        pin_memory (bool, optional): Whether to pin memory address in CPU memory. Defaults to False.
+        num_workers (int, optional): Number of worker threads for this dataloader. Defaults to 0.
+        kwargs (dict): optional parameters for ``torch.utils.data.DataLoader``
+
+    Returns:
+        :class:`torch.utils.data.DataLoader`: A DataLoader used for training or testing.
+    """
+    collate_fn = None
+    if collate_param:
+        data_collate_type = collate_param.pop("model_name")
+        collate_fn = DATA_COLLATOR[data_collate_type](dataset_param=dataset_param, **collate_param)
+    if persistent_workers is None:
+        persistent_workers = True if num_workers > 0 else False
+    return DataLoader(
+        dataset,
+        batch_size=batch_size,
+DONE4

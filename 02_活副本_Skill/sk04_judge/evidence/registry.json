@@ -1,0 +1,8 @@
+{
+ "schema": "sk04_registry.v1",
+ "entries": [],
+ "meta": {
+  "note": "R2-SK04 append-only 运行账本 genesis；首条 prev_hash=GENESIS；CA3 创建 2026-09-02（本地零 GPU）",
+  "maintainer": "CA3 (R2-SK04)"
+ }
+}

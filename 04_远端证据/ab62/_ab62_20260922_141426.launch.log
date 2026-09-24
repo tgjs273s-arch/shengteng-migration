@@ -1,0 +1,13 @@
+AB62_OUT=/root/ops/ab62_20260922_141427 boot=fe6372a8-974e-481a-9c6a-828b3f4eb3ba steps=100 world=2
+AB62_ENV_JSON exists=True
+RUN 00_N MM_CAND=None rc=0 wall=133s iter_lines=100 logB=111596
+RUN 01_C1 MM_CAND=C1 rc=0 wall=129s iter_lines=100 logB=111783
+RUN 02_C2 MM_CAND=C2 rc=0 wall=140s iter_lines=100 logB=111605
+RUN 03_C1 MM_CAND=C1 rc=0 wall=139s iter_lines=100 logB=111783
+RUN 04_C2 MM_CAND=C2 rc=0 wall=135s iter_lines=100 logB=111606
+RUN 05_N MM_CAND=None rc=0 wall=133s iter_lines=100 logB=111596
+RUN 06_C2 MM_CAND=C2 rc=0 wall=131s iter_lines=100 logB=111792
+RUN 07_N MM_CAND=None rc=0 wall=137s iter_lines=100 logB=111592
+RUN 08_C1 MM_CAND=C1 rc=0 wall=132s iter_lines=100 logB=111784
+MARKERS {"c1_active": true, "c2_active": true}
+AB62_DONE out=/root/ops/ab62_20260922_141427

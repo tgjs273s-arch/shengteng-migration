@@ -1,0 +1,81 @@
+{
+ "schema": "dsh.nzreplay.status.v1",
+ "root": "/root/ops/nzreplay_20260922_151513",
+ "reuse_root": true,
+ "flow_finished": true,
+ "verification_passed": true,
+ "phases": {
+  "phase1": {
+   "skipped": true,
+   "reason": "reuse-root（不重跑训练）"
+  },
+  "phase2_a_detsc": {
+   "rc": 0,
+   "wall": 109.3,
+   "dumps": [
+    "replay_dump.rank0.json",
+    "replay_dump.rank1.json"
+   ],
+   "precond_invalid_lines": [],
+   "precond_ok": true,
+   "detsc_active_lines": 3,
+   "detsc_failed_lines": 0
+  },
+  "phase2_b_detsc": {
+   "rc": 0,
+   "wall": 93.1,
+   "dumps": [
+    "replay_dump.rank0.json",
+    "replay_dump.rank1.json"
+   ],
+   "precond_invalid_lines": [],
+   "precond_ok": true,
+   "detsc_active_lines": 3,
+   "detsc_failed_lines": 0
+  },
+  "phase3": {
+   "rc": 0,
+   "wall": 5.3
+  }
+ },
+ "failures": [],
+ "config_actual": {
+  "base_train_iters": 100,
+  "lr": 1e-05,
+  "lr_decay_style": "cosine",
+  "lr_warmup_ratio": 0.1,
+  "lr_warmup_steps_of_base": 10,
+  "lr_warmup_steps_of_cfg1": 10,
+  "save_interval_cfg1": 30,
+  "replay_from_iteration": 30
+ },
+ "cfg1": "/root/ops/nzreplay_20260922_151513/cfg1_make_ckpt.yaml",
+ "cfg2": "/root/ops/nzreplay_20260922_151513/cfg2_replay_from_ckpt.yaml",
+ "resume_root": "/root/ops/nzreplay_20260922_151513/resume_from_30",
+ "tracker": {
+  "path": "/root/ops/nzreplay_20260922_151513/resume_from_30/latest_checkpointed_iteration.txt",
+  "exists": true,
+  "value": "30",
+  "expected": 30
+ },
+ "ckpt_dir": "/root/ops/nzreplay_20260922_151513/ckpt/iter_0000030",
+ "ckpt_files": [
+  ".metadata",
+  "__0_0.distcp",
+  "__0_1.distcp",
+  "__0_10.distcp",
+  "__0_11.distcp",
+  "__0_12.distcp",
+  "..."
+ ],
+ "ckpt_has_metadata": true,
+ "ckpt_has_extra_state": true,
+ "detsc_mode": "on",
+ "detsc_same_mode_both_runs": true,
+ "restored_iteration": {
+  "a_detsc": 30,
+  "b_detsc": 30
+ },
+ "diff_tail": "96fd056a53b59）\n  C4 一次更新后参数: 逐字节相同（n_tensors=473 sha_all=1c305d6b9ad6c0a3）\nREPLAY_IDENTICAL rank=0（**只**证明这一步；不推出全程可复现）\n== rank 1 ==\n  [结果] fixed.grads_sha_all          同  A=8dfddb07e8e6be1c06004c1a B=8dfddb07e8e6be1c06004c1a\n  [前提] fixed.input_sha_all          同  A=7a99c6b2031e4049c744cd7f B=7a99c6b2031e4049c744cd7f\n  [前提] fixed.iteration              同  A=30 B=30\n  [前提] fixed.lr                     同  A=8.83022221559489e-06 B=8.83022221559489e-06\n  [其它] fixed.opt_after_sha_all      同  A=f4b9bea3ea325bd46e9eb298 B=f4b9bea3ea325bd46e9eb298\n  [其它] fixed.opt_before_sha_all     同  A=4d9e96723d06f1cedba2df9f B=4d9e96723d06f1cedba2df9f\n  [结果] fixed.params_after_sha_all   同  A=2923e30a509475ba4f82ccc5 B=2923e30a509475ba4f82ccc5\n  [前提] fixed.params_before_sha_all  同  A=587a806cff6dd0230b4e3e5b B=587a806cff6dd0230b4e3e5b\n  [前提] fixed.rng_cpu_sha            同  A=c80d2f5a43765e550b1cf301 B=c80d2f5a43765e550b1cf301\n  C1 前向输出：loss 逐字节相同（118e286971ea vs 118e286971ea）；logits 逐字节相同\n  C2 通信前局部梯度：UNVERIFIED（FSDP2 不可观测；**不参与**判定，不用 C3 顶替）\n  C3 通信后梯度: 逐字节相同（n_tensors=320 sha_all=8dfddb07e8e6be1c）\n  C4 一次更新后参数: 逐字节相同（n_tensors=473 sha_all=2923e30a509475ba）\nREPLAY_IDENTICAL rank=1（**只**证明这一步；不推出全程可复现）\n",
+ "exit_code": 0
+}

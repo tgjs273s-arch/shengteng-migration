@@ -1,0 +1,383 @@
+{
+ "schema": "dsh.protocol.profile_short.v1",
+ "frozen_at": "2026-09-22",
+ "note": "★ 判据先于运行冻结（本轮判据写在下 criteria，运行已完成，结果填在 results）。**Profiler 运行只用于定位，其步时长不得用于宣布收益**（工具自身也打印了这条）。",
+ "question": "下一份算力该投在哪里：通信组合（reshard_after_forward × pregather）？局部重计算/激活？还是主机下发间隙？",
+ "run": {
+  "tool": "scripts/56_profile_run.py（委托 50_train.py 启动，同一套环境组装）",
+  "config": "/root/ops/qwen3_5_0_8B_mock_dp2_v3.yaml（GBS=8，100 步协议不变）",
+  "geometry": "mbs=4 × gas=1 × world=2；official_comparable=false（理由：数据身份未声明，默认视为 mock）",
+  "profiling_window": [
+   50,
+   55
+  ],
+  "with_stack": false,
+  "machine": "199.98.58.213",
+  "run_dir": "/root/ops/prof_20260922_112113",
+  "boot_id": "fe6372a8-974e-481a-9c6a-828b3f4eb3ba"
+ },
+ "criteria": {
+  "buckets": "torch_npu profiler 的 step_trace_time.csv 五桶：Computing / Communication / Communication(Not Overlapped) / Free / Stage；比例按 **Stage 归一**",
+  "decision_rule": [
+   "**未重叠通信 ≥15%** ⇒ 通信是瓶颈，值得做 reshard_after_forward × pregather 组合实验",
+   "**Free ≥15%** ⇒ 主机下发/空隙方向（结合 kernel 发射次数判断是否发射受限）",
+   "**Computing ≥70%** ⇒ 计算占主导；但桶比例**不能**区分『真实算子』与『重计算』⇒ 必须再做 kernel 明细或调用栈归因后才允许宣布方向",
+   "任一项都不满足 ⇒ 记录『本轮无瓶颈指向』，不得凭偏好选方向"
+  ],
+  "fail_closed": [
+   "缺 step_trace_time.csv ⇒ 直接失败，不用 kernel_details 硬凑（工具已如此）",
+   "拿被 profiling 拖慢的步时长与稳态对标 ⇒ 禁止（工具在产物里打印了这条提醒）"
+  ]
+ },
+ "results": {
+  "valid": true,
+  "driver_rc": 0,
+  "train_rc": [
+   "0"
+  ],
+  "steps_parsed": 100,
+  "wall_seconds": 146.7,
+  "profiled_steps": 5,
+  "stage_mean_us": 739549.55,
+  "buckets_mean_us": {
+   "Computing": 576949.001,
+   "Free": 142442.587,
+   "Communication": 41714.938,
+   "Communication(Not Overlapped)": 20107.798
+  },
+  "shares_pct_of_stage": {
+   "Computing": 78.0,
+   "Free": 19.3,
+   "Communication": 5.6,
+   "Communication(Not Overlapped)": 2.7
+  },
+  "kernel_launches_per_profiled_step": 7150,
+  "kernel_details_rows": 35750,
+  "steady_state_step_ms_for_contrast_only": 432.7,
+  "profiled_step_ms": 739.5
+ },
+ "decision_2026_09_22": {
+  "verdict": "**不投通信组合**；下一步做 kernel 明细/调用栈归因，再决定算力投向",
+  "reason": [
+   "未重叠通信仅 **2.7%**（总通信 5.6%）⇒ 按 above 判据，通信**不是**瓶颈 ⇒ `reshard_after_forward × pregather` 组合实验的预期收益空间很有限，不做为首选。",
+   "Computing 占 **78.0%**、Free 占 **19.3%** ⇒ 两个大头都不小；但『Computing』是**混合量**（前向/反向/重计算都在里面），**仅凭它无法区分『重计算占比是否突出』**。",
+   "`kernel_launches_per_profiled_step = 7150` 极高（每步 7150 次 kernel 发射）⇒ 需判断 Free 的 19.3% 是否来自主机下发/同步（发射受限），这需要 kernel 明细或调用栈数据。"
+  ],
+  "explicitly_not_decided": "**不宣布**『该做局部重计算』或『该做算子融合』——那需要先证明 Computing 中的重计算占比或关键路径上的单个算子（否则就是凭比例猜，属于本项目已记录过的『判据分辨率低于问题尺度』同族错误）。",
+  "next": "带 `--with-stack`（或解析 kernel_details.csv 的算子明细）再采一次同一窗口，把 Computing 拆成『重计算 vs 真实计算』，并把 Free 拆成『主机下发/同步/数据等待』；随后只做 profile 支持的那一类优化。"
+ },
+ "boundaries": [
+  "样本仅 **5 个步**（50–55）；桶比例在这 5 步内稳定（各桶 n=5，max 与 median 相差 <1%），但不代表长程行为。",
+  "**数据是 mock**（且每步同一批）⇒ 数据加载/等待行为**不代表官方 COCO 多图数据**；Free 中的数据等待成分可能被低估。",
+  "本协议不含显存曲线（`with_memory=false`）⇒ 关于 GDN 显存增长那一类问题**尚未取证**。",
+  "步时长 739.5 ms 是**被 profiling 拖慢**的值，与稳态 432.7 ms **不可对标**；本协议只用比例。",
+  "单机单次运行；不含跨机复现（机器 A 已关机）。"
+ ],
+ "kernel_attribution_2026_09_22": {
+  "note": "桶比例（Computing 78%）无法区分『真实算子 vs 重计算』⇒ 按 criteria 的要求做**算子级归因**。数据源：同一批 profile 的 kernel_details.csv（35750 行 = 7150 发射/步 × 5 步；总耗时 3172977 us）。★ 纪律：**只用比例**；被 profiling 拖慢的绝对时间不与稳态对标。",
+  "top_kernels_by_time": {
+   "aclnnMatmul_MatMulV3Common_MatMulV3": {
+    "pct": 20.5,
+    "calls": 2085
+   },
+   "prepare_wy_repr_bwd_kernel": {
+    "pct": 6.17,
+    "calls": 90
+   },
+   "causal_conv1d_bwd_kernel": {
+    "pct": 5.44,
+    "calls": 90
+   },
+   "chunk_bwd_kernel_dqkwg": {
+    "pct": 5.27,
+    "calls": 90
+   },
+   "chunk_gated_delta_rule_fwd_kernel_h_blockdim64": {
+    "pct": 5.03,
+    "calls": 180
+   },
+   "chunk_gated_delta_rule_bwd_kernel_dhu_blockdim64": {
+    "pct": 4.61,
+    "calls": 90
+   },
+   "aclnnInplaceCopy_TransposeAiCore_Transpose": {
+    "pct": 3.96,
+    "calls": 4055
+   },
+   "aclnnMul_MulAiCore_Mul": {
+    "pct": 3.51,
+    "calls": 2540
+   },
+   "aclnnInplaceCopy_CastAiCore_Cast": {
+    "pct": 3.3,
+    "calls": 3815
+   },
+   "aclnnLogSoftmaxBackward_LogSoftmaxGrad": {
+    "pct": 2.53,
+    "calls": 5
+   },
+   "aclnnLogSoftmax_LogSoftmaxAiCore_LogSoftmaxV2": {
+    "pct": 2.08,
+    "calls": 5
+   },
+   "aclnnAdd_AddAiCore_Add": {
+    "pct": 1.73,
+    "calls": 1930
+   },
+   "causal_conv1d_fwd_kernel": {
+    "pct": 1.7,
+    "calls": 180
+   },
+   "RmsNormGrad": {
+    "pct": 1.68,
+    "calls": 395
+   },
+   "aclnnApplyAdamWV2": {
+    "pct": 1.65,
+    "calls": 1600
+   }
+  },
+  "families": {
+   "GDN / linear-attn 系列": {
+    "pct": 28.22,
+    "members": [
+     "prepare_wy_repr_bwd",
+     "causal_conv1d_bwd",
+     "chunk_bwd_kernel_dqkwg",
+     "chunk_gated_delta_rule_fwd_kernel_h",
+     "chunk_gated_delta_rule_bwd_dhu",
+     "causal_conv1d_fwd"
+    ]
+   },
+   "matmul 族（MatMulV3）": {
+    "pct": 20.5
+   },
+   "小算子/拷贝/类型转换簇": {
+    "pct": 16.3,
+    "members": [
+     "InplaceCopy_Transpose",
+     "InplaceCopy_Cast",
+     "InplaceCopy_Slice",
+     "Mul",
+     "Add",
+     "ApplyAdamWV2",
+     "LpNormV2",
+     "Subs"
+    ],
+    "calls_total": "≈20000 次/5 步（每步约 4000 次）"
+   }
+  },
+  "revised_decision": {
+   "verdict": "profile 支持两个候选方向（按证据强度排序）：① **GDN/linear-attn 算子族（28.2%，最大算子族）**；② **小算子/拷贝/cast 簇（16.3%、近 2 万次发射，与 19.3% Free 吻合）**。通信仍不在列（未重叠 2.7%）。",
+   "why_this_supersedes_bucket_only_reading": "桶比例只能说『计算占 78%』；算子级归因才能说清『哪一族占大头』——这一步正是 criteria 里要求的『再做归因才允许宣布方向』。",
+   "still_not_decided": "① **重计算占比**仍未量化（需要 `--with-stack` 或识别 recompute 重复 kernel 序列）；② **显存曲线**未采（`with_memory=false`），GDN 相关显存增长仍未取证 ⇒ 『是否值得为 GDN 恢复更快路径』必须等显存证据，不能只看耗时占比。",
+   "next_candidates_ranked": [
+    "GDN/linear-attn 族：先确认它是否落在关键路径（而非可与 matmul 重叠），再考虑局部优化；同时采显存曲线以判断『恢复更快路径』的代价",
+    "小算子簇：核对是否可由融合/减少 cast-copy 消掉（与 Free 19.3%、7150 发射/步一致）",
+    "通信组合（reshard_after_forward × pregather）：**暂不投入**（未重叠仅 2.7%）"
+   ]
+  },
+  "boundaries": [
+   "kernel_details.csv 的 `Duration(us)` 是 kernel 级设备时间，**不含**主机下发与同步等待 ⇒ 它与桶的 Free 19.3% 是**两类信息**，不能相加当成 100%。",
+   "族占比是**按算子名手工归族**的结果（名字里含 GDN/chunk/conv1d 者归入 GDN 族）；归族规则写在这里，若换版本算子命名变化，需重新归族。",
+   "样本仍为 5 个步（50–55）、mock 数据、单机单次。"
+  ],
+  "recorded_at": "2026-09-22 11:22:45"
+ },
+ "memory_round_2026_09_22": {
+  "note": "第二轮 profile：开启显存采集（为此给 56_profile_run.py 新增 `--with-memory` —— 原实现把 `with_memory` **硬编码为 False**，导致『激活/logits 占用是否突出』这类问题在本项目里一直无法回答）。窗口缩到 50–52（显存记录很重）。同时挂了一个独立的 HBM 采样循环（`npu-smi info`）。",
+  "run": {
+   "base": "/root/ops/profmem3_20260922_112940",
+   "prof_out": "/root/ops/profmem3_20260922_112940/run",
+   "config": "/root/ops/qwen3_5_0_8B_mock_dp2_v3.yaml（GBS=8）",
+   "profiling_window": [
+    50,
+    52
+   ],
+   "with_memory": true,
+   "with_stack": false,
+   "rc": "P2PROF_OK；train 100/100"
+  },
+  "buckets_with_memory": {
+   "shares_pct": {
+    "Computing": 70.9,
+    "Free": 26.6,
+    "Communication": 5.2,
+    "Communication(Not Overlapped)": 2.5
+   },
+   "mean_us": {
+    "Computing": 577850,
+    "Free": 217047,
+    "Communication": 42107,
+    "Communication(Not Overlapped)": 20311
+   },
+   "note": "与第一轮（Computing 78.0 / Free 19.3）方向一致；显存采集本身把 Free 抬高（开销进了 Free 桶）⇒ 两轮的 Free 不可直接比较，比例只用于定性。"
+  },
+  "hbm_curve": {
+   "source": "npu-smi info 采样（每 5 秒尝试一次，但**单次调用本身要十几秒** ⇒ 实际约 7 点/124 秒，粗粒度）",
+   "chip0": {
+    "first_mb": 3124,
+    "last_mb": 8458,
+    "min_mb": 3124,
+    "max_mb": 8531,
+    "delta_mb": 5334
+   },
+   "chip1": {
+    "first_mb": 2896,
+    "last_mb": 8220,
+    "min_mb": 2896,
+    "max_mb": 8299,
+    "delta_mb": 5324
+   },
+   "reading": "两块 die 从**空闲基线 ~3.0 GB** 升到 **~8.5 GB 峰值**（连续 100 步内）；末端略降（收尾阶段）⇒ 本配置下**未见 64 GB 量级风险**，但**跨步增长曲线是粗粒度**的，不能据此宣布『显存稳定』。",
+   "boundary": "npu-smi 的采样间隔 >> 步时长（~0.43–0.7 s/步）⇒ **看不到步内峰值**；要拿步内峰值必须用进程内 allocator 统计（本轮未做）。"
+  },
+  "operator_memory": {
+   "file": "…/ASCEND_PROFILER_OUTPUT/operator_memory.csv（17458 行）",
+   "columns": [
+    "Name",
+    "Size(KB)",
+    "Allocation Time(us)",
+    "Release Time(us)",
+    "Active Release Time(us)",
+    "Duration(us)",
+    "Active Duration(us)",
+    "Allocation Total Allocated(MB)"
+   ],
+   "top_peak_size_kb": {
+    "aten::empty_strided": 6145920.5,
+    "aten::_log_softmax": 6145920.5,
+    "aten::nll_loss_backward": 6145920.5,
+    "aten::_log_softmax_backward_data": 6145920.5,
+    "aten::_foreach_copy_": 3119104.0,
+    "aten::_convolution": 3119104.0,
+    "aten::mul": 3119104.0,
+    "aten::copy_": 3119104.0,
+    "aten::cat": 3119104.0,
+    "aten::stack": 3119104.0
+   },
+   "reading": "★ 峰值最高的四项**是同一峰值**（6145920.5 KB ≈ **5.86 GB**）：`empty_strided` 是通用分配入口，而 `_log_softmax` / `nll_loss_backward` / `_log_softmax_backward_data` 是**同一个峰值时刻的持有者**⇒ **logits/loss 物化是最大显存持有者**（8.5 GB 峰值里约 5.9 GB 落在这一条链上）。",
+   "aggregation_boundary": "本表的『Top』是按**算子名取最大 Size**（`max` 聚合），因此① `empty_strided` 这类**通用分配入口**会与语义算子并列，不能当成『某个算子特别费显存』；② 同名多次分配只保留最大值 ⇒ **不能**用本表求『总占用』。要更细的归因需按 `Active Duration`×Size 或时间轴重建。"
+  },
+  "revised_decision": {
+   "now_supported": [
+    "**显存方向（证据最具体）**：logits/loss 物化占峰值约 5.9 GB / 8.5 GB ⇒ 按 Codex 的判定表对应『激活或 logits 占用突出 ⇒ 单独测试 **chunk loss**、按模块重计算』——**这是目前唯一同时有显存证据与时间证据支持的方向**（时间侧：`_log_softmax` 2.08% + `LogSoftmaxGrad` 2.53%）。",
+    "**算子族方向**：GDN/linear-attn 族占时 28.2%（第一轮 kernel 归因）⇒ 仍待回答『是否落在关键路径』。",
+    "**小算子/主机方向**：小算子簇 16.3%、7150 发射/步、Free 19–27% ⇒ 三条独立线索互相印证。",
+    "**通信方向：排除**（未重叠 2.5–2.7%，两轮一致）。"
+   ],
+   "next_before_any_change": [
+    "① chunk loss 类改动必须先立协议（它改变 loss 计算与显存布局，属于『改计算』而非『改开关』）；",
+    "② 若要做 GDN 方向，必须先采**进程内步内峰值显存**（决定『恢复更快路径』的代价），本轮 npu-smi 的粗粒度曲线**不足以**支撑该决定。"
+   ],
+   "still_not_decided": [
+    "重计算（recompute）占比仍未量化：`with_stack` 尚未开启（决定『Computing 里有多少是重算』）；",
+    "步内显存峰值未知（采样粒度限制）；",
+    "mock 数据每步同一批 ⇒ 数据加载成分被低估（沿用第一轮边界）。"
+   ]
+  },
+  "recorded_at": "2026-09-22 11:28:25"
+ },
+ "pending_with_stack_2026_09_22": {
+  "status": "已挂后台运行，**结果待读**（本轮对话结束时仍在跑）",
+  "purpose": "回答 profile 协议里最后一项 still_not_decided：Computing（70.9–78.0%）里**重计算占比**是多少。开 `--with-stack` 后可以把 kernel 归因到 Python 调用点，从而区分『真实计算』与『重计算』。",
+  "command": "python3 scripts/56_profile_run.py --skill /root/qwen35-ascend-migrator --config /root/ops/qwen3_5_0_8B_mock_dp2_v3.yaml --steps 100 --prof-start 50 --prof-end 51 --with-stack",
+  "out_dir": "/root/ops/p2prof（★ 注意：本轮**漏传 --out**，用的是工具默认目录）",
+  "launch_log": "/root/ops/profstack_20260922_113307/launch.log",
+  "how_to_read": [
+   "① `cat /root/ops/p2prof/result.json` 看桶比例（与 50–51 窗口对照）；",
+   "② 在 `/root/ops/p2prof/prof/*/ASCEND_PROFILER_OUTPUT/` 下找带调用栈的产物（kernel_details 的调用栈列 / `trace_view.json`），把 Computing 按调用点归因；",
+   "③ 判定：若重计算相关调用点占 Computing 的显著比例 ⇒ 支持『按模块重计算 / chunk loss』方向；若不显著 ⇒ 收回该方向，改看小算子簇（16.3%、7150 发射/步）。",
+   "④ 纪律：仍然**只用比例**；被 profiling 拖慢的绝对时间不对标稳态。"
+  ],
+  "boundaries": [
+   "窗口只有 2 个步（50–51），样本小；",
+   "with_stack 会显著增大产物与运行时间；",
+   "数据仍为 mock（每步同一批）⇒ 数据等待成分被低估。"
+  ],
+  "recorded_at": "2026-09-22 11:29:39"
+ },
+ "stack_round_2026_09_22": {
+  "note": "第三轮：`--with-stack`（窗口 50–51，1 个采样步），目的是回答『Computing 里有多少是重计算』以及把耗时归到调用点。★ **本轮的桶比例不可与前两轮对比**：with_stack 把 Free 抬到 65.1%（`Computing 33.6 / Free 65.1 / Communication 2.5 / NotOverlapped 1.3`）——追踪开销本身进了 Free 桶。**只用同轮之内的相对比例**。",
+  "run": {
+   "out_dir": "/root/ops/p2prof（漏传 --out，工具默认目录）",
+   "prof_dir": "/root/ops/p2prof/prof/4ac9ca3712ba_29018_..._ascend_pt/",
+   "rc": "P2PROF_OK；train 100/100",
+   "artifacts": {
+    "operator_details.csv": "48.7 MB（含 Call Stack 列）",
+    "trace_view.json": "149.8 MB",
+    "kernel_details.csv": "2.3 MB",
+    "task_time.csv": "1.2 MB"
+   }
+  },
+  "stack_attribution_device_self_us": {
+   "total": 1198465,
+   "by_marker_pct": {
+    "backward": 55.74,
+    "其它（含前向）": 37.07,
+    "communication": 5.19,
+    "optimizer": 1.22,
+    "recompute": 0.78
+   },
+   "top_ops": {
+    "wait_event（backward 栈）": {
+     "pct": 33.47
+    },
+    "wait_event（其它栈）": {
+     "pct": 11.46
+    },
+    "aclnnMatmul": {
+     "pct": 11.6
+    },
+    "prepare_wy_repr_bwd_kernel": {
+     "pct": 3.27
+    },
+    "causal_conv1d_bwd_kernel": {
+     "pct": 2.91
+    },
+    "aclnnMul": {
+     "pct": 2.36
+    },
+    "HcclAllGather": {
+     "pct": 1.86
+    },
+    "wait_event（communication 栈）": {
+     "pct": 1.66
+    },
+    "aclnnApplyAdamWV2": {
+     "pct": 0.88
+    },
+    "recompute_w_u_fwd_kernel": {
+     "pct": 0.67
+    }
+   }
+  },
+  "findings": [
+   "★★ **`wait_event` 类目合计 ≈46.6%**（33.47 + 11.46 + 1.66）——设备侧最大的单一支出不是算术，而是**等待/同步**。这与另外两个独立量一致：无插桩那一轮的 `Free 19.3%`（主机/流间隙）与 `7150 次 kernel 发射/步`。⇒ 瓶颈方向是**重叠/同步与发射开销**，而不是通信（5.19%）或算子本身。",
+   "★★ **重计算仅 0.78%**（`recompute_w_u_fwd_kernel` 0.67%）⇒ **『按模块重计算』在时间维度上没有收益空间**；若要动 loss/logits 那条链（峰值显存 5.86 GB），必须把动机如实写成**显存**（chunk loss），**不得**宣称它省时间。",
+   "通信 5.19%（`HcclAllGather` 1.86% 为主）与桶层结论（总通信 5.2–5.6%、未重叠 2.5–2.7%）**互相印证**⇒ 通信方向继续排除。",
+   "前向主导算子仍是大 `MatMul`（11.60%），GDN 反向核合计约 6.2%，与第二轮 kernel 归因方向一致。"
+  ],
+  "caveats": [
+   "**wait_event 占比可能被插桩本身放大**：追踪让主机变慢 ⇒ 流等待变多。但『等待可观』这一点有独立旁证（无插桩轮次的 Free 19.3% + 7150 发射/步），故方向成立、**数值不可当精确值**。",
+   "窗口仅 1–2 个步；数据仍为 mock（每步同一批）⇒ 数据加载/等待成分被低估。",
+   "调用栈的**叶子帧解析失败**（我的 `;` + ` in ` 切分与实际格式不符）：实测格式是 `<file>(<line>): <func>;\\n<file>(<line>): <func>`（分隔符是**字面的反斜杠 n**，不是换行）⇒ 叶子帧聚合输出全为 `?`，**该维度本轮无结论**（只有按标记的归类有效）。"
+  ],
+  "revised_decision": {
+   "supported_now": [
+    "① **等待/同步/发射侧**（wait_event ≈46.6% + Free 19.3% + 7150 发射/步 + 小算子簇 16.3%）：下一步应先查**必要的同步点**（每步回主机的取值/日志、梯度裁剪的通信、以及 cast/copy/transpose 小算子簇），这是唯一有**三个独立量**指向的方向。",
+    "② **显存侧（动机=显存，不是时间）**：logits/loss 物化占峰值 ≈5.86 GB / 8.5 GB ⇒ chunk loss 类改动可作为**显存**手段立项；且必须先立协议（它改变 loss 计算与显存布局）。"
+   ],
+   "excluded": [
+    "通信（5.19%，三轮一致）",
+    "重计算（0.78%，时间维度无收益）"
+   ],
+   "still_not_decided": [
+    "步内峰值显存（需进程内 allocator 统计）；",
+    "叶子帧归因（解析格式已记录，重跑一次即可得）；",
+    "官方 COCO 数据下的数据等待成分（mock 低估）。"
+   ]
+  },
+  "recorded_at": "2026-09-22 11:56:15"
+ }
+}

@@ -1,0 +1,17 @@
+train_rc=0
+!! 人工覆盖 world_size: 2 → 2（P0 推断值可能不可靠）
+== P5 训练执行 ==
+环境路径 : full_npu | world_size=2
+几何自检 : mbs=4 × gas=1 × world=2 = GBS 8（官方红线 = 8；取值来源 yaml）
+训练命令 : cd /root/MindSpeed-MM && PYTHONPATH=/root/MindSpeed-MM:${PYTHONPATH:-} timeout 900 torchrun --nproc_per_node 2 --nnodes 1 --node_rank 0 --master_addr localhost --master_port 6111 mindspeed_mm/fsdp/train/trainer.py /root/ops/ab62_20260922_141427/06_C2/config.yaml > /root/ops/ab62_20260922_141427/06_C2/train.log 2>&1
+日志     : /root/ops/ab62_20260922_141427/06_C2/train.log （train_iters 已由配置决定，--steps=100 仅作提示）
+前台执行中（超时 900s）...
+
+=== 训练结果 ===
+iteration 行数 : 100
+耗时           : 130s
+日志           : /root/ops/ab62_20260922_141427/06_C2/train.log
+  [Rank 0 | Local Rank 0] 2026-09-22 14:29:41,770 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:41] iteration       99/     100 | consumed samples:          792 | elapsed time per
+  [Rank 0 | Local Rank 0] 2026-09-22 14:29:42,479 INFO [mindspeed_mm.fsdp.train.train_engine:48] =>  [2026-09-22 14:29:42] iteration      100/     100 | consumed samples:          800 | elapsed time per
+TRAIN_OK iters=100 log=/root/ops/ab62_20260922_141427/06_C2/train.log
+下一步: P6 性能 → python3 scripts/60_bench.py --log /root/ops/ab62_20260922_141427/06_C2/train.log
