@@ -20,7 +20,9 @@
 
 import argparse
 import csv
+import hashlib
 import json
+import math
 import os
 import re
 import statistics
@@ -30,17 +32,23 @@ import shutil
 import tempfile
 
 SKILL_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, SCRIPT_DIR)
+from _train_log import read_log, integrity
 JUDGE_DIR = os.path.join(SKILL_ROOT, "sk04_judge", "scripts")
 BASELINE_DIR = os.path.join(SKILL_ROOT, "sk04_judge", "configs", "baselines")
-
-ITER_RE = re.compile(
-    r"iteration\s+(\d+)\s*/\s*(\d+)\s*\|\s*consumed samples:\s*(\d+)"
-    r"\s*\|\s*elapsed time per iteration \(ms\):\s*([\d.]+)"
-    r"\s*\|\s*learning rate:\s*([\d.Ee+\-]+)"
-    r"\s*\|\s*global batch size:\s*(\d+)"
-    r"\s*\|\s*loss:\s*([\d.Ee+\-]+)"
-    r"\s*\|\s*grad norm:\s*([\d.]+)")
-
+TRITON_ID = "qwen35-0p8b-triton-20260724-100step-v1"
+LEGACY_A_ID = "qwen35-legacy-singlecard-20260608-v1"
+BASELINE_IDENTITIES = {
+    "officialB": {"canonical_id": TRITON_ID,
+                  "yaml_sha256": "bc4ea08bb2fe1d3f9e707310e7a5f70a61c969abcb77f4f3833392fcc0401c31",
+                  "log_sha256": "c8daabce532d0d7b5a3ffa1668ff490a3ddf8d95448701d17d2dc64ca1c89296",
+                  "log_path": os.path.join(SKILL_ROOT, "examples", "train", "official_baseline.log")},
+    "officialA": {"canonical_id": LEGACY_A_ID,
+                  "yaml_sha256": "de89de60814f5c4fd55376e459f98d0bb8c333aabd1c596a80816686b7efd02b",
+                  "log_sha256": None, "log_path": None},
+}
 
 def run_tool(script, args, timeout=300):
     """执行 judge 工具，返回 (rc, stdout, stderr)。"""
@@ -87,50 +95,120 @@ def checked_tool(script, args, outdir):
     return rc, so, se
 
 
-def parse_log(path):
-    rows = {}
-    for line in open(path, encoding="utf-8", errors="replace"):
-        m = ITER_RE.search(line)
-        if m:
-            it = int(m.group(1))
-            rows[it] = {"loss": float(m.group(7)), "gn": float(m.group(8)), "ms": float(m.group(4))}
-    return rows
+RELATIVE_DENOMINATOR_FLOOR = 1e-12  # 仅用于定义可计算性，不是验收阈值。
 
 
-def pointwise_metrics(ours, official):
-    """逐点相对误差 4 指标（Mean/MSE/Max/Min）+ 超 2% 步数。"""
-    common = sorted(set(ours) & set(official))
-    if not common:
+def sha256_file(path):
+    with open(path, "rb") as fh:
+        return hashlib.sha256(fh.read()).hexdigest()
+
+
+def baseline_identity(ref, path, log_path):
+    """Bind a historical alias to its immutable repository copy without rewriting it."""
+    name = os.path.splitext(os.path.basename(path))[0]
+    known = BASELINE_IDENTITIES.get(name)
+    yaml_hash = sha256_file(path) if os.path.isfile(path) else None
+    log_hash = sha256_file(log_path) if log_path and os.path.isfile(log_path) else None
+    issues = []
+    if known:
+        if yaml_hash != known["yaml_sha256"]:
+            issues.append("baseline_yaml_hash_mismatch")
+        if log_path:
+            if known["log_sha256"] is None:
+                issues.append("reference_log_identity_unavailable")
+            elif log_hash != known["log_sha256"]:
+                issues.append("baseline_log_hash_mismatch")
+        else:
+            issues.append("reference_log_missing")
+    else:
+        issues.append("baseline_identity_unregistered")
+    return {"requested": ref, "alias": name if known else None,
+            "canonical_id": known["canonical_id"] if known else None,
+            "identity_scope": "repository_copy", "external_source_status": "SOURCE_PENDING",
+            "yaml_path": os.path.abspath(path), "yaml_sha256": yaml_hash,
+            "reference_log_path": os.path.abspath(log_path) if log_path else None,
+            "reference_log_sha256": log_hash,
+            "expected_reference_log_sha256": known["log_sha256"] if known else None,
+            "identity_issues": issues, "identity_status": "MATCHED" if not issues else "UNVERIFIED"}
+
+
+def _by_step(parsed):
+    """The caller must reject incomplete logs before using this map."""
+    return {row["iter"]: row for row in parsed["rows"] if row["rank"] == 0}
+
+
+def _error(candidate, reference):
+    absolute = abs(candidate - reference)
+    if not math.isfinite(absolute):
+        return None, None
+    relative = (absolute / abs(reference) * 100.0
+                if abs(reference) > RELATIVE_DENOMINATOR_FLOOR else None)
+    if relative is not None and not math.isfinite(relative):
+        relative = None
+    return absolute, relative
+
+
+def _aggregate(values):
+    values = [value for value in values if value is not None]
+    if not values:
         return None
-    def rel(a, b):
-        return abs(a - b) / abs(b) * 100.0 if b else 0.0
-    le = [rel(ours[i]["loss"], official[i]["loss"]) for i in common]
-    ge = [rel(ours[i]["gn"], official[i]["gn"]) for i in common]
-    def m(e):
-        return {"mean": statistics.mean(e), "mse": sum(x * x for x in e) / len(e),
-                "max": max(e), "min": min(e), "median": statistics.median(e)}
-    return {"n_common": len(common),
-            "loss": m(le), "grad_norm": m(ge),
-            "loss_over_2pct_iters": [i for i in common if rel(ours[i]["loss"], official[i]["loss"]) > 2.0],
-            "gn_over_2pct_iters": [i for i in common if rel(ours[i]["gn"], official[i]["gn"]) > 2.0],
-            "step1_loss_ours": ours[min(common)]["loss"],
-            "step1_loss_official": official[min(common)]["loss"]}
+    squares = [value * value for value in values]
+    return {"mean": statistics.mean(values),
+            "mse": statistics.mean(squares) if all(math.isfinite(x) for x in squares) else None,
+            "max": max(values), "min": min(values),
+            "median": statistics.median(values)}
 
 
-def window_metrics(ours, official, lo=50, hi=100):
-    def w(rows, key):
-        v = [rows[i][key] for i in sorted(rows) if lo <= i <= hi]
-        return (statistics.mean(v), statistics.median(v)) if v else (None, None)
-    ol, om = w(ours, "loss"); fl, fm = w(official, "loss")
-    og, _ = w(ours, "gn"); fg, _ = w(official, "gn")
+def pointwise_metrics(ours, reference):
+    """One row source for JSON and CSV; unknown relative values remain null."""
+    common = sorted(set(ours) & set(reference))
+    rows = []
+    for step in common:
+        candidate, baseline = ours[step], reference[step]
+        loss_abs, loss_rel = _error(candidate["loss"], baseline["loss"])
+        gn_abs, gn_rel = _error(candidate["grad_norm"], baseline["grad_norm"])
+        rows.append({"iter": step, "official_loss": baseline["loss"],
+                     "ours_loss": candidate["loss"], "loss_abs_err": loss_abs,
+                     "loss_rel_err_pct": loss_rel,
+                     "official_gn": baseline["grad_norm"],
+                     "ours_gn": candidate["grad_norm"], "gn_abs_err": gn_abs,
+                     "gn_rel_err_pct": gn_rel})
+    result = {"n_common": len(common), "common_steps": common,
+              "loss": {"absolute": _aggregate([r["loss_abs_err"] for r in rows]),
+                       "relative_pct": _aggregate([r["loss_rel_err_pct"] for r in rows
+                                                   if r["loss_rel_err_pct"] is not None]),
+                       "absolute_undefined_steps": [r["iter"] for r in rows
+                                                    if r["loss_abs_err"] is None],
+                       "relative_undefined_steps": [r["iter"] for r in rows
+                                                    if r["loss_rel_err_pct"] is None]},
+              "grad_norm": {"absolute": _aggregate([r["gn_abs_err"] for r in rows]),
+                            "relative_pct": _aggregate([r["gn_rel_err_pct"] for r in rows
+                                                        if r["gn_rel_err_pct"] is not None]),
+                            "absolute_undefined_steps": [r["iter"] for r in rows
+                                                         if r["gn_abs_err"] is None],
+                            "relative_undefined_steps": [r["iter"] for r in rows
+                                                         if r["gn_rel_err_pct"] is None]},
+              "rows": rows, "relative_denominator_floor": RELATIVE_DENOMINATOR_FLOOR}
+    if 1 in common:
+        result["step1_loss_ours"] = ours[1]["loss"]
+        result["step1_loss_official"] = reference[1]["loss"]
+    return result
+
+
+def window_metrics(ours, reference, lo=50, hi=100):
     out = {}
-    if ol and fl:
-        out["loss"] = {"ours_mean": ol, "official_mean": fl,
-                       "rel_dev_pct": abs(ol - fl) / fl * 100.0,
-                       "ours_median": om, "official_median": fm}
-    if og and fg:
-        out["grad_norm"] = {"ours_mean": og, "official_mean": fg,
-                            "rel_dev_pct": abs(og - fg) / fg * 100.0}
+    for key, label in (("loss", "loss"), ("grad_norm", "grad_norm")):
+        ov = [ours[i][key] for i in range(lo, hi + 1) if i in ours]
+        rv = [reference[i][key] for i in range(lo, hi + 1) if i in reference]
+        if ov and rv:
+            oa, ra = statistics.mean(ov), statistics.mean(rv)
+            absolute, relative = _error(oa, ra)
+            out[label] = {"ours_mean": oa, "official_mean": ra,
+                          "abs_dev": absolute, "rel_dev_pct": relative,
+                          "ours_count": len(ov), "official_count": len(rv)}
+            if key == "loss":
+                out[label].update(ours_median=statistics.median(ov),
+                                  official_median=statistics.median(rv))
     return out
 
 
@@ -402,8 +480,13 @@ def _main():
     outdir = tempfile.mkdtemp(prefix="attempt-", dir=publishdir)
     write_status(publishdir, "RUNNING", attempt_dir=outdir)
     base = args.baseline
+    for alias, identity in BASELINE_IDENTITIES.items():
+        if base == identity["canonical_id"]:
+            base = alias
+            break
     if os.path.isfile(base) is False and os.path.isfile(os.path.join(BASELINE_DIR, base + ".yaml")):
         base = os.path.join(BASELINE_DIR, base + ".yaml")
+    identity = baseline_identity(args.baseline, base, args.baseline_log)
 
     print("== P7 判定链 ==")
     print("日志     : %s" % args.log)
@@ -477,6 +560,10 @@ def _main():
     color = reach["color"]
 
     # ---- 5) 双轨精度指标（逐点 + 窗口）
+    ours_parsed = read_log(args.log)
+    candidate_totals = {row["total"] for row in ours_parsed["rows"]}
+    candidate_end = next(iter(candidate_totals)) if len(candidate_totals) == 1 else None
+    candidate_integrity = integrity(ours_parsed, expected_end=candidate_end)
     summary = {"execution_state": "COMPLETED", "attempt_dir": outdir,
                "verdict_id": verdict.get("verdict_id"),
                "verdict": verdict_name,
@@ -484,39 +571,81 @@ def _main():
                "level": level,
                "officiality": verdict.get("officiality"),
                "deviations": (verdict.get("config_deviation") or {}).get("count_mismatch", 0),
-               "open_gates": open_gates}
+               "open_gates": open_gates,
+               "baseline_identity": identity,
+               "candidate_log_sha256": sha256_file(args.log),
+               "candidate_integrity": candidate_integrity,
+               "comparability": {"verdict": verdict_name, "color": color,
+                                 "level": level, "open_gates": open_gates},
+               "rule_status": "RULE_PENDING", "rule_version": None,
+               "numeric_validity": "NO_REFERENCE", "numeric_acceptance": "NOT_DETERMINED",
+               "numeric_metrics": None,
+               "alignment_evidence": {
+                   key: "UNVERIFIED" for key in
+                   ("weight_start", "loss_semantics", "dtype", "optimizer",
+                    "learning_rate", "seed", "preprocessing", "data_identity",
+                    "sample_order")}}
     if args.baseline_log and os.path.isfile(args.baseline_log):
-        ours = parse_log(args.log)
-        official = parse_log(args.baseline_log)
-        pw = pointwise_metrics(ours, official)
-        wm = window_metrics(ours, official)
-        summary["pointwise"] = pw
-        summary["window_50_100"] = wm
-        if pw:
-            # 逐点对比 CSV（供精度报告作图）
-            with open(os.path.join(outdir, "loss_compare.csv"), "w", newline="", encoding="utf-8-sig") as f:
-                w = csv.writer(f)
-                w.writerow(["iter", "official_loss", "ours_loss", "loss_rel_err_pct",
-                            "official_gn", "ours_gn", "gn_rel_err_pct"])
-                for i in sorted(set(ours) & set(official)):
-                    lr = abs(ours[i]["loss"] - official[i]["loss"]) / official[i]["loss"] * 100
-                    gr = abs(ours[i]["gn"] - official[i]["gn"]) / official[i]["gn"] * 100
-                    w.writerow([i, official[i]["loss"], ours[i]["loss"], round(lr, 6),
-                                official[i]["gn"], ours[i]["gn"], round(gr, 6)])
-            print("\n—— 双轨精度指标 ——")
-            print("  逐点 loss : Mean %.4f%% | Max %.4f%% | MSE %.6f | 超2%%步数 %d/%d" % (
-                pw["loss"]["mean"], pw["loss"]["max"], pw["loss"]["mse"],
-                len(pw["loss_over_2pct_iters"]), pw["n_common"]))
-            print("  逐点 gn   : Mean %.4f%% | Max %.4f%% | 超2%%步数 %d/%d" % (
-                pw["grad_norm"]["mean"], pw["grad_norm"]["max"],
-                len(pw["gn_over_2pct_iters"]), pw["n_common"]))
-            print("  step1 loss: 我方 %.6f vs 官方 %.6f" % (pw["step1_loss_ours"], pw["step1_loss_official"]))
-        if wm.get("loss"):
-            print("  窗口50-100: loss 偏差 %.4f%% | gn 偏差 %.4f%%" % (
-                wm["loss"]["rel_dev_pct"], wm["grad_norm"]["rel_dev_pct"]))
-        print("  对比 CSV  : %s" % os.path.join(outdir, "loss_compare.csv"))
+        reference_parsed = read_log(args.baseline_log)
+        reference_totals = {r["total"] for r in reference_parsed["rows"]}
+        expected_end = next(iter(reference_totals)) if len(reference_totals) == 1 else None
+        reference_gbs = {r["gbs"] for r in reference_parsed["rows"]}
+        expected_gbs = next(iter(reference_gbs)) if len(reference_gbs) == 1 else None
+        ours_integrity = integrity(ours_parsed, expected_end=expected_end,
+                                   expected_gbs=expected_gbs)
+        reference_integrity = integrity(reference_parsed, expected_end=expected_end,
+                                        expected_gbs=expected_gbs)
+        metrics = {"candidate_integrity": ours_integrity,
+                   "reference_integrity": reference_integrity,
+                   "pointwise": None, "window_50_100": None,
+                   "source_type": "training_iteration_log"}
+        summary["numeric_metrics"] = metrics
+        bad_parse = any(x in item["problems"] for item in (ours_integrity, reference_integrity)
+                        for x in ("bad_iteration_records", "duplicate_steps",
+                                  "non_increasing_step_order", "unexpected_or_mixed_ranks"))
+        if not bad_parse and ours_parsed["rows"] and reference_parsed["rows"]:
+            ours = _by_step(ours_parsed)
+            reference = _by_step(reference_parsed)
+            pw = pointwise_metrics(ours, reference)
+            wm = window_metrics(ours, reference)
+            metrics["pointwise"] = pw
+            metrics["window_50_100"] = wm
+            summary["pointwise"] = {k: v for k, v in pw.items() if k != "rows"}
+            summary["window_50_100"] = wm
+            if pw["rows"]:
+                with open(os.path.join(outdir, "loss_compare.csv"), "w", newline="", encoding="utf-8-sig") as f:
+                    columns = ("iter", "official_loss", "ours_loss", "loss_abs_err",
+                               "loss_rel_err_pct", "official_gn", "ours_gn", "gn_abs_err",
+                               "gn_rel_err_pct")
+                    writer = csv.DictWriter(f, fieldnames=columns)
+                    writer.writeheader()
+                    writer.writerows(pw["rows"])
+                print("  对比 CSV  : %s" % os.path.join(outdir, "loss_compare.csv"))
+        complete = (ours_integrity["state"] == "COMPLETE" and
+                    reference_integrity["state"] == "COMPLETE")
+        all_relative = bool(metrics["pointwise"]) and all(
+            not metrics["pointwise"][key]["relative_undefined_steps"]
+            for key in ("loss", "grad_norm"))
+        if identity["identity_issues"]:
+            summary["numeric_validity"] = "BASELINE_IDENTITY_UNVERIFIED"
+        elif not complete or not metrics["pointwise"] or not metrics["pointwise"]["n_common"]:
+            summary["numeric_validity"] = "INCOMPLETE_SERIES"
+        elif not all_relative:
+            summary["numeric_validity"] = "RELATIVE_UNDEFINED"
+        else:
+            summary["numeric_validity"] = "VALID_MEASUREMENT"
+        print("  数值状态: %s；规则: RULE_PENDING" % summary["numeric_validity"])
+    elif args.baseline_log:
+        summary["numeric_validity"] = "REFERENCE_LOG_MISSING"
+        print("  数值状态: REFERENCE_LOG_MISSING")
     else:
-        print("\n（未提供 --baseline-log，跳过逐点/窗口双轨指标）")
+        print("\n（未提供 --baseline-log，数值判定未执行）")
+    summary["numeric_open_gates"] = list(identity["identity_issues"])
+    if candidate_integrity["state"] != "COMPLETE":
+        summary["numeric_open_gates"].append("candidate_integrity_incomplete")
+    if summary["numeric_validity"] != "VALID_MEASUREMENT":
+        summary["numeric_open_gates"].append(summary["numeric_validity"].lower())
+    summary["numeric_open_gates"].extend(["rule_pending", "alignment_evidence_unverified"])
 
     # ---- 4) 账本
     if args.registry and args.tag:

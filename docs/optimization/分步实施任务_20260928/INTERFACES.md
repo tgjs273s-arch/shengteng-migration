@@ -30,7 +30,7 @@
 
 ## 本轮工程源码版本（2026-09-28）
 
-**2026-09-29 状态更新：下表为此前临时工程候选。用户新提供 PDF 第 1 页指定 `git checkout 26.1.0`，不与下表 `v26.0.0` 等同。GitHub/GitCode 当前 `26.1.0` 分支均指向 `5b5505331924634da64e3d9a1925d02b10babe9f`，对应命名 tag `v26.1.0` 是另一个提交 `d0b964b55fb33b4eccec72513d8741d391ec13c7`。T03/T08 正在核查新输入与 API，正式替换前不得将旧候选原型、保存格式假设或测试结论移用于新目标。**
+**2026-09-29 状态更新：下表为此前临时工程候选。用户新提供 PDF 第 1 页指定 `git checkout 26.1.0`，不与下表 `v26.0.0` 等同。主管已采纳下一节的固定新工程目标，代码适配与验证尚在进行；不得将旧候选原型、保存格式假设或测试结论移用于新目标。**
 
 T03 已对不可变上游提交进行只读源码核查，主管采纳下列版本作为工程输入。此决定不代替比赛指定来源确认，也不证明本机已经安装或运行对应环境。
 
@@ -45,6 +45,13 @@ T03 应将本次实际消费的文件摘要、源码差异、上游复用与项�
 目标 [train_engine.py](https://github.com/Ascend/MindSpeed-MM/blob/6c45b4869f9938892b982a203cc121803c345db2/mindspeed_mm/fsdp/train/train_engine.py) 使用 `training.load` 加载 checkpoint；[tracker 解析](https://github.com/Ascend/MindSpeed-MM/blob/6c45b4869f9938892b982a203cc121803c345db2/mindspeed_mm/fsdp/checkpoint/utils.py) 区分 `release` 初始权重和整数续训步数。恢复真实起点还需对应 checkpoint 的元数据，不能从目录存在或旧 `load_checkpoint_path` 字段猜测。
 
 配置、注册架构和权重索引的静态吻合不证明模型可实例化、权重数值完整或 NPU 正确；相关验证分别由 T03/T04/T08/T12 留存。当前运行环境与正式精度规则仍待补齐。
+
+## 2026-09-29 采纳的新工程目标
+
+- 依用户提供 PDF 第 1 页的 `26.1.0` 分支要求，固定 [MindSpeed-MM `5b5505331924634da64e3d9a1925d02b10babe9f`](https://github.com/Ascend/MindSpeed-MM/tree/5b5505331924634da64e3d9a1925d02b10babe9f)。GitHub/GitCode 两仓库当前分支相同；`v26.1.0` tag 为 `d0b964b55fb33b4eccec72513d8741d391ec13c7`，与所选分支分叉，不混用。材料未给不可变 commit；这里固定的是本次核对时的分支版本，不宣称它就是材料生成时的历史提交。
+- 新目标 Qwen3.5 示例 README 仍指向 GPU Transformers `fc91372`，沿用已核完整 commit `fc9137225880a9d03f130634c20f9dbe36a7b8bf`。0.8B 元数据仍锁 `2fc06364715b967f1860aea9cf38778875588b17`，作为项目明确选择而非 PDF 指定 revision；PDF 的 4B 配置文件名不能改变本项目 0.8B 目标。
+- 新版注册器返回类，ModelHub 配置覆盖增加 feature_args，并有 MTP 和 causal-conv 实现变化。T03 需另存新 bundle、manifest、补丁和摘要，重放后才交接；不得覆盖旧版本证据。Triton 参考日志第 90–91 行明确 `mtp_num_layers: 0`、`mtp_loss_scaling_factor: 0.1`，参考与 runtime 检查按此显式记录 MTP 策略，不能静默启用 1 层。
+- T08 已核固定新目标仍用 DCP checkpointer 保存；`load_format` 只控制加载，未知 `save_format` 可被配置解析容纳但没有保存实现消费。P2/P5 不能凭该字段宣称 HF 保存或规避 DCP；所需 HF 产物走版本匹配的显式导出。`no_save_optim`、`no_save_rng`、`load_rank0_and_broadcast` 是真实受支持字段，不能混同为无效参数。
 
 ## T06 本地接口冻结与后续集成
 
@@ -67,6 +74,12 @@ T03 应将本次实际消费的文件摘要、源码差异、上游复用与项�
 - P2 新增 `reference_config.yaml`、`config_manifest.json`（`migrator_config.v1`），保存实际/参考配置 SHA-256、canonical baseline ID、来源模板和 P0 身份、GBS 几何、逐叶差异以及字段来源。差异有双方 `*_present`，缺失与 null/空映射不混同。
 - `verified_reference_fields` 仅描述已经核对的仓库存量日志字段，其他字段列入 `template_default_fields_unverified`；整份参考模板不等于完整官方配置。新提供的外部材料由 T01 补核后再更新来源状态。
 - P2 新产物、角色传参及配置到本次训练的绑定仍由 T10 接入 `_stage_state.OUTPUTS` 与主入口。T05 资产子步尚未冻结，消费方不得推测其字段。
+
+## T07 独立数值核心接口
+
+- `judge_summary.json` 增加 `baseline_identity`、`candidate_log_sha256`、`candidate_integrity`、`comparability`、`numeric_metrics`、`numeric_validity`、`rule_status`、`numeric_acceptance`、`alignment_evidence` 和 `numeric_open_gates`。`VALID_MEASUREMENT` 只表示所选日志可计算，当前规则仍 RULE_PENDING、数值验收 NOT_DETERMINED。
+- canonical Triton ID 和旧 `officialB` 兼容，但以登记 YAML/日志 hash 配对；旧 `officialA` 继续保留独立身份。原件补核、配置/资产身份与当前训练绑定尚须后继消费，不能以别名替代证据。
+- CSV 与 JSON 共用逐步误差数据，零/近零参考的相对误差为 null。SK04 观测增加 `iteration_integrity`；不完整序列不提供有效 step1 证据或支持绿色结果。默认/`--gate` 返回码定义不变。
 
 ## 验收结果语义
 

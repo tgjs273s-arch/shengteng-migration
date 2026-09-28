@@ -169,6 +169,12 @@ def data_same_source(run, data_cmp):
 
 def gates_of(run, rows, derived, observed, data_same):
     gates = []
+    observed_integrity = ((observed.get("observed") or {}).get("iteration_integrity")
+                          if observed is not None else None)
+    integrity_state = (observed_integrity or {}).get("state")
+    gates.append({"gate": "iteration_integrity", "closed": integrity_state == "COMPLETE",
+                  "detail": "训练日志步序列完整性=%s；重复、坏行、乱序或缺步不可用作首步证据"
+                  % (integrity_state or "UNVERIFIED")})
     # 1) 数据身份
     if data_same.get("same_source") is True:
         gates.append({"gate": "data_identity", "closed": True, "detail": data_same["detail"]})
@@ -237,7 +243,7 @@ def finalize(run, rows, derived, data_same, base_doc, observed, gates):
     s1 = {}
     if observed is not None:
         s1 = (observed.get("observed") or {}).get("step1_lr0", {})
-        if s1.get("loss") is not None:
+        if s1.get("iter") == 1 and s1.get("lr") == 0.0 and s1.get("loss") is not None:
             obs_band = "A" if s1["loss"] >= 5.0 else "B"
     band_gate = {"gate": "loss_band", "closed": True,
                  "detail": "带判定: baseline=%s" % band_name(base_band)}
@@ -248,7 +254,7 @@ def finalize(run, rows, derived, data_same, base_doc, observed, gates):
         else:
             band_gate = {"gate": "loss_band", "closed": False,
                          "detail": "带冲突：run step1 实测 %s(%s) ≠ baseline %s(%s) → 数值尺度不可比，"
-                         "逐点 <2%% 数学上不可达（compare.py provenance 守卫同口径，勿喂 S-M3）"
+                         "逐点数值比较前提不成立（勿按同一数值尺度判定）"
                          % (obs_band, s1.get("loss"), base_band, band_name(base_band))}
     else:
         band_gate = {"gate": "loss_band", "closed": False,
@@ -257,7 +263,7 @@ def finalize(run, rows, derived, data_same, base_doc, observed, gates):
     open_gates = [g["gate"] for g in gates if not g["closed"]]
 
     # ---- 颜色与裁决
-    hard_open = [g for g in open_gates if g in ("kernel_evidence", "loss_band")]
+    hard_open = [g for g in open_gates if g in ("kernel_evidence", "loss_band", "iteration_integrity")]
     band_conflict = obs_band is not None and base_band is not None and obs_band != base_band
     if level == "none":
         color, verdict = "red", "NOT_COMPARABLE"
@@ -289,7 +295,7 @@ def finalize(run, rows, derived, data_same, base_doc, observed, gates):
     if open_gates:
         reasons.append("未闭合证据门: %s" % ", ".join(open_gates))
     if verdict == "POINTWISE_OK":
-        reasons.append("逐点 <2%% 可宣称（7 维全等 + N_eff 同 + 证据门全闭）；数字口径见 S-M3 compare.py")
+        reasons.append("逐点比较的配置与证据前提已闭合；实际数值误差与适用规则须另行判定")
     elif verdict == "WINDOW_OK":
         reasons.append("只许窗口均值口径对照（S-M3 窗口统计），禁止宣称逐点 PASS")
     elif verdict == "NOT_COMPARABLE":

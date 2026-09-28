@@ -40,6 +40,11 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+SKILL_SCRIPTS = Path(__file__).resolve().parents[2] / "scripts"
+if str(SKILL_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SKILL_SCRIPTS))
+from _train_log import read_log, integrity
+
 # ---------------------------------------------------------------- 迭代行正则
 # 与 skill_round2_SM3/compare.py 的 _ITER_RE 及 R1-SK01 parse_train_log.py 完全一致
 # （三处同源，勿改，改动会口径漂移）。官方 2026-07-24 日志实例见 compare.py docstring。
@@ -187,6 +192,11 @@ def main():
               % log_path, file=sys.stderr)
         return 3
 
+    strict = read_log(log_path)
+    totals = {row["total"] for row in strict["rows"]}
+    expected_end = next(iter(totals)) if len(totals) == 1 else None
+    strict_integrity = integrity(strict, expected_end=expected_end)
+
     # ---- observed 组装
     iters = sorted(rows)
     sample_deltas = sorted({rows[iters[i]]["Samples"] - rows[iters[i - 1]]["Samples"]
@@ -200,14 +210,13 @@ def main():
     if first_row["ts"] and last_row["ts"]:
         wallclock["elapsed_min"] = round((last_row["ts"] - first_row["ts"]).total_seconds() / 60.0, 1)
 
-    # step1 采样（R1-SK01 口径：iter=1 且 lr==0 优先）
-    s1 = rows.get(1)
-    if s1 is not None and s1["LR"] != 0.0:
-        lr0 = [rows[i] for i in iters if rows[i]["LR"] == 0.0]
-        s1 = min(lr0, key=lambda r: r["Iter"]) if lr0 else s1
-    step1 = {"iter": s1["Iter"], "lr": s1["LR"], "loss": s1["Loss"],
-             "grad_norm": s1["GradNorm"], "line": s1["line"]}
-    step1["loss_band"] = "A(从零尺度)" if s1["Loss"] >= _LOSS_BAND_SPLIT else "B(预训练续训尺度)"
+    # 只有真实 iteration 1 才能提供 step1 证据；其他零学习率步不能代替。
+    s1 = rows.get(1) if strict_integrity["state"] == "COMPLETE" else None
+    step1 = ({"iter": s1["Iter"], "lr": s1["LR"], "loss": s1["Loss"],
+              "grad_norm": s1["GradNorm"], "line": s1["line"],
+              "loss_band": "A(从零尺度)" if s1["Loss"] >= _LOSS_BAND_SPLIT else "B(预训练续训尺度)"}
+             if s1 is not None else {"iter": None, "lr": None, "loss": None,
+                                     "grad_norm": None, "line": None, "loss_band": None})
 
     loaded_ckpt = [{"line": i + 1, "text": line.strip()[:200]}
                    for i, line in enumerate(lines) if "Loaded checkpoint from" in line]
@@ -230,6 +239,7 @@ def main():
         "traceback_count": sum(1 for l in lines if "Traceback (most recent call last)" in l),
         "wallclock": wallclock,
         "step1_lr0": step1,
+        "iteration_integrity": strict_integrity,
         "loaded_checkpoint_evidence": loaded_ckpt,
     }
 
