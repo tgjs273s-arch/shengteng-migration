@@ -597,7 +597,7 @@ def _main():
                     "learning_rate", "seed", "preprocessing", "data_identity",
                     "sample_order")}}
     summary["alignment_evidence"]["local_config_asset_train_binding"] = binding["state"]
-    summary["alignment_evidence"]["runtime_asset_binding"] = "UNVERIFIED"
+    summary["alignment_evidence"]["runtime_asset_binding"] = binding["runtime_asset_binding"]
     if args.baseline_log and os.path.isfile(args.baseline_log):
         reference_parsed = read_log(args.baseline_log)
         reference_totals = {r["total"] for r in reference_parsed["rows"]}
@@ -663,8 +663,9 @@ def _main():
         summary["numeric_open_gates"].append("candidate_integrity_incomplete")
     if summary["numeric_validity"] != "VALID_MEASUREMENT":
         summary["numeric_open_gates"].append(summary["numeric_validity"].lower())
-    summary["numeric_open_gates"].extend(["rule_pending", "alignment_evidence_unverified",
-                                          "runtime_asset_binding_unverified"])
+    summary["numeric_open_gates"].extend(["rule_pending", "alignment_evidence_unverified"])
+    if binding["runtime_asset_binding"] != "LOCAL_PRE_POST_VERIFIED":
+        summary["numeric_open_gates"].append("runtime_asset_binding_unverified")
 
     # ---- 4) 账本
     if args.registry and args.tag:

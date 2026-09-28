@@ -114,7 +114,7 @@ T03 应将本次实际消费的文件摘要、源码差异、上游复用与项�
 - P7 新增可选 `--config-manifest`、`--assets-json`、`--train-integrity`；三项齐全才尝试完整本地绑定。无新参数保留旧调用，部分缺件或错配写 `source_binding.state=REJECTED` 及具体门；旧默认/gate 退出码仍表示原执行/颜色语义，总验收不能只读取退出码。
 - `source_binding.state=LOCAL_BINDING_VERIFIED` 要求 P2 有效配置对应 P5 原输入、P5 快照与保存目录隔离差异相符，并核对本次 run/log/配置摘要和基线身份。此模式的 `--config` 及 SK04 指纹使用已核对的 P5 快照。
 - 消费者复用 T05 检查器，从实际索引、DCP 元数据和 JSON 图片引用重建完整清单，复算当前内容并交叉核对 HF/processor、DCP、数据 JSON 和图片根目录；删掉清单行并重算清单自身摘要不能伪装完整。缺少检查依赖时不宣称绑定通过。
-- 本子步仅核查当前本地来源，`runtime_asset_binding` 与 `official_asset_identity` 继续 `UNVERIFIED`；T10 的运行前后生产收据已在后节冻结，其消费者接线另行复核。正式规则仍 `RULE_PENDING`，数值测量、可比性和正式验收保持独立。
+- 前后身份消费者还要求 P5 两份收据 schema/state/problems 匹配、同次 run.json 路径及摘要、非空且相等的 prelaunch/postrun；复用 P5 `capture` 重验当前来源。全部通过时 `runtime_asset_binding=LOCAL_PRE_POST_VERIFIED`，只关闭对应本地前后身份门；缺收据或旧 `UNBOUND` 调用保留 `UNVERIFIED`，错配拒绝来源绑定。`official_asset_identity`、实际模型导入和 NPU 仍未验证，正式规则仍 `RULE_PENDING`。
 
 ### T10 P5 运行前后资产收据（独立子步）
 

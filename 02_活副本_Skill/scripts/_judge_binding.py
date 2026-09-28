@@ -16,6 +16,7 @@ SK04_SCRIPTS = Path(__file__).resolve().parents[1] / "sk04_judge" / "scripts"
 if str(SK04_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SK04_SCRIPTS))
 from _asset_integrity import inspect_hf, inspect_dcp, inspect_data, inspect_llava
+from _runtime_asset_binding import capture as capture_runtime_assets
 
 
 def digest(path):
@@ -49,6 +50,51 @@ def _file_matches(path, expected):
         return bool(path and expected and Path(path).is_file() and digest(path) == expected)
     except (OSError, TypeError, ValueError):
         return False
+
+
+def _runtime_binding(train, run, run_path, assets_json, snapshot, assets, plan):
+    """Verify the P5 receipt and recapture current local inputs with P5's rules."""
+    train_binding = train.get("asset_binding")
+    run_binding = run.get("asset_binding")
+    if train_binding is None and run_binding is None:
+        return "UNVERIFIED", []  # Legacy P5 invocation.
+    if not isinstance(train_binding, dict) or not isinstance(run_binding, dict):
+        return "UNVERIFIED", ["runtime_asset_receipt_structure"]
+    if train_binding.get("state") == run_binding.get("state") == "UNBOUND":
+        return "UNVERIFIED", []
+    if (train_binding.get("schema") != "p5_asset_binding.v1" or
+            run_binding.get("schema") != "p5_asset_binding.v1" or
+            train_binding.get("state") != "VERIFIED" or
+            run_binding.get("state") != "VERIFIED" or
+            train_binding.get("problems") != [] or
+            run_binding.get("problems") != [] or
+            run_binding.get("scope") !=
+            "local_disk_identity_only; runtime_import_and_npu_unverified"):
+        return "UNVERIFIED", ["runtime_asset_receipt_state"]
+    if (not _same_path(train_binding.get("run_record"), run_path) or
+            not _file_matches(run_path, train_binding.get("run_record_sha256"))):
+        return "UNVERIFIED", ["runtime_asset_run_record_mismatch"]
+    before, after = run_binding.get("prelaunch"), run_binding.get("postrun")
+    if not isinstance(before, dict) or not before or not isinstance(after, dict) or before != after:
+        return "UNVERIFIED", ["runtime_asset_pre_post_mismatch"]
+    if (not _same_path(before.get("assets_json_path"), assets_json) or
+            not _file_matches(assets_json, before.get("assets_json_sha256")) or
+            train_binding.get("assets_json_sha256") != before.get("assets_json_sha256") or
+            before.get("p4_attempt_id") != assets.get("attempt_id") or
+            train_binding.get("migration_id") != before.get("migration_id") or
+            before.get("migration_id") != assets.get("migration_id") or
+            before.get("migration_manifest_sha256") != assets.get("migration_manifest_sha256") or
+            before.get("target_commit") != plan.get("target_framework_commit")):
+        return "UNVERIFIED", ["runtime_asset_receipt_identity_mismatch"]
+    try:
+        current = capture_runtime_assets(
+            assets_json, before["migration_bundle"], before["migration_overlay"],
+            before["target_checkout"], Path(snapshot).read_bytes())
+    except Exception:  # Missing dependencies or malformed current inputs leave the gate open.
+        return "UNVERIFIED", ["runtime_asset_current_capture_failed"]
+    if current != before:
+        return "UNVERIFIED", ["runtime_asset_current_identity_mismatch"]
+    return "LOCAL_PRE_POST_VERIFIED", []
 
 
 def verify_binding(config_manifest, assets_json, train_integrity, log, baseline_id,
@@ -251,6 +297,11 @@ def verify_binding(config_manifest, assets_json, train_integrity, log, baseline_
             issues.append("train_hf_path_mismatch")
     except Exception:  # Untrusted YAML, missing optional parser or malformed nested fields.
         issues.append("p5_snapshot_unreadable")
+    if not issues:
+        runtime_state, runtime_issues = _runtime_binding(
+            train, run, run_path, assets_json, snapshot, assets, plan)
+        result["runtime_asset_binding"] = runtime_state
+        issues.extend(runtime_issues)
     result["state"] = "LOCAL_BINDING_VERIFIED" if not issues else "REJECTED"
     result["run_id"] = run_id
     result["config_role"] = plan.get("role")

@@ -163,7 +163,103 @@ def check(paths, **overrides):
             BASELINE, REFERENCE_SHA, overrides.get('config', paths['snapshot']))
 
 
+def bind_runtime_receipt(paths):
+    """Create a synthetic P5 receipt; tests mock only the expensive recapture."""
+    assets = json.loads(paths['assets'].read_text(encoding='utf-8'))
+    plan = json.loads(paths['plan'].read_text(encoding='utf-8'))
+    pre = {'assets_json_path': str(paths['assets']),
+           'assets_json_sha256': binding.digest(paths['assets']),
+           'p4_attempt_id': assets['attempt_id'],
+           'migration_id': assets['migration_id'],
+           'migration_manifest_sha256': assets['migration_manifest_sha256'],
+           'target_commit': plan['target_framework_commit'],
+           'migration_bundle': str(paths['migration']),
+           'migration_overlay': str(paths['migration']),
+           'target_checkout': str(paths['migration'].parent),
+           'hf_file_inventory_sha256': assets['hf_identity']['file_inventory_sha256'],
+           'dcp_file_inventory_sha256': assets['dcp_identity']['file_inventory_sha256'],
+           'data_json_sha256': assets['data_identity']['json_sha256']}
+    run_path = paths['train'].parent / 'run.json'
+    run = json.loads(run_path.read_text(encoding='utf-8'))
+    run['asset_binding'] = {'schema': 'p5_asset_binding.v1', 'state': 'VERIFIED',
+                            'prelaunch': pre, 'postrun': dict(pre), 'problems': [],
+                            'scope': 'local_disk_identity_only; runtime_import_and_npu_unverified'}
+    write_json(run_path, run)
+    train = json.loads(paths['train'].read_text(encoding='utf-8'))
+    train['asset_binding'] = {'schema': 'p5_asset_binding.v1', 'state': 'VERIFIED',
+                              'run_record': str(run_path),
+                              'run_record_sha256': binding.digest(run_path),
+                              'assets_json_sha256': pre['assets_json_sha256'],
+                              'migration_id': pre['migration_id'], 'problems': []}
+    write_json(paths['train'], train)
+    return pre
+
+
 class BindingTests(unittest.TestCase):
+    def test_verified_runtime_receipt_requires_current_recapture(self):
+        with test_directory() as tmp:
+            paths = fixture(tmp)
+            pre = bind_runtime_receipt(paths)
+            with mock.patch.object(binding, 'capture_runtime_assets', return_value=dict(pre)) as capture:
+                result = check(paths)
+            self.assertEqual(result['state'], 'LOCAL_BINDING_VERIFIED', result)
+            self.assertEqual(result['runtime_asset_binding'], 'LOCAL_PRE_POST_VERIFIED')
+            capture.assert_called_once_with(
+                paths['assets'], pre['migration_bundle'], pre['migration_overlay'],
+                pre['target_checkout'], paths['snapshot'].read_bytes())
+            self.assertEqual(result['official_asset_identity'], 'UNVERIFIED')
+
+    def test_runtime_receipt_tampering_does_not_close_local_pre_post_gate(self):
+        cases = ('wrong_run_path', 'wrong_run_hash', 'pre_post_drift', 'bad_nested_type',
+                 'missing_capture_field',
+                 'wrong_assets_hash', 'wrong_manifest_hash', 'current_drift',
+                 'missing_train_receipt', 'producer_unbound')
+        for case in cases:
+            with self.subTest(case=case), test_directory() as tmp:
+                paths = fixture(tmp)
+                pre = bind_runtime_receipt(paths)
+                train = json.loads(paths['train'].read_text(encoding='utf-8'))
+                run_path = paths['train'].parent / 'run.json'
+                run = json.loads(run_path.read_text(encoding='utf-8'))
+                if case == 'wrong_run_path':
+                    train['asset_binding']['run_record'] = str(paths['train'])
+                elif case == 'wrong_run_hash':
+                    train['asset_binding']['run_record_sha256'] = '0' * 64
+                elif case == 'pre_post_drift':
+                    run['asset_binding']['postrun']['data_json_sha256'] = '0' * 64
+                elif case == 'bad_nested_type':
+                    run['asset_binding']['prelaunch'] = ['invalid']
+                elif case == 'missing_capture_field':
+                    del run['asset_binding']['prelaunch']['migration_bundle']
+                    del run['asset_binding']['postrun']['migration_bundle']
+                elif case == 'wrong_assets_hash':
+                    run['asset_binding']['prelaunch']['assets_json_sha256'] = '0' * 64
+                    run['asset_binding']['postrun']['assets_json_sha256'] = '0' * 64
+                elif case == 'wrong_manifest_hash':
+                    run['asset_binding']['prelaunch']['migration_manifest_sha256'] = '0' * 64
+                    run['asset_binding']['postrun']['migration_manifest_sha256'] = '0' * 64
+                elif case == 'missing_train_receipt':
+                    del train['asset_binding']
+                elif case == 'producer_unbound':
+                    train['asset_binding']['state'] = 'UNBOUND'
+                    run['asset_binding']['state'] = 'UNBOUND'
+                if case in ('pre_post_drift', 'bad_nested_type', 'missing_capture_field',
+                            'wrong_assets_hash',
+                            'wrong_manifest_hash', 'producer_unbound'):
+                    write_json(run_path, run)
+                    train['asset_binding']['run_record_sha256'] = binding.digest(run_path)
+                write_json(paths['train'], train)
+                observed = dict(pre)
+                if case == 'current_drift':
+                    observed['data_json_sha256'] = '0' * 64
+                with mock.patch.object(binding, 'capture_runtime_assets', return_value=observed):
+                    result = check(paths)
+                self.assertEqual(result['runtime_asset_binding'], 'UNVERIFIED', result)
+                if case != 'producer_unbound':
+                    self.assertEqual(result['state'], 'REJECTED', result)
+                else:
+                    self.assertEqual(result['state'], 'LOCAL_BINDING_VERIFIED', result)
+
     def test_current_local_bytes_match_but_official_and_runtime_stay_unverified(self):
         with test_directory() as tmp:
             result = check(fixture(tmp))
