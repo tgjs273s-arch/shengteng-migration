@@ -113,12 +113,10 @@ DIAGNOSTICS = [
      "**第一步先数迭代行**：若 `iteration N/N` 已到末步 → 训练本身成功，崩溃只在收尾保存。\n"
      "      根因：`dcp.save` 的 SavePlan 规划走 `distW.reduce_scatter('plan')` → `scatter_object_list`，\n"
      "      而本 CANN 上 `HCCL doesn't support gather at the moment` → aicpu 失败（ACL 507018）。\n"
-     "      处置（**配置级，不需改训练代码**）：\n"
-     "        ① 置 `training.save_format: hf` 绕开 DCP plan 广播；\n"
-     "           注意 `trainer.py:439-448` 规定 `save_format != dcp` 时需同时\n"
-     "           `no_save_optim: true` 与 `no_save_rng: true`，否则会被强制回退 dcp；\n"
-     "        ② 或不需要 checkpoint 时置 `training.save: null`\n"
-     "           （`train_engine.py:315` 的 `if args.training.save:` 守卫为假 → 完全不保存）。\n"
+     "      当前固定目标 MindSpeed-MM 26.1.0 仍固定使用 DCP checkpointer；\n"
+     "      `training.save_format: hf` 不会切换保存格式，不能作为绕过办法。\n"
+     "      若仅做无需模型产物的诊断，可显式置 `training.save: null` 关闭保存；\n"
+     "      这样不会产生可用于推理验收的本次 checkpoint。\n"
      "      ⚠ `load_rank0_and_broadcast`（坑 108）**只修 load，不影响 save** ——\n"
      "        它在 load 阶段生效会让人误以为「这个 CANN 缺陷已绕过」，直到收尾保存才炸。"),
     # ★ 坑 140：坑 108 的**真身** —— 与坑 113（收尾保存）同族、症状几乎一样，
@@ -142,8 +140,8 @@ DIAGNOSTICS = [
      "      ★ 这个开关是 **P0/P2 按实测 CANN 版本自动写入的**（CANN 含 beta/RC/dev → true）。\n"
      "        若你**手工造了一份配置**（例如拿 `config/templates/` 去改），就会丢掉它 ——\n"
      "        这是本故障最常见的成因：**不是机器坏了，是配置绕过了自动档位**。\n"
-     "      ★ **save 侧是另一条独立路径**（坑 113 的 `save_format: hf`）：只设 load 侧会\n"
-     "        「载入正常、训练跑完 100 步才在收尾保存处 SIGABRT」。两条都要设。"),
+     "      ★ save 侧是另一条独立路径；只设 load 侧仍可能在收尾 DCP 保存时失败，\n"
+     "        需单独核对固定框架、CANN 与保存路径，不能以无效 `save_format` 绕过。"),
     # ★ 坑 144：**官方数据侧参数 ≠ 通用参数**。官方 `cutoff_len: 1024` 是给 COCO **单图**
     #   样本调的；喂**多图** mock 数据时序列被截断，`<|image_pad|>` 占位符被截掉一部分，
     #   而视觉侧仍按**全部图**产出特征 → 占位符数 ≠ 特征数（真机实测 tokens 2992 / features 262144）。
@@ -388,6 +386,54 @@ def configured_start(training, workdir):
     return None, "invalid_load_tracker", tracker
 
 
+def snapshot_config_for_run(config_bytes, run_dir):
+    """Return the exact YAML bytes a run will consume and its save intent.
+
+    The source file stays untouched. A real save always goes below this run's
+    directory, so an old shared save_path cannot become this run's checkpoint.
+    """
+    import yaml
+
+    source = yaml.safe_load(config_bytes)
+    if not isinstance(source, dict) or not isinstance(source.get("training"), dict):
+        raise ValueError("training 配置必须是 YAML 映射")
+    training = source["training"]
+    declared_format = training.get("save_format") if "save_format" in training else None
+    if "save_format" in training and declared_format != "dcp":
+        raise ValueError("training.save_format=%r 在固定目标版本不控制保存；仅可省略或声明 dcp"
+                         % declared_format)
+    source_present = "save" in training
+    original = training.get("save")
+    if original is not None and original is not False and not isinstance(original, str):
+        raise ValueError("training.save 必须是路径字符串或显式 null/false")
+    enabled = bool(original)
+    effective_path = os.path.abspath(os.path.join(run_dir, "checkpoints")) if enabled else None
+    if source_present:
+        if enabled:
+            training["save"] = effective_path
+        else:
+            # The target declares save as str with a None default. Omit an
+            # explicit YAML null/false instead of passing a type it may reject.
+            training.pop("save")
+        rendered = yaml.safe_dump(source, allow_unicode=True, sort_keys=False).encode("utf-8")
+        rendered_training = yaml.safe_load(rendered)["training"]
+        if enabled and rendered_training.get("save") != effective_path:
+            raise ValueError("本次 checkpoint 路径未能通过 YAML 回读")
+        if not enabled and "save" in rendered_training:
+            raise ValueError("关闭保存未能通过 YAML 回读")
+    else:
+        # No save key was present; keep the input bytes unchanged.
+        rendered = config_bytes
+    return rendered, {
+        "source_present": source_present,
+        "source_value": original,
+        "enabled": enabled,
+        "effective_present": enabled,
+        "effective_path": effective_path,
+        "actual_format": "dcp" if enabled else None,
+    }
+
+
 def launch_training(body, log_path, detached=True, config_bytes=None):
     """Linux runner; the child retains the advisory log lock after SSH disconnects."""
     import fcntl
@@ -398,23 +444,37 @@ def launch_training(body, log_path, detached=True, config_bytes=None):
         os.makedirs(runs, exist_ok=True)
         run_dir = tempfile.mkdtemp(prefix="p5-", dir=runs)
         config_snapshot = None
+        effective_sha256 = None
+        save_intent = None
         if config_bytes is not None:
+            effective_bytes, save_intent = snapshot_config_for_run(config_bytes, run_dir)
             config_snapshot = os.path.join(run_dir, "effective_config.yaml")
             with open(config_snapshot, "wb") as config_output:
-                config_output.write(config_bytes)
+                config_output.write(effective_bytes)
+            effective_sha256 = hashlib.sha256(effective_bytes).hexdigest()
             body = body.replace("__P5_CONFIG_SNAPSHOT__", shlex.quote(config_snapshot))
         runner = os.path.join(run_dir, "runner.sh")
         with open(runner, "w", encoding="utf-8", newline="\n") as f:
             # Clear old training output even when cd/setup fails before torchrun.
             f.write("#!/bin/bash\n: > %s || exit 2\n%s\n" % (shlex.quote(log_path), body))
+        run_record = {"run_id": os.path.basename(run_dir), "pid": None,
+                      "log": log_path, "runner": runner,
+                      "config_snapshot": config_snapshot,
+                      "source_config_sha256": hashlib.sha256(config_bytes).hexdigest()
+                      if config_bytes is not None else None,
+                      "effective_config_sha256": effective_sha256,
+                      "checkpoint_save": save_intent}
+        run_record_path = os.path.join(run_dir, "run.json")
+        with open(run_record_path, "w", encoding="utf-8") as f:
+            json.dump(run_record, f, ensure_ascii=False, indent=2)
         command = (["nohup"] if detached else []) + ["bash", "-l", runner]
         with open(os.path.join(run_dir, "runner.log"), "wb") as output:
             proc = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=output,
                                     stderr=subprocess.STDOUT, start_new_session=detached,
                                     pass_fds=(lock.fileno(),))
-        with open(os.path.join(run_dir, "run.json"), "w", encoding="utf-8") as f:
-            json.dump({"pid": proc.pid, "log": log_path, "runner": runner,
-                       "config_snapshot": config_snapshot}, f, indent=2)
+        run_record["pid"] = proc.pid
+        with open(run_record_path, "w", encoding="utf-8") as f:
+            json.dump(run_record, f, ensure_ascii=False, indent=2)
         return proc, run_dir
     finally:
         # Do not LOCK_UN: the runner owns the same open file description.
@@ -505,6 +565,19 @@ def main():
         print("   这属于坑 109 类故障（逐行改 yaml 导致缩进/块映射损坏）。")
         print("   处置: 用 P2 重新生成：`python3 scripts/20_plan_migration.py ...`")
         print("         （P2 现已**先校验后落盘**，产不出坏配置）")
+        return 3
+    if _cfg_doc is None:
+        print("FATAL 无 PyYAML，无法验证并隔离本次 training.save；拒绝启动训练", file=sys.stderr)
+        return 3
+    if not isinstance(_cfg_doc.get("training"), dict):
+        print("FATAL training 配置必须是 YAML 映射", file=sys.stderr)
+        return 3
+    try:
+        # Validate unsupported save advice before any torchrun process starts.
+        snapshot_config_for_run(_cfg_bytes, os.path.join(os.path.dirname(
+            os.path.abspath(args.log)), "runs", "p5-preflight"))
+    except ValueError as exc:
+        print("FATAL 保存配置不适用于固定目标版本: %s" % exc, file=sys.stderr)
         return 3
 
     def _as_int(v):
@@ -649,7 +722,7 @@ def main():
     print("训练命令 : %s" % train_cmd)
     print("日志     : %s %s" % (log_path, steps_note))
     if args.dry_run:
-        print("\n[dry-run] 将执行（配置占位符为本次快照）:\n%s" %
+        print("\n[dry-run] 将执行（实际保存路径在创建 p5-* 运行目录后绑定）:\n%s" %
               full.replace("__P5_CONFIG_SNAPSHOT__", shlex.quote(cfg_arg)))
         return 0
 
@@ -657,10 +730,12 @@ def main():
     try:
         proc, run_dir = launch_training(body, log_path, detached=not args.foreground,
                                         config_bytes=_cfg_bytes)
-    except (OSError, ImportError) as exc:
+    except (OSError, ImportError, ValueError) as exc:
         print("TRAIN_FAIL 启动失败或日志正在被其他任务使用: %s" % exc, file=sys.stderr)
         return 2
     print("本次执行目录: %s (pid=%d)" % (run_dir, proc.pid))
+    expected_snapshot_bytes, save_intent = snapshot_config_for_run(_cfg_bytes, run_dir)
+    expected_snapshot_sha256 = hashlib.sha256(expected_snapshot_bytes).hexdigest()
     rc = None
     last = 0
     while True:
@@ -692,9 +767,14 @@ def main():
         check["state"] = "UNKNOWN"
         check.setdefault("problems", []).append("unverified_config_geometry")
     check.update({"train_rc": rc, "failure_markers": [],
-                  "config_input": cfg_arg,
+                  "source_config": cfg_arg,
+                  "source_config_sha256": _cfg_sha256,
+                  "config_input": cfg_arg,  # prior path alias; source identity above
                   "config": os.path.join(run_dir, "effective_config.yaml"),
-                  "config_sha256": _cfg_sha256,
+                  "config_sha256": expected_snapshot_sha256,
+                  "effective_config_sha256": expected_snapshot_sha256,
+                  "checkpoint_save": save_intent,
+                  "run_id": os.path.basename(run_dir),
                   "log": log_path, "world_size": world,
                   "config_train_iters": expected_end,
                   "scope": "SHORT_DIAGNOSTIC" if expected_end is not None and expected_end < 100
@@ -711,16 +791,33 @@ def main():
     except OSError as exc:
         check["config_snapshot_sha256_after_run"] = None
         check["config_snapshot_read_error"] = str(exc)
-    if check["config_snapshot_sha256_after_run"] != _cfg_sha256:
+    if check["config_snapshot_sha256_after_run"] != expected_snapshot_sha256:
         check["state"] = "INCOMPLETE"
         check.setdefault("problems", []).append("config_snapshot_changed")
+    # A save-enabled run must keep the launch receipt with the exact effective
+    # config identity and path. No checkpoint existence is asserted here.
+    run_record_path = os.path.join(run_dir, "run.json")
+    if save_intent["enabled"]:
+        try:
+            with open(run_record_path, encoding="utf-8") as record_stream:
+                run_record = json.load(record_stream)
+            receipt_valid = (run_record.get("source_config_sha256") == _cfg_sha256
+                             and run_record.get("effective_config_sha256") == expected_snapshot_sha256
+                             and run_record.get("checkpoint_save") == save_intent)
+        except (OSError, ValueError, TypeError):
+            receipt_valid = False
+        if not receipt_valid:
+            check["state"] = "INCOMPLETE"
+            check.setdefault("problems", []).append("checkpoint_save_receipt_missing_or_changed")
+    check["config_sha256_after_run"] = check["config_snapshot_sha256_after_run"]
     try:
         with open(cfg_arg, "rb") as config_stream:
-            check["config_sha256_after_run"] = hashlib.sha256(config_stream.read()).hexdigest()
+            check["source_config_sha256_after_run"] = hashlib.sha256(
+                config_stream.read()).hexdigest()
     except OSError as exc:
-        check["config_sha256_after_run"] = None
-        check["config_read_error_after_run"] = str(exc)
-    if check["config_sha256_after_run"] != _cfg_sha256:
+        check["source_config_sha256_after_run"] = None
+        check["source_config_read_error_after_run"] = str(exc)
+    if check["source_config_sha256_after_run"] != _cfg_sha256:
         check["state"] = "INCOMPLETE"
         check.setdefault("problems", []).append("config_changed_during_run")
     n = check.get("selected_count", 0)

@@ -81,6 +81,13 @@ T03 应将本次实际消费的文件摘要、源码差异、上游复用与项�
 - P2 新产物、角色传参及配置到本次训练的绑定仍由 T10 接入 `_stage_state.OUTPUTS` 与主入口。T05 资产子步尚未冻结，消费方不得推测其字段。
 - 新目标更正已复核：manifest 增加 `target_framework_commit`、实际 `checkpoint_format=dcp`、`checkpoint_enabled`、`checkpoint_controls` 与阻断原因；自定义 `training.save_format` 被拒绝，P0 的 HF 保存建议不应用且返回 3。参考与候选显式写日志中的 `model.mtp_num_layers=0` 和 `mtp_loss_scaling_factor=0.1`。这些是配置证据，真实 DCP 保存由 T08/T12 验证。
 
+## T08 保存隔离子步接口
+
+- P5 的 `effective_config.yaml` 是本次实际输入快照。启用保存时，`training.save` 改为本次 `runs/p5-*/checkpoints` 绝对路径；源配置不修改。显式 null/false/空串的关闭意图保留在收据，有效快照省略 `save` 键以兼容固定目标参数类。未提供该键时保留原字节。
+- `run.json` 记录 `run_id`、`source_config_sha256`、`effective_config_sha256` 和 `checkpoint_save`（源值、启用状态、实际路径、实际 DCP 格式）。`train_integrity.json` 的 `source_config`/`source_config_sha256` 绑定源文件，`config`/`config_sha256` 绑定有效快照；旧 `config_input` 仍指源路径，不可把它与快照摘要配对。运行后分别检查两份配置，启用保存时还检查收据一致性。
+- 固定目标没有 HF 训练保存开关。P5 拒绝非 DCP 的 `save_format` 声明；显式 `dcp` 仅作兼容声明，不负责选择 checkpointer。P2 仍拒绝该无效字段。
+- 这些字段只证明启动配置与本次保存意图，不证明 checkpoint 已写完整或能加载。完整 `model_artifact`、导出与重载等待 T05 资产交接；T10 需纳入上述实际快照与运行收据，T07 消费配置时必须区分源配置和按次变化的保存路径。
+
 ## T07 独立数值核心接口
 
 - `judge_summary.json` 增加 `baseline_identity`、`candidate_log_sha256`、`candidate_integrity`、`comparability`、`numeric_metrics`、`numeric_validity`、`rule_status`、`numeric_acceptance`、`alignment_evidence` 和 `numeric_open_gates`。`VALID_MEASUREMENT` 只表示所选日志可计算，当前规则仍 RULE_PENDING、数值验收 NOT_DETERMINED。
