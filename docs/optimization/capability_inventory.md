@@ -246,3 +246,9 @@ P5 将启用保存的有效配置绑定本次 `runs/p5-*/checkpoints`，分别�
 P3 增加成组迁移 manifest/bundle/目标 checkout 参数，复用固定身份校验；具备目标 GDN/causal-conv 前向、梯度与小文本模型 prefill/decode/cache 的真实执行入口。数值输入、中间结果和失败阶段可落盘追溯，工程容差与官方训练规则分开。旧默认矩阵仍只代表独立算子 forward/shape。
 
 [独立复核](分步实施任务_20260928/records/T04_测试复核.md) 的新增 6 项控制流与既有 14 项阶段契约通过、无 skip；实际命令在缺 Torch 的解释器中保存 7 行 CONTRACT_ONLY。缺参数和篡改身份均按约定拒绝，错误身份保存 FAILED JSON。主管接收离线接口范围，未执行实际 CPU 模型或 NPU 数值；完整 0.8B、视觉/logits 和 decode 布局疑点仍待 T12 留证，T04 整体 WAITING_EXTERNAL。回退限 P3、新数值 helper、测试和本步说明，已冻结的 T03 补丁未改。
+
+## 2026-09-29 T05 资产检查与来源绑定
+
+P4 的 `migrator_assets.v2` 记录 HF/DCP 文件清单、真实 DCP 元数据引用检查、JSON/顺序/图片身份与实际解码结果，并可绑定已验证的 T03 migration ID。v3 转换收据绑定源与目标完整本地文件清单、补丁及 tied 映射；旧收据、空壳分片、损坏图片和缺依赖不能获得齐备状态。固定 HF commit 不再误用为镜像仓库 revision。官方资产同字节及真实重载仍未验证。
+
+[独立复核](分步实施任务_20260928/records/T05_测试复核.md) 的 14 项资产回归通过；来源兼容回归初次漏传 bundle 导致 10 项跳过，保留记录并补传后 15/15 实际通过。P4 实际 `--no-download` 绑定真实迁移清单，缺件返回 3，输出本次缺件列表及 `reload_verified=false`。没有下载权重、转换或训练；DCP 元数据范围的合成测试不代替真实 Torch DCP 加载。主管接收本地接口，允许后继消费；真实完整资产和实机仍待 T12。回退限本步 P4、独立 helper、测试及说明，保留 T03 固定源码与历史证据。

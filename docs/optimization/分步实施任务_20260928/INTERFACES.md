@@ -88,6 +88,14 @@ T03 应将本次实际消费的文件摘要、源码差异、上游复用与项�
 - P2 新产物、角色传参及配置到本次训练的绑定仍由 T10 接入 `_stage_state.OUTPUTS` 与主入口。T05 资产子步尚未冻结，消费方不得推测其字段。
 - 新目标更正已复核：manifest 增加 `target_framework_commit`、实际 `checkpoint_format=dcp`、`checkpoint_enabled`、`checkpoint_controls` 与阻断原因；自定义 `training.save_format` 被拒绝，P0 的 HF 保存建议不应用且返回 3。参考与候选显式写日志中的 `model.mtp_num_layers=0` 和 `mtp_loss_scaling_factor=0.1`。这些是配置证据，真实 DCP 保存由 T08/T12 验证。
 
+## T05 资产子步接口冻结
+
+- P4 输出 `migrator_assets.v2`，含本次 `attempt_id`、`hf_identity`、`dcp_identity`、`llava_identity`、`data_identity`、`data_conversion`、`missing_required` 和 `readiness`。本地文件身份与官方同字节分开；`metadata_revision_observed` 只绑定小元数据，完整 payload 的上游 revision 不由它推断。
+- `--migration-bundle`/`--migration-overlay` 成对提供，目标仍由 `--msmm-dir` 指定。成功后 `migration_identity_state=validated_overlay_and_target`，附真实 migration ID、manifest 路径/摘要；身份错误返回 3。无迁移引用时至多 `local_complete_migration_unbound`，不能作为四流程完整身份。
+- HF 完整清单绑定本地 config/index/processor/tokenizer 和所有权重分片摘要。初始 DCP 需 release tracker、真实 PyTorch 元数据引用完整性及全部 payload 哈希；无读取器为 `metadata_unverified`，不能就绪。转换收据 `qwen35_0p8b_conversion.v3` 绑定双方清单摘要、目标/补丁、tied 映射和提供时的迁移引用；旧 v2 不自动升级。
+- `data_identity` 记录 JSON 字节/顺序身份及逐图片清单、解码状态；Pillow 缺失或图片损坏不能就绪。`data_conversion` 保留固定脚本身份、参数、各次完整日志/返回码及新输出摘要；`official_data_identity` 继续未验证。下载使用 HF 对应仓库的固定完整 commit，不猜 ModelScope revision 映射。
+- 缺件 `readiness=incomplete`、rc=3；本地齐备且绑定迁移为 `local_complete_official_unverified`，仍非官方同字节或重载通过。`--no-download` 不下载、安装或转换。T07/T08/T10 消费实际路径及文件摘要，不凭齐备字符串代替当前资产或运行前后身份检查。
+
 ## T08 保存隔离子步接口
 
 - P5 的 `effective_config.yaml` 是本次实际输入快照。启用保存时，`training.save` 改为本次 `runs/p5-*/checkpoints` 绝对路径；源配置不修改。显式 null/false/空串的关闭意图保留在收据，有效快照省略 `save` 键以兼容固定目标参数类。未提供该键时保留原字节。

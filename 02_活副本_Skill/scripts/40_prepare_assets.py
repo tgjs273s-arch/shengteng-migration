@@ -14,18 +14,23 @@
 """
 
 import argparse
+import importlib.util
 import json
 import os
+from pathlib import Path
 import shutil
 import shlex
 import subprocess
 import sys
 import time
+import uuid
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _qwen35_weights import (TIE_MAPPING, WeightContractError, metadata_contract,
+from _qwen35_weights import (MODEL_REVISION, TIE_MAPPING, WeightContractError,
                              sha256, weight_headers_contract)
 from _qwen35_migration import TargetIdentityError, verify_target_checkout
+from _asset_integrity import (REQUIRED_HF_FILES, CONVERTER_COMMIT, converter_identity,
+                              inspect_data, inspect_dcp, inspect_hf, inspect_llava)
 
 # 校验锚点（与官方一致；修改需有依据）
 ANCHORS = {
@@ -61,26 +66,34 @@ def _dcp_release_ready(path):
         return False
 
 
-def _conversion_receipt(path, source, target):
-    return {"schema": "qwen35_0p8b_conversion.v2", "model_revision": source["model_revision"],
+def _conversion_receipt(path, source, target, migration=None):
+    dcp = inspect_dcp(path)
+    if dcp.get("status") != "local_structure_and_hashes":
+        raise ValueError("DCP payload incomplete; cannot issue conversion receipt")
+    return {"schema": "qwen35_0p8b_conversion.v3", "model_revision": source["model_revision"],
             "config_sha256": source["config_sha256"], "index_sha256": source["index_sha256"],
+            "hf_file_inventory_sha256": source["file_inventory_sha256"],
+            "dcp_file_inventory_sha256": dcp["file_inventory_sha256"],
+            "migration_id": (migration or {}).get("migration_id"),
+            "migration_manifest_sha256": (migration or {}).get("manifest_sha256"),
             "target_commit": target["target_commit"], "converter_sha256": target["converter_current_sha256"],
             "patch_identity": target["patch_identity"],
             "target_source_files_sha256": target["target_files_sha256"],
+            "tie_weight_mapping": TIE_MAPPING.copy(),
             "mtp_source_keys": source["mtp_source_keys"],
             "reference_training_mtp_num_layers": 0, "dcp_mtp_reload_verified": False,
             "dcp_metadata_sha256": sha256(os.path.join(path, "release", ".metadata"))}
 
 
-def _existing_conversion_verified(path, source, target):
+def _existing_conversion_verified(path, source, target, migration=None):
     receipt_path = os.path.join(path, "migration_conversion_receipt.json")
     if not _dcp_release_ready(path) or not os.path.isfile(receipt_path):
         return False
     try:
         with open(receipt_path, encoding="utf-8") as handle:
             saved = json.load(handle)
-        return saved == _conversion_receipt(path, source, target)
-    except (OSError, ValueError, json.JSONDecodeError):
+        return saved == _conversion_receipt(path, source, target, migration)
+    except (OSError, ValueError, KeyError, json.JSONDecodeError):
         return False
 
 
@@ -92,30 +105,20 @@ def _weights_ready(p):
       `ValueError: Processor was not found, please check and update your model file.`，
       而资产检查一路绿灯。**改为必需文件清单。**
     """
-    if not _dir_nonempty(p):
+    if weights_missing_files(p):
         return False
     try:
-        files = set(os.listdir(p))
-    except Exception:
+        weight_headers_contract(p)
+    except (WeightContractError, OSError):
         return False
-    # 必需：权重本体 + 模型配置 + 分词器（processor 依赖它们）
-    has_weights = any(f.endswith((".safetensors", ".bin")) for f in files)
-    has_config = "config.json" in files
-    has_tok = any(f.startswith("tokenizer") for f in files) or "vocab.json" in files
-    return bool(has_weights and has_config and has_tok)
+    return True
 
 
 def weights_missing_files(p):
     """返回缺失的必需文件项（供诊断输出）。"""
-    need = {"权重(.safetensors/.bin)": lambda fs: any(x.endswith((".safetensors", ".bin")) for x in fs),
-            "config.json": lambda fs: "config.json" in fs,
-            "tokenizer*": lambda fs: any(x.startswith("tokenizer") for x in fs) or "vocab.json" in fs,
-            "preprocessor_config.json": lambda fs: "preprocessor_config.json" in fs}
-    try:
-        fs = set(os.listdir(p))
-    except Exception:
+    if not os.path.isdir(p):
         return ["目录不可读"]
-    return [k for k, fn in need.items() if not fn(fs)]
+    return [name for name in REQUIRED_HF_FILES if not os.path.isfile(os.path.join(p, name))]
 
 
 def _file_bytes_ok(p, expect):
@@ -272,6 +275,24 @@ def conversion_command(workdir, argv):
     return "cd %s && %s" % (shlex.quote(workdir), shlex.join(argv))
 
 
+def verified_migration(bundle, overlay, target_checkout):
+    """Consume T03's validator; never derive a migration ID independently."""
+    script = os.path.join(os.path.dirname(__file__), "22_migrate_qwen35.py")
+    spec = importlib.util.spec_from_file_location("qwen35_migrate_for_assets", script)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    manifest, _ = module.validate_overlay(Path(bundle), Path(overlay))
+    target = verify_target_checkout(target_checkout, require_patched=True)
+    if (manifest.get("target", {}).get("commit") != target["target_commit"] or
+            manifest.get("target", {}).get("converter_after_sha256") !=
+            target["converter_current_sha256"]):
+        raise ValueError("migration overlay differs from installed target checkout")
+    manifest_path = Path(overlay) / "migration_manifest.json"
+    return {"migration_id": manifest["migration_id"],
+            "manifest_path": str(manifest_path), "manifest_sha256": sha256(manifest_path),
+            "target_commit": target["target_commit"]}
+
+
 def fetch_llava(path, dry=False):
     """llava_instruct_150k.json：modelscope 主源 → hf 直链备源，**字节级锚点校验**。"""
     anchor = ANCHORS["llava_json"]["bytes"]
@@ -298,18 +319,26 @@ def fetch_llava(path, dry=False):
     return False
 
 
+def _hf_snapshot_download(**kwargs):
+    """Load the optional official Hub client only for an authorized download."""
+    from huggingface_hub import snapshot_download
+    return snapshot_download(**kwargs)
+
+
 def fetch_model(hf_dir, dry=False):
-    """Qwen3.5-0.8B 权重：modelscope 主源 → hf 备源。"""
+    """Request the fixed Hugging Face repository commit, without mirror revision guessing."""
     if dry:
         return False
     ensure(hf_dir)
-    ok, tail = _ms_download(
-        "download Qwen/Qwen3.5-0.8B --local_dir %s" % shlex.quote(hf_dir), "model-modelscope")
-    if os.path.isdir(hf_dir) and any(f.endswith((".safetensors", ".bin", ".json"))
-                                     for f in os.listdir(hf_dir)):
+    try:
+        _hf_snapshot_download(repo_id="Qwen/Qwen3.5-0.8B", revision=MODEL_REVISION,
+                              local_dir=hf_dir)
+    except Exception as exc:
+        _degrade("model_download", "HF 固定提交下载失败或 huggingface_hub 不可用: %s" % exc)
+        return False
+    if _weights_ready(hf_dir):
         return True
-    print("  modelscope 未取到权重，尝试 hf 备源 ...")
-    _degrade("model_download", "modelscope 未取到权重，备源需人工确认（HF 401 已知）")
+    _degrade("model_download", "HF 固定提交 %s 未取得完整权重；不回退浮动版本" % MODEL_REVISION)
     return False
 
 
@@ -352,6 +381,8 @@ def main():
     ap.add_argument("--model-dir", default="/root", help="权重存放目录")
     ap.add_argument("--data-dir", default="/root/data", help="数据存放目录")
     ap.add_argument("--msmm-dir", default="/root/MindSpeed-MM")
+    ap.add_argument("--migration-bundle", default=None, help="T03 固定输入 bundle（与 --migration-overlay 成对）")
+    ap.add_argument("--migration-overlay", default=None, help="T03 apply 输出目录（与 --migration-bundle 成对）")
     ap.add_argument("--skip-coco", action="store_true", help="跳过 COCO 图片下载（约 18GB）")
     ap.add_argument("--skip-convert", action="store_true", help="跳过数据转换")
     ap.add_argument("--no-download", action="store_true", help="只检查不下载（校验模式）")
@@ -360,7 +391,33 @@ def main():
 
     outdir = os.path.abspath(args.out)
     ensure(outdir, args.dry_run)
-    result = {"schema": "migrator_assets.v1", "assets": {}, "checks": [], "warnings": []}
+    result = {"schema": "migrator_assets.v2", "assets": {}, "checks": [], "warnings": [],
+              "attempt_id": uuid.uuid4().hex,
+              "model_revision_requested": MODEL_REVISION,
+              "model_revision_observed": None,
+              "migration_id": None,
+              "migration_identity_state": "awaiting_T03_manifest_reference",
+              "reload_verified": False}
+    if bool(args.migration_bundle) != bool(args.migration_overlay):
+        print("FATAL --migration-bundle 与 --migration-overlay 必须成对提供", file=sys.stderr)
+        return 2
+    migration = None
+    if args.migration_bundle:
+        try:
+            migration = verified_migration(args.migration_bundle, args.migration_overlay,
+                                           args.msmm_dir)
+        except Exception as exc:  # T03 validator exposes its own MigrationError type.
+            result["migration_identity_state"] = "invalid"
+            result["migration_error"] = str(exc)
+            if not args.dry_run:
+                with open(os.path.join(outdir, "assets.json"), "w", encoding="utf-8") as handle:
+                    json.dump(result, handle, ensure_ascii=False, indent=1)
+            print("FATAL T03 migration/target 身份无效：%s" % exc, file=sys.stderr)
+            return 3
+        result.update(migration_id=migration["migration_id"],
+                      migration_manifest_sha256=migration["manifest_sha256"],
+                      migration_manifest_path=migration["manifest_path"],
+                      migration_identity_state="validated_overlay_and_target")
 
     def record(key, path, extra=None, status="unknown"):
         rec = {"path": path, "exists": os.path.exists(path) if path else False, "status": status}
@@ -390,12 +447,13 @@ def main():
     print("\n[1/3] 模型权重")
     record("weight_hf", model_hf)
     record("weight_dcp", model_dcp)
-    if not _weights_ready(model_hf) and not args.no_download:
-        print("  下载 hf 权重（modelscope 主源 → hf 备源，带重试）...")
+    hf_ready_before = _weights_ready(model_hf)
+    if not hf_ready_before and not args.no_download:
+        print("  从 Hugging Face 固定仓库提交下载 hf 权重...")
         if not args.dry_run:
             if fetch_model(model_hf):
                 print("  权重就绪: %s" % model_hf)
-    elif _weights_ready(model_hf):
+    elif hf_ready_before:
         print("  hf 权重已存在且内容就绪，跳过下载")
     elif os.path.isdir(model_hf):
         # ★ 坑 70：目录存在但为空/无权重文件 —— 曾经因此**永久跳过下载**（权重一直是 0）
@@ -404,13 +462,16 @@ def main():
     else:
         result["warnings"].append("hf 权重缺失且 --no-download：请先下载 Qwen/Qwen3.5-0.8B（modelscope）")
 
+    hf_inventory = inspect_hf(model_hf)
+    result["hf_identity"] = hf_inventory
+    result["metadata_revision_observed"] = hf_inventory.get("metadata_revision")
     result["conversion"] = {"converter": "Qwen35Converter", "model_size": "0.8B",
                             "tie_weight_mapping": TIE_MAPPING.copy(), "status": "not_run"}
     if not _dcp_release_ready(model_dcp) and not args.no_download:
         if _dir_nonempty(model_dcp):
             result["conversion"]["status"] = "blocked_partial_dcp"
             check("DCP 输出目录可安全写入", False, "已有不完整内容，使用新输出路径人工核查")
-        elif _weights_ready(model_hf):
+        elif hf_inventory["status"] == "local_complete":
             try:
                 target_identity = verify_target_checkout(args.msmm_dir, require_patched=True)
                 header_report = weight_headers_contract(model_hf)
@@ -430,12 +491,15 @@ def main():
                                             target_commit=target_identity["target_commit"],
                                             converter_sha256=target_identity["converter_current_sha256"],
                                             patch_identity=target_identity["patch_identity"],
-                                            payload_hashes_checked=False,
+                                            hf_file_inventory_sha256=hf_inventory["file_inventory_sha256"],
+                                            payload_hashes_checked=True,
+                                            upstream_payload_same_bytes="unverified",
                                             model_state_dict_checked=False)
                 check("固定目标源码、0.8B 权重索引及全部分片头", True,
                       "仅校验头部，未验证 tensor payload 或模型数值")
                 print("  转换 hf → DCP（Qwen35Converter，带 tied lm_head 映射）...")
-            if result["conversion"]["status"] == "headers_checked" and _HAVE_COMPAT:
+            if result["conversion"]["status"] == "headers_checked" and _HAVE_COMPAT \
+                    and not args.dry_run:
                 # ★ 坑 100：`convert_cli` 需要**两个**依赖，缺一不可 ——
                 #   `jsonargparse`（第 8 行 import）与 `docstring-parser`（jsonargparse 的
                 #   可选依赖，但在此路径上被强制要求）。
@@ -468,7 +532,8 @@ def main():
                 else:
                     ok, attempts = _retry(lambda _i: subprocess.run(cmd, shell=True, timeout=3600).returncode == 0,
                                           tries=2, backoff=15, label="hf2dcp")
-                    ready = _dcp_release_ready(model_dcp)
+                    dcp_after = inspect_dcp(model_dcp)
+                    ready = dcp_after["status"] == "local_structure_and_hashes"
                     result["conversion"].update(status="converted_structure_only" if ok and ready else "failed",
                                                 attempts=attempts, dcp_release_structure_ready=ready)
                     if not ok or not ready:
@@ -476,13 +541,13 @@ def main():
                               "转换失败或缺少 tracker/release/.metadata")
                         _degrade("dcp_convert", "hf→dcp 转换未有效产出（P5 依赖）", severity="blocked")
                     else:
-                        receipt = _conversion_receipt(model_dcp, header_report, target_identity)
+                        receipt = _conversion_receipt(model_dcp, hf_inventory, target_identity, migration)
                         receipt_path = os.path.join(model_dcp, "migration_conversion_receipt.json")
                         try:
                             with open(receipt_path, "x", encoding="utf-8") as handle:
                                 json.dump(receipt, handle, ensure_ascii=False, indent=2)
                         except FileExistsError:
-                            if not _existing_conversion_verified(model_dcp, header_report, target_identity):
+                            if not _existing_conversion_verified(model_dcp, hf_inventory, target_identity, migration):
                                 result["conversion"]["status"] = "failed"
                                 check("转换身份收据", False, "已有收据与本次输入/目标不一致")
                         except OSError as exc:
@@ -495,15 +560,15 @@ def main():
     elif _dcp_release_ready(model_dcp):
         try:
             target_identity = verify_target_checkout(args.msmm_dir, require_patched=True)
-            source_identity, _, _ = metadata_contract(model_hf)
-            verified = _existing_conversion_verified(model_dcp, source_identity, target_identity)
+            verified = hf_inventory["status"] == "local_complete" and \
+                _existing_conversion_verified(model_dcp, hf_inventory, target_identity, migration)
         except (TargetIdentityError, WeightContractError, OSError) as exc:
             verified = False
             result["conversion"]["error"] = str(exc)
         result["conversion"]["status"] = "existing_verified_receipt" if verified else "existing_unverified"
         if verified:
-            result["conversion"].update(source_revision=source_identity["model_revision"],
-                                        mtp_source_keys=source_identity["mtp_source_keys"],
+            result["conversion"].update(source_revision=hf_inventory["model_revision"],
+                                        mtp_source_keys=hf_inventory["mtp_source_keys"],
                                         reference_training_mtp_num_layers=0,
                                         dcp_mtp_reload_verified=False,
                                         target_commit=target_identity["target_commit"],
@@ -512,11 +577,13 @@ def main():
         check("既有 DCP 转换身份收据", verified,
               "结构存在但无同源收据不得作为本轮可用 DCP" if not verified else "仅确认结构与转换身份")
     result["weight_validation_level"] = (
-        "dcp_conversion_identity_and_structure_only"
+        "local_hf_and_dcp_hashes_receipt_no_reload"
         if result["conversion"]["status"] in ("converted_structure_only", "existing_verified_receipt")
         else "insufficient")
-    record("weight_hf", model_hf, status="ok" if _weights_ready(model_hf) else "missing")
-    record("weight_dcp", model_dcp, status="structure_only" if _dcp_release_ready(model_dcp) else "missing")
+    dcp_inventory = inspect_dcp(model_dcp)
+    result["dcp_identity"] = dcp_inventory
+    record("weight_hf", model_hf, status="local_complete" if hf_inventory["status"] == "local_complete" else "missing")
+    record("weight_dcp", model_dcp, status="structure_only" if dcp_inventory["status"] == "local_structure_and_hashes" else "missing")
 
     # ---------------- 数据下载 ----------------
     print("\n[2/3] 数据集")
@@ -526,10 +593,16 @@ def main():
         if not args.dry_run:
             if fetch_llava(data_llava):
                 print("  llava json 就绪")
-    rec = record("llava_json", data_llava)
+    llava_identity = inspect_llava(data_llava)
+    result["llava_identity"] = llava_identity
+    rec = record("llava_json", data_llava,
+                 extra={"sha256": llava_identity.get("json_sha256"),
+                        "order_sha256": llava_identity.get("order_sha256"),
+                        "samples": llava_identity.get("row_count"),
+                        "official_sha256": None, "official_same_bytes": "unverified"})
     if rec.get("bytes"):
         anchor = ANCHORS["llava_json"]["bytes"]
-        check("llava_instruct_150k.json 字节数 = %d（官方一致）" % anchor,
+        check("llava_instruct_150k.json 预期字节数 = %d（仅大小校验）" % anchor,
               rec["bytes"] == anchor, "实际 %d" % rec["bytes"])
     else:
         result["warnings"].append("llava json 缺失：数据可比性无法确认")
@@ -550,41 +623,86 @@ def main():
 
     # ---------------- 转换 ----------------
     print("\n[3/3] 数据格式转换")
+    script_identity = converter_identity(args.msmm_dir)
+    result["data_conversion"] = {"script": script_identity,
+                                  "parameters": {"llava_json_path": data_llava,
+                                                 "coco_path": data_coco_dir,
+                                                 "output_json_path": converted},
+                                  "source_json_sha256": llava_identity.get("json_sha256"),
+                                  "status": "not_run"}
     if _json_samples(converted) != ANCHORS["converted_json"]["samples"] and not args.skip_convert and not args.no_download:
-        script = os.path.join(args.msmm_dir, "mindspeed_mm/fsdp/tools/data_tool/"
-                                            "llava_instruct_2_mllm_demo_format.py")
-        if os.path.isfile(data_llava) and os.path.isdir(data_coco_img):
+        script = script_identity["path"]
+        if script_identity["status"] != "pinned":
+            check("固定目标数据转换脚本", False, script_identity.get("error") or "脚本内容与固定提交不一致")
+            result["data_conversion"]["status"] = "blocked_script_identity"
+        elif llava_identity["status"] == "local_content_verified" and os.path.isdir(data_coco_img):
             cmd = conversion_command(args.msmm_dir, [
                 python_exe() if _HAVE_COMPAT else "python3", script,
                 "--llava_json_path", data_llava, "--coco_path", data_coco_dir,
                 "--output_json_path", converted])
+            result["data_conversion"]["command_argv"] = [
+                python_exe() if _HAVE_COMPAT else "python3", script,
+                "--llava_json_path", data_llava, "--coco_path", data_coco_dir,
+                "--output_json_path", converted]
             print("  命令: %s" % cmd)
             if not args.dry_run:
-                _retry(lambda _i: subprocess.run(cmd, shell=True, timeout=7200).returncode == 0,
-                       tries=2, backoff=20, label="convert")
+                logs = []
+                def run_conversion(_i):
+                    log_path = os.path.join(outdir, "data-conversion-%s-attempt-%d.log" %
+                                            (result["attempt_id"], _i))
+                    with open(log_path, "wb") as stream:
+                        try:
+                            proc = subprocess.run(cmd, shell=True, timeout=7200,
+                                                  stdout=stream, stderr=subprocess.STDOUT)
+                            rc = proc.returncode
+                        except subprocess.TimeoutExpired:
+                            rc = None
+                    with open(log_path, "rb") as stream:
+                        stream.seek(max(0, os.path.getsize(log_path) - 2000))
+                        tail = stream.read().decode("utf-8", errors="replace")
+                    logs.append({"path": log_path, "sha256": sha256(log_path),
+                                 "returncode": rc, "tail": tail})
+                    return rc == 0
+                ok, attempts = _retry(run_conversion, tries=2, backoff=20, label="convert")
+                result["data_conversion"].update(status="generated" if ok else "failed",
+                                                 attempts=logs, attempted_count=attempts)
+            else:
+                result["data_conversion"]["status"] = "planned_not_executed"
         else:
             result["warnings"].append("缺少 llava json 或 COCO 图片，无法转换")
-    samples = count_samples(converted) if os.path.isfile(converted) else None
-    rec = record("converted_json", converted, extra={"samples": samples})
+    data_identity = inspect_data(converted, data_coco_dir)
+    result["data_identity"] = data_identity
+    if result["data_conversion"]["status"] == "generated":
+        if (data_identity["status"] != "local_content_verified" or
+                data_identity.get("row_count") != ANCHORS["converted_json"]["samples"]):
+            result["data_conversion"]["status"] = "failed_output_validation"
+            check("本次数据转换返回码与新产物身份", False,
+                  data_identity.get("error") or "样本数/图片解码未达标")
+        else:
+            result["data_conversion"]["output_json_sha256"] = data_identity["json_sha256"]
+            result["data_conversion"]["output_order_sha256"] = data_identity["order_sha256"]
+    elif result["data_conversion"]["status"] == "failed":
+        check("本次数据转换返回码", False, "转换失败；完整输出见本次日志清单")
+    elif result["data_conversion"]["status"] == "not_run" and os.path.isfile(converted):
+        result["data_conversion"]["status"] = "existing_local_identity_only"
+    samples = data_identity.get("row_count")
+    rec = record("converted_json", converted, extra={"samples": samples,
+                  "sha256": data_identity.get("json_sha256"),
+                  "order_sha256": data_identity.get("order_sha256"),
+                  "status": data_identity.get("status")})
     if samples is not None:
         check("output_llava_coco_data.json 样本数 = %d" % ANCHORS["converted_json"]["samples"],
               samples == ANCHORS["converted_json"]["samples"], "实际 %d" % samples)
 
-    # ---------------- 可比性等级 ----------------
-    llava_ok = result["assets"].get("llava_json", {}).get("bytes") == ANCHORS["llava_json"]["bytes"]
-    conv_ok = result["assets"].get("converted_json", {}).get("samples") == ANCHORS["converted_json"]["samples"]
-    if llava_ok and conv_ok and n_img == ANCHORS["coco_images"]["images"]:
-        level = "构造性同源（同源下载 + 官方转换脚本 + 样本数一致 + shuffle=false）"
-    elif n_img:
-        level = "子集/部分（仅窗口口径可比）"
+    # Local content hashes are useful for later comparison, but no official
+    # dataset byte manifest is available to establish official same-bytes.
+    if data_identity["status"] == "local_content_verified":
+        level = "本地内容身份已记录；官方同字节未核对"
     else:
-        level = "不可比（仅验证流程连通）"
+        level = "不可比（数据内容或引用图片未验证）"
     result["data_comparability"] = level
-
-    if not args.dry_run:
-        os.makedirs(outdir, exist_ok=True)
-        with open(os.path.join(outdir, "assets.json"), "w", encoding="utf-8") as f:
-            json.dump(result, f, ensure_ascii=False, indent=1)
+    result["official_data_identity"] = {"status": "unverified", "json_sha256": None,
+                                        "image_manifest_sha256": None}
 
     print("\n=== 资产清单 ===")
     for k, v in result["assets"].items():
@@ -610,37 +728,36 @@ def main():
         if not p or not os.path.exists(p):
             return False, "不存在"
         if key in ("weight_hf", "weight_dcp"):
-            try:
-                files = os.listdir(p)
-            except Exception as e:
-                return False, "无法列目录: %s" % e
-            if not files:
-                return False, "空目录（★ 空目录不算就绪）"
             if key == "weight_hf":
-                # ★ 坑 94：必需文件清单式校验（原判据"有一个 json 就算成功"过弱）
-                miss = weights_missing_files(p)
-                if miss:
-                    return False, "缺少必需文件: %s" % ",".join(miss)
-            if key == "weight_dcp" and not _dcp_release_ready(p):
-                return False, "缺少有效 release tracker 或 .metadata"
+                if hf_inventory["status"] != "local_complete":
+                    return False, "HF 文件、索引/分片或内容身份不足: %s" % (
+                        hf_inventory.get("error") or ",".join(hf_inventory.get("missing_files", [])))
+                return True, "完整本地文件哈希，非上游同字节证明"
+            if dcp_inventory["status"] != "local_structure_and_hashes":
+                return False, "DCP tracker/metadata/payload 不完整: %s" % (
+                    dcp_inventory.get("error") or ",".join(dcp_inventory.get("missing_files", [])))
             if key == "weight_dcp" and result["conversion"]["status"] not in (
                     "converted_structure_only", "existing_verified_receipt"):
-                return False, "DCP 仅有结构，缺少本次固定源码和转换身份"
-            return True, "%d 个文件（DCP 仅结构校验）" % len(files)
+                return False, "DCP 缺少本次完整源/DCP payload 哈希绑定收据"
+            return True, "DCP 本地 payload 哈希与本次收据一致；未重载"
         if key == "llava_json":
+            if llava_identity["status"] != "local_content_verified":
+                return False, llava_identity.get("error", "来源 JSON 内容未验证")
             n = rec.get("bytes")
             if not n:
                 return False, "空文件"
             if n != ANCHORS["llava_json"]["bytes"]:
                 return False, "字节数 %d != 锚点 %d" % (n, ANCHORS["llava_json"]["bytes"])
-            return True, "字节数与锚点一致"
+            if not rec.get("sha256"):
+                return False, "来源 JSON 无法读取并计算内容哈希"
+            return True, "本地字节哈希已记录；官方同字节未核对"
         if key == "converted_json":
-            s = rec.get("samples")
-            if not s:
-                return False, "无样本或无法解析"
+            if data_identity["status"] != "local_content_verified":
+                return False, data_identity.get("error", "JSON/图片内容未验证")
+            s = data_identity["row_count"]
             if s != ANCHORS["converted_json"]["samples"]:
                 return False, "样本数 %d != 锚点 %d" % (s, ANCHORS["converted_json"]["samples"])
-            return True, "%d 样本与锚点一致" % s
+            return True, "%d 样本、顺序及引用图片本地哈希已记录" % s
         if key == "coco_images":
             n = rec.get("images")
             if not n:
@@ -656,7 +773,7 @@ def main():
     #   "可选"必须按**下游依赖**定义，而不是按"我们觉得它次要"。
     REQUIRED_ASSETS = ("weight_hf", "weight_dcp", "llava_json", "converted_json")
     OPTIONAL_ASSETS = ("coco_images",)
-    missing, why = [], []
+    missing = []
     for k in REQUIRED_ASSETS:
         ok_k, det = substantive(k)
         if not ok_k:
@@ -666,6 +783,16 @@ def main():
         ok_k, det = substantive(k)
         if not ok_k:
             opt_missing.append("%s(%s)" % (k, det))
+
+    result["missing_required"] = missing
+    result["missing_optional"] = opt_missing
+    result["readiness"] = (("local_complete_official_unverified" if migration else
+                            "local_complete_migration_unbound") if not missing and not fails
+                           else "incomplete")
+    if not args.dry_run:
+        os.makedirs(outdir, exist_ok=True)
+        with open(os.path.join(outdir, "assets.json"), "w", encoding="utf-8") as f:
+            json.dump(result, f, ensure_ascii=False, indent=1)
 
     print("\n=== 完整性判定（内容级，非存在性）===")
     for k in REQUIRED_ASSETS + OPTIONAL_ASSETS:
