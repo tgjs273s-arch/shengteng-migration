@@ -36,6 +36,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 if SCRIPT_DIR not in sys.path:
     sys.path.insert(0, SCRIPT_DIR)
 from _train_log import read_log, integrity
+from _judge_binding import verify_binding
 JUDGE_DIR = os.path.join(SKILL_ROOT, "sk04_judge", "scripts")
 BASELINE_DIR = os.path.join(SKILL_ROOT, "sk04_judge", "configs", "baselines")
 TRITON_ID = "qwen35-0p8b-triton-20260724-100step-v1"
@@ -453,6 +454,9 @@ def _main():
     ap.add_argument("--data-json", default=None, help="数据集 json（用于字节/顺序身份核对）")
     ap.add_argument("--baseline", default="officialB", help="officialA | officialB | <yaml 路径>")
     ap.add_argument("--baseline-log", default=None, help="官方基线日志（用于逐点/窗口双轨指标）")
+    ap.add_argument("--config-manifest", default=None, help="P2 config_manifest.json，本地配置身份绑定")
+    ap.add_argument("--assets-json", default=None, help="P4 assets.json，本地权重/数据内容身份")
+    ap.add_argument("--train-integrity", default=None, help="P5 train_integrity.json，本次运行收据")
     ap.add_argument("--out", default="out/judge", help="输出目录")
     ap.add_argument("--registry", default=None, help="哈希链账本路径（提供则追加）")
     ap.add_argument("--tag", default=None, help="账本条目 tag（需唯一）")
@@ -487,6 +491,9 @@ def _main():
     if os.path.isfile(base) is False and os.path.isfile(os.path.join(BASELINE_DIR, base + ".yaml")):
         base = os.path.join(BASELINE_DIR, base + ".yaml")
     identity = baseline_identity(args.baseline, base, args.baseline_log)
+    binding = verify_binding(args.config_manifest, args.assets_json, args.train_integrity,
+                             args.log, identity["canonical_id"],
+                             identity["expected_reference_log_sha256"], args.config)
 
     print("== P7 判定链 ==")
     print("日志     : %s" % args.log)
@@ -511,7 +518,10 @@ def _main():
         return 2
 
     fp_args = ["--baseline", base, "--out", os.path.join(outdir, "fp.json")]
-    if use_log:
+    if binding["state"] == "LOCAL_BINDING_VERIFIED":
+        fp_args += ["--config", binding["effective_config_path"]]
+        print("指纹配置源: P5 已核有效快照 %s" % binding["effective_config_path"])
+    elif use_log:
         # ★ 坑 114：日志内嵌 Configuration Details 才是"实际跑了什么"
         fp_args += ["--config-from-log", os.path.abspath(args.log)]
         print("指纹配置源: --config-from-log（日志运行态）")
@@ -573,6 +583,7 @@ def _main():
                "deviations": (verdict.get("config_deviation") or {}).get("count_mismatch", 0),
                "open_gates": open_gates,
                "baseline_identity": identity,
+               "source_binding": binding,
                "candidate_log_sha256": sha256_file(args.log),
                "candidate_integrity": candidate_integrity,
                "comparability": {"verdict": verdict_name, "color": color,
@@ -585,6 +596,8 @@ def _main():
                    ("weight_start", "loss_semantics", "dtype", "optimizer",
                     "learning_rate", "seed", "preprocessing", "data_identity",
                     "sample_order")}}
+    summary["alignment_evidence"]["local_config_asset_train_binding"] = binding["state"]
+    summary["alignment_evidence"]["runtime_asset_binding"] = "UNVERIFIED"
     if args.baseline_log and os.path.isfile(args.baseline_log):
         reference_parsed = read_log(args.baseline_log)
         reference_totals = {r["total"] for r in reference_parsed["rows"]}
@@ -641,11 +654,17 @@ def _main():
     else:
         print("\n（未提供 --baseline-log，数值判定未执行）")
     summary["numeric_open_gates"] = list(identity["identity_issues"])
+    summary["numeric_open_gates"].extend(binding["issues"])
+    if binding["state"] == "NOT_PROVIDED":
+        summary["numeric_open_gates"].append("source_binding_not_provided")
+    elif binding["state"] == "REJECTED":
+        summary["numeric_validity"] = "SOURCE_BINDING_REJECTED"
     if candidate_integrity["state"] != "COMPLETE":
         summary["numeric_open_gates"].append("candidate_integrity_incomplete")
     if summary["numeric_validity"] != "VALID_MEASUREMENT":
         summary["numeric_open_gates"].append(summary["numeric_validity"].lower())
-    summary["numeric_open_gates"].extend(["rule_pending", "alignment_evidence_unverified"])
+    summary["numeric_open_gates"].extend(["rule_pending", "alignment_evidence_unverified",
+                                          "runtime_asset_binding_unverified"])
 
     # ---- 4) 账本
     if args.registry and args.tag:
