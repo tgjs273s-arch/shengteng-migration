@@ -1,0 +1,43 @@
+# 换行符与文本/二进制判定策略
+#
+# 背景：本仓库在 Windows 上编辑、在 WSL/Linux 上执行脚本与训练。此前没有 .gitattributes
+# 且 core.autocrlf=true，检出时把所有文本都写成 CRLF：.sh 带 \r 在 WSL 里执行会报
+# "\r: command not found"，工作区字节也与仓库中已存的 LF 内容不一致，影响证据哈希核对。
+#
+# 策略：文本一律 LF（与仓库内容同源），Windows 原生脚本保留 CRLF。
+# 仓库本地已设 core.autocrlf=false，因此下面的属性是换行符的唯一事实来源。
+* text=auto eol=lf
+
+# Windows 原生脚本：cmd.exe 与 Windows PowerShell 5.1 期望 CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# 二进制资产：不做文本转换，也不做行级 diff
+*.pdf  binary
+*.docx binary
+*.xlsx binary
+*.pptx binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.svg  text eol=lf
+*.zip  binary
+*.rar  binary
+*.7z   binary
+*.gz   binary
+*.tar  binary
+*.whl  binary
+*.bin  binary
+*.pt   binary
+*.pth  binary
+*.ckpt binary
+*.onnx binary
+*.safetensors binary
+*.npy  binary
+*.npz  binary
+*.so   binary
+*.dll  binary
+*.exe  binary
