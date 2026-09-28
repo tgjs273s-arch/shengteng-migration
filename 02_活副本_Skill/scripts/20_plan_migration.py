@@ -42,7 +42,6 @@ FIELD_SPECS = [
     (("training",), "gradient_accumulation_steps", 2),
     (("training",), "save_interval", 2),
     (("training",), "load_rank0_and_broadcast", 2),
-    (("training",), "save_format", 2),
     (("features",), "recompute", 2),
     (("features",), "enable_chunk_loss", 2),
     (("features",), "enable_activation_offload", 2),
@@ -52,6 +51,8 @@ FIELD_SPECS = [
     #   （复核意见：新比较必须覆盖它）。现由 P0 档位写入并在下方回读校验。
     (("model",), "skip_gdn_recompute", 2),
     (("model",), "skip_flash_attn_recompute", 2),
+    (("model",), "mtp_num_layers", 2),
+    (("model",), "mtp_loss_scaling_factor", 2),
 ]
 
 # Fields observed in the saved 2026-07-24 Triton reference log. This is a
@@ -59,6 +60,7 @@ FIELD_SPECS = [
 REFERENCE_BASELINE_ID = "qwen35-0p8b-triton-20260724-100step-v1"
 REFERENCE_LOG_SHA256 = "c8daabce532d0d7b5a3ffa1668ff490a3ddf8d95448701d17d2dc64ca1c89296"
 REFERENCE_LOG_PATH = os.path.join(SKILL_ROOT, "examples", "train", "official_baseline.log")
+TARGET_MSMM_COMMIT = "5b5505331924634da64e3d9a1925d02b10babe9f"
 REFERENCE_TEMPLATE_PATH = os.path.join(SKILL_ROOT, "config", "templates",
                                        "qwen3_5_0_8B_reference.yaml")
 REFERENCE_TARGETS = {
@@ -71,7 +73,6 @@ REFERENCE_TARGETS = {
     ("training", "gradient_accumulation_steps"): 1,
     ("training", "save_interval"): 100,
     ("training", "load_rank0_and_broadcast"): False,
-    ("training", "save_format"): "auto",
     ("features", "recompute"): True,
     ("features", "enable_chunk_loss"): True,
     ("features", "enable_activation_offload"): True,
@@ -79,6 +80,8 @@ REFERENCE_TARGETS = {
     ("model", "causal_conv1d_implementation"): "triton",
     ("model", "skip_gdn_recompute"): True,
     ("model", "skip_flash_attn_recompute"): True,
+    ("model", "mtp_num_layers"): 0,
+    ("model", "mtp_loss_scaling_factor"): 0.1,
 }
 
 
@@ -94,7 +97,6 @@ def candidate_targets(profile):
         ("training", "gradient_accumulation_steps"): profile.get("gas", 1),
         ("training", "save_interval"): 10000,
         ("training", "load_rank0_and_broadcast"): bool(profile.get("load_rank0_and_broadcast", False)),
-        ("training", "save_format"): profile.get("save_format", "auto"),
         ("features", "recompute"): bool(profile.get("recompute", False)),
         ("features", "enable_chunk_loss"): bool(profile.get("enable_chunk_loss", False)),
         ("features", "enable_activation_offload"): bool(profile.get("enable_activation_offload", False)),
@@ -102,6 +104,8 @@ def candidate_targets(profile):
         ("model", "causal_conv1d_implementation"): profile.get("operator_backend", "triton"),
         ("model", "skip_gdn_recompute"): bool(profile.get("skip_gdn_recompute", True)),
         ("model", "skip_flash_attn_recompute"): True,
+        ("model", "mtp_num_layers"): 0,
+        ("model", "mtp_loss_scaling_factor"): 0.1,
     }
 
 
@@ -424,19 +428,15 @@ def main():
             print("  - %s: 实际=%s 期望=%s" % (name, actual, expect), file=sys.stderr)
         return 3
 
-    # ★ 坑 113 的前提守卫：`trainer.py:439-448` 规定 `save_format != dcp` 时
-    #   必须 `no_save_optim` 与 `no_save_rng` **同为真**，否则会被**静默强制回退 dcp** ——
-    #   于是收尾保存的 ACL 507018 又回来了，而且没有任何报错提示。
-    #   这类"静默回退"正是本项目反复踩的形态，必须在生成阶段就拦住。
+    # 26.1.0 branch commit 5b550533 uses DistributedCheckpointer for saving.
+    # TrainingArguments accepts extra fields, so save_format could appear valid
+    # while having no effect. Reject it rather than claiming an HF save path.
     _trdoc = doc.get("training") or {}
-    if str(_trdoc.get("save_format", "auto")).lower() != "dcp":
-        _miss_pre = [k for k in ("no_save_optim", "no_save_rng") if _trdoc.get(k) is not True]
-        if _miss_pre:
-            print("FATAL save_format=%s 要求 %s 同时为 true，否则 trainer 会**静默回退 dcp**，"
-                  "坑 113 的收尾保存崩溃（ACL 507018 / rc≠0）会复发。当前不满足: %s"
-                  % (_trdoc.get("save_format"), " 与 ".join(_miss_pre), "、".join(_miss_pre)),
-                  file=sys.stderr)
-            return 3
+    if "save_format" in _trdoc:
+        print("FATAL training.save_format=%s 在目标 MindSpeed-MM %s 不受支持；"
+              "实际保存固定为 DCP，不能据此声称 HF 保存或规避 DCP 保存故障"
+              % (_trdoc["save_format"], TARGET_MSMM_COMMIT), file=sys.stderr)
+        return 3
 
     # ---- 几何与角色身份（运行时 world 仍由 P5 强校验）
     _mbs = (doc.get("training") or {}).get("micro_batch_size")
@@ -472,10 +472,10 @@ def main():
         elif profile["operator_backend"] != "triton":
             feasibility_reasons.append("探测后端=%s；参考日志使用 triton" %
                                        profile.get("operator_backend"))
-        if profile.get("load_rank0_and_broadcast") or profile.get("save_format") == "hf":
-            feasibility_reasons.append("当前 CANN 需要 DCP 加载/保存工作区；参考配置未采用该工作区")
-        if "load_rank0_and_broadcast" not in profile or "save_format" not in profile:
-            feasibility_unknown.append("P0 未完整提供 DCP 加载/保存工作区判据")
+        if profile.get("load_rank0_and_broadcast"):
+            feasibility_reasons.append("当前 CANN 需要 DCP rank0 加载工作区；参考配置未采用该工作区")
+        if "load_rank0_and_broadcast" not in profile:
+            feasibility_unknown.append("P0 未提供 DCP rank0 加载判据")
         if feasibility_reasons:
             warnings.append("参考运行环境未对齐：" + "；".join(feasibility_reasons))
         if feasibility_unknown:
@@ -483,9 +483,12 @@ def main():
 
     differences = config_differences(doc, reference_doc)
     reference_fields = set(dict(config_leaves(reference_doc)))
-    verified_reference_fields = sorted(".".join(path) for path in REFERENCE_TARGETS
-                                       if path != ("training", "save_format"))
+    verified_reference_fields = sorted(".".join(path) for path in REFERENCE_TARGETS)
     template_default_fields = sorted(reference_fields - set(verified_reference_fields))
+    checkpoint_block_reasons = []
+    if str(profile.get("save_format") or "").lower() == "hf":
+        checkpoint_block_reasons.append(
+            "P0 建议 HF 直接保存，但固定目标只提供 DCP 保存；该建议未应用且不能规避 DCP 保存故障")
     cfg_path = os.path.join(outdir, "train_config.yaml")
     reference_cfg_path = os.path.join(outdir, "reference_config.yaml")
     manifest = {
@@ -495,6 +498,18 @@ def main():
         "baseline_source": {"kind": "repository_log_copy",
                             "path": REFERENCE_LOG_PATH, "sha256": reference_log_sha},
         "official_rule_state": "RULE_PENDING",
+        "target_framework_commit": TARGET_MSMM_COMMIT,
+        "checkpoint_format": "dcp",
+        "checkpoint_format_source": "target_trainer_fixed_distributed_checkpointer",
+        "checkpoint_enabled": bool(_trdoc.get("save")),
+        "checkpoint_controls": {
+            "save": _trdoc.get("save"),
+            "no_save_optim": _trdoc.get("no_save_optim"),
+            "no_save_rng": _trdoc.get("no_save_rng"),
+            "load_rank0_and_broadcast": _trdoc.get("load_rank0_and_broadcast"),
+        },
+        "unsupported_profile_save_format": profile.get("save_format"),
+        "checkpoint_block_reasons": checkpoint_block_reasons,
         "reference_scope": "saved_log_observed_fields_plus_template_defaults",
         "verified_reference_fields": verified_reference_fields,
         "template_default_fields_unverified": template_default_fields,
@@ -548,8 +563,9 @@ def main():
     print("  参考: %s" % reference_cfg_path)
     print("  身份: %s" % manifest_path)
     print("  方案: %s" % plan_path)
-    if args.config_role == "reference" and feasibility_reasons:
-        print("PLAN_BLOCKED role=reference reason=%s" % ";".join(feasibility_reasons))
+    if (args.config_role == "reference" and feasibility_reasons) or checkpoint_block_reasons:
+        print("PLAN_BLOCKED role=%s reason=%s" %
+              (args.config_role, ";".join(feasibility_reasons + checkpoint_block_reasons)))
         return 3
     print("PLAN_OK role=%s profile=%s path=%s" % (args.config_role, profile.get("profile"), path))
     print("下一步: P3 算子验证 → python3 scripts/30_verify_ops.py；或直接 P5 训练 → scripts/50_train.py")
@@ -570,6 +586,11 @@ def build_plan_md(env, profile, points, cfg_path, report, warnings,
                      (config_manifest["reference_feasibility"],
                       "；".join(config_manifest["reference_feasibility_reasons"] +
                                config_manifest["reference_feasibility_unknown"])))
+        lines.append("目标 MindSpeed-MM `%s` 的训练保存格式：**DCP**。" %
+                     config_manifest["target_framework_commit"])
+        if config_manifest["checkpoint_block_reasons"]:
+            lines.append("保存路径受阻：%s" % "；".join(config_manifest["checkpoint_block_reasons"]))
+        lines.append("")
     lines.append("## 1. 环境画像\n")
     lines.append("| 项 | 值 |")
     lines.append("|---|---|")

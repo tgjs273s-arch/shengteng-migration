@@ -58,8 +58,15 @@ class ConfigRoleTests(unittest.TestCase):
         self.assertEqual(manifest["baseline_id"], "qwen35-0p8b-triton-20260724-100step-v1")
         self.assertEqual(manifest["official_rule_state"], "RULE_PENDING")
         self.assertIn("features.recompute", manifest["verified_reference_fields"])
-        self.assertIn("training.save_format", manifest["template_default_fields_unverified"])
+        self.assertIn("model.mtp_num_layers", manifest["verified_reference_fields"])
+        self.assertIn("model.mtp_loss_scaling_factor", manifest["verified_reference_fields"])
         self.assertIn("training.seed", manifest["template_default_fields_unverified"])
+        self.assertEqual(manifest["checkpoint_format"], "dcp")
+        self.assertTrue(manifest["checkpoint_enabled"])
+        self.assertIs(manifest["checkpoint_controls"]["no_save_optim"], True)
+        self.assertIs(manifest["checkpoint_controls"]["no_save_rng"], True)
+        self.assertEqual(manifest["target_framework_commit"],
+                         "5b5505331924634da64e3d9a1925d02b10babe9f")
         differences = {row["field"] for row in manifest["differences_from_reference"]}
         self.assertNotIn("features.recompute", differences)
         self.assertNotIn("parallel.fsdp_plan.pregather", differences)
@@ -68,6 +75,9 @@ class ConfigRoleTests(unittest.TestCase):
         self.assertTrue(config["features"]["enable_chunk_loss"])
         self.assertTrue(config["features"]["enable_activation_offload"])
         self.assertTrue(config["model"]["skip_flash_attn_recompute"])
+        self.assertEqual(config["model"]["mtp_num_layers"], 0)
+        self.assertEqual(config["model"]["mtp_loss_scaling_factor"], 0.1)
+        self.assertNotIn("save_format", config["training"])
         self.assertEqual(config["training"]["save_interval"], 100)
 
     def test_candidate_has_auditable_differences_and_exact_paths(self):
@@ -96,6 +106,8 @@ class ConfigRoleTests(unittest.TestCase):
         self.assertEqual(config["data"]["dataset_param"]["basic_parameters"]["dataset_dir"],
                          unusual)
         self.assertEqual(config["training"]["load"], unusual + " dcp")
+        self.assertEqual(config["model"]["mtp_num_layers"], 0)
+        self.assertEqual(config["model"]["mtp_loss_scaling_factor"], 0.1)
         self.assertEqual(differences["training.load"]["effective"], unusual + " dcp")
         self.assertEqual(differences["data.dataset_param.basic_parameters.dataset"]["effective"],
                          [unusual + ".json"])
@@ -122,6 +134,29 @@ class ConfigRoleTests(unittest.TestCase):
         _, manifest = self.read(output)
         self.assertEqual(manifest["reference_feasibility"], "unknown")
         self.assertTrue(manifest["reference_feasibility_unknown"])
+
+    def test_unsupported_hf_save_advice_blocks_candidate_without_claiming_hf_output(self):
+        profile = {"world_size": 2, "dp": 2, "mbs": 4, "gas": 1,
+                   "operator_backend": "triton", "save_format": "hf"}
+        proc, output = self.generate(profile, "--config-role", "candidate")
+        self.assertEqual(proc.returncode, 3, proc.stdout + proc.stderr)
+        config, manifest = self.read(output)
+        self.assertIn("PLAN_BLOCKED", proc.stdout)
+        self.assertEqual(manifest["checkpoint_format"], "dcp")
+        self.assertTrue(manifest["checkpoint_block_reasons"])
+        self.assertNotIn("save_format", config["training"])
+
+    def test_custom_template_save_format_hf_is_rejected_before_output(self):
+        profile = {"world_size": 2, "dp": 2, "mbs": 4, "gas": 1,
+                   "operator_backend": "triton"}
+        template = self.root / "unsupported-save.yaml"
+        source = (ROOT / "config" / "templates" / "qwen3_5_0_8B_base.yaml").read_text(encoding="utf-8")
+        template.write_text(source.replace("  save_interval: 10000",
+                                           "  save_interval: 10000\n  save_format: hf"), encoding="utf-8")
+        proc, output = self.generate(profile, "--template", str(template))
+        self.assertEqual(proc.returncode, 3, proc.stdout + proc.stderr)
+        self.assertIn("training.save_format", proc.stderr)
+        self.assertFalse((output / "train_config.yaml").exists())
 
     def test_reference_records_step_and_custom_template_changes(self):
         profile = {"world_size": 2, "dp": 2, "mbs": 4, "gas": 1,

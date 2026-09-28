@@ -92,6 +92,8 @@ model:
   #   ⚠ 耦合（读源码得知，勿按名字猜）：`gdn_implementation: eager` 时 True 会 raise NotImplemented。
   skip_gdn_recompute: True
   skip_flash_attn_recompute: true
+  mtp_num_layers: 0
+  mtp_loss_scaling_factor: 0.1
 
 # 优化特性配置
 features:
@@ -131,7 +133,6 @@ training:
   micro_batch_size: 4
   gradient_accumulation_steps: 1
   load_rank0_and_broadcast: false
-  save_format: auto # 当前模板/策略值；参考日志未显式记录
   seed: 42
   lr: 1.0e-5
   lr_decay_style: cosine

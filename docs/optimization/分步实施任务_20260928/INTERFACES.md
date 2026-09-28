@@ -75,6 +75,7 @@ T03 应将本次实际消费的文件摘要、源码差异、上游复用与项�
 - P2 新增 `reference_config.yaml`、`config_manifest.json`（`migrator_config.v1`），保存实际/参考配置 SHA-256、canonical baseline ID、来源模板和 P0 身份、GBS 几何、逐叶差异以及字段来源。差异有双方 `*_present`，缺失与 null/空映射不混同。
 - `verified_reference_fields` 仅描述已经核对的仓库存量日志字段，其他字段列入 `template_default_fields_unverified`；整份参考模板不等于完整官方配置。新提供的外部材料由 T01 补核后再更新来源状态。
 - P2 新产物、角色传参及配置到本次训练的绑定仍由 T10 接入 `_stage_state.OUTPUTS` 与主入口。T05 资产子步尚未冻结，消费方不得推测其字段。
+- 新目标更正已复核：manifest 增加 `target_framework_commit`、实际 `checkpoint_format=dcp`、`checkpoint_enabled`、`checkpoint_controls` 与阻断原因；自定义 `training.save_format` 被拒绝，P0 的 HF 保存建议不应用且返回 3。参考与候选显式写日志中的 `model.mtp_num_layers=0` 和 `mtp_loss_scaling_factor=0.1`。这些是配置证据，真实 DCP 保存由 T08/T12 验证。
 
 ## T07 独立数值核心接口
 

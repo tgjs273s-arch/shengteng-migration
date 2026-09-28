@@ -90,6 +90,8 @@ model:
   #   ⚠ 耦合（读源码得知，勿按名字猜）：`gdn_implementation: eager` 时 True 会 raise NotImplemented。
   skip_gdn_recompute: True
   skip_flash_attn_recompute: false
+  mtp_num_layers: 0  # 已保存 Triton 参考日志第 90 行；不采用框架新默认值
+  mtp_loss_scaling_factor: 0.1  # 同日志第 91 行
 
 # 优化特性配置
 features:
@@ -176,4 +178,3 @@ tools:
       stacks: all
       max_entries: null
       mem_info: false
-
