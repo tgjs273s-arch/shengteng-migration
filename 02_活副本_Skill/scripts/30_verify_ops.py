@@ -9,13 +9,18 @@ import sys
 import traceback
 from pathlib import Path
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+except ImportError:
+    torch = nn = F = None
 
 
 def probe_backend():
     # 探 torch_npu: 装好且卡可见 -> 轨A; 否则 -> 轨B(CPU 回退) —— 兼作 Skill P0 env-probe
+    if torch is None:
+        return "cpu", "CPU-回退(当前解释器缺 PyTorch，算子未执行)"
     try:
         import torch_npu  # noqa  # 导入后 torch.npu 才挂上
         if torch.npu.is_available():
@@ -36,6 +41,13 @@ def _quick_gelu(x):
 
 
 def run_matrix(device):
+    if torch is None:
+        return [{"op": op, "status": "contract-only", "validation_level": "dependency_unavailable",
+                 "reason": "current interpreter has no PyTorch"} for op in (
+                     "vision_3d_conv_patch(Conv3d)",
+                     "custom_act_or_norm(RMSNorm+silu+quick_gelu)",
+                     "full_attn(scaled_dot_product_attention)",
+                     "linear_attn_GatedDeltaNet(chunk_gated_delta_rule/causal_conv1d)")]
     rows = []
     # 行1: 视觉 3D-Conv patch embedding
     try:
@@ -92,8 +104,9 @@ def summarize_matrix(rows):
         status = "PARTIAL" if counts["forward_ok"] else "CONTRACT_ONLY"
     else:
         status = "PASSED"
+    numeric = [r for r in rows if r.get("validation_level", "").startswith("numeric")]
     return {"status": status, "total": len(rows), "counts": counts,
-            "scope": "forward/shape only; numerical equivalence not verified",
+            "scope": "target numerical checks in matrix" if numeric else "forward/shape only; numerical equivalence not verified",
             "exit_code": 1 if status == "FAILED" else 0}
 
 
@@ -106,34 +119,63 @@ def main():
     #   → **P3 阶段从未真正运行过**；且 driver 的判据只看产物是否存在，
     #     于是它被记成普通 FAIL 而不是"接口不匹配"。现显式接受 `--env` 并落进产物。
     ap.add_argument("--env", default=None, help="P0 环境档案（可选；记录进产物便于溯源）")
+    ap.add_argument("--migration-manifest", help="T03 本次 migration_manifest.json；与 bundle/checkout 成组提供")
+    ap.add_argument("--migration-bundle", help="T03 固定 16 文件 bundle；与 manifest/checkout 成组提供")
+    ap.add_argument("--target-checkout", help="已按 manifest 安装的固定 MindSpeed-MM checkout")
     args = ap.parse_args()
+    if any((args.migration_manifest, args.migration_bundle, args.target_checkout)) and not all(
+            (args.migration_manifest, args.migration_bundle, args.target_checkout)):
+        ap.error("--migration-manifest、--migration-bundle、--target-checkout 必须同时提供")
     if args.env and not os.path.isfile(args.env):
         print("[WARN] --env 指定的环境档案不存在: %s（继续，P3 不依赖它）" % args.env)
 
+    outdir = Path(args.out)
+    outdir.mkdir(parents=True, exist_ok=True)
     kind, backend = probe_backend()
-    device = torch.device("npu:0" if kind == "npu" else "cpu")
+    device = torch.device("npu:0" if kind == "npu" else "cpu") if torch is not None else "cpu"
     print("=== Skill P3 算子矩阵 @", backend, " device=", device, "===")
     rows = run_matrix(device)
+    if args.migration_manifest:
+        # This replaces the old static GDN declaration with checks against the
+        # actual migrated target. The helper imports framework modules lazily.
+        rows = [r for r in rows if not r["op"].startswith("linear_attn_GatedDeltaNet(")]
+        try:
+            from _qwen35_numeric import run as run_target_numeric
+            rows.extend(run_target_numeric(args.migration_manifest, args.migration_bundle, args.target_checkout,
+                                           outdir / "target_numeric"))
+        except Exception as exc:
+            rows.append({"op": "target_migration_identity", "status": "error",
+                         "validation_level": "identity_failed",
+                         "err": f"{type(exc).__name__}: {exc}"})
     for r in rows:
         if r["status"] == "contract-only":
-            print(f"[{r['op']}] contract-only | 契约 in={r['shape_contract']['in']} out={r['shape_contract']['out']}")
-            print("        -> 本地无 kernel, 不伪造 forward; 真算子归 P2 昇腾 Triton/Ascend C 落地")
+            shape = r.get("shape_contract")
+            if shape:
+                print(f"[{r['op']}] contract-only | 契约 in={shape.get('in')} out={shape.get('out')}")
+            else:
+                print(f"[{r['op']}] contract-only | {r.get('validation_level', 'unverified')}: {r.get('reason', '未执行')}")
         elif r["status"] == "forward_ok":
-            print(f"[{r['op']}] forward_ok | in={r['in_shape']} out={r['out_shape']}")
+            if "in_shape" in r and "out_shape" in r:
+                print(f"[{r['op']}] forward_ok | in={r['in_shape']} out={r['out_shape']}")
+            else:
+                detail = r.get("shape", r.get("shapes", {}))
+                print(f"[{r['op']}] forward_ok | level={r.get('validation_level', 'forward')} "
+                      f"shape={detail} metrics={len(r.get('metrics', {}))}")
         else:
-            print(f"[{r['op']}] ERROR | {r.get('err')}")
+            print(f"[{r['op']}] ERROR | stage={r.get('failed_stage', 'unknown')} {r.get('err')}")
     print("-" * 64)
     print("backend:", backend)   # 无卡含 'CPU-回退'=轨B; 有卡含 'Ascend NPU'=轨A
     summary = summarize_matrix(rows)
-    print("VERIFY_%s forward_ok=%d contract_only=%d error=%d（仅 forward/shape，未验证数值等价）" % (
+    print("VERIFY_%s forward_ok=%d contract_only=%d error=%d（验证范围见 ops_matrix.json）" % (
         summary["status"], summary["counts"]["forward_ok"],
         summary["counts"]["contract-only"], summary["counts"]["error"]))
 
-    outdir = Path(args.out)
-    outdir.mkdir(parents=True, exist_ok=True)
     (outdir / "ops_matrix.json").write_text(json.dumps({
         "backend": backend, "device": str(device), "matrix": rows,
         "summary": summary, "environment_file": args.env,
+        "migration_manifest": args.migration_manifest,
+        "migration_bundle": args.migration_bundle,
+        "target_checkout": args.target_checkout,
     }, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"产物: {outdir / 'ops_matrix.json'}")
     return summary["exit_code"]

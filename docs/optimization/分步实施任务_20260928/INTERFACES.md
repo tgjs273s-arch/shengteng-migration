@@ -73,6 +73,13 @@ T03 应将本次实际消费的文件摘要、源码差异、上游复用与项�
 
 固定新目标的实际 migration_id 为 `qwen35-0p8b-a69b4e66be0ab549`，converter patch SHA-256 为 `2bda81ad2c3f7ccdaba6dec8d5de4e7a0898c73f37e2f6d9bbcc4027633773cb`。真实 16 文件 bundle、安装幂等/漂移拒绝与 15 项离线回归已验证，输出仍为 `STATIC_APPLIED_RUNTIME_PENDING`。P4 转换收据升级 `qwen35_0p8b_conversion.v2`，包含新目标源码与补丁身份、15 个 MTP 源键及 `dcp_mtp_reload_verified=false`；此收据仍只覆盖结构与元数据，完整 payload/资产由 T05 补齐。T04 可消费已冻结源/目标及实际后端定义；runtime 实例化、decode/cache 疑点和 NPU 数值仍未解决。
 
+## T04 目标数值验证入口接口
+
+- P3 新模式需同时传 `--migration-manifest`、`--migration-bundle`、`--target-checkout`，复用 T03 的固定身份校验；参数缺件返回 2，身份漂移返回 1 并保存本次 `ops_matrix.json`。旧 CLI 的状态语义保留，退出码 0 可能仍为 CONTRACT_ONLY/PARTIAL，不能用它单独宣布通过。
+- 默认独立算子仍只检 forward/shape。目标模式增加真实 CPU eager 小文本模型 prefill/decode/cache，以及 NPU Triton GDN/causal-conv 前向、梯度、末状态和小文本模型缓存比较入口；缺依赖明确 contract-only，运行异常为 error。BF16 的 `atol=0.05/rtol=0.05` 是工程冒烟容差，不是官方训练精度规则。
+- 新行保存身份、实现来源、输入几何、指标、容差、失败阶段和实际张量文件清单。输入、小模型初始化状态、输出/梯度使用 `--out/target_numeric/` 下的 float32 小端文件，附原 dtype/shape/SHA；失败保留前面完成的指标，不加载 pickle 证据。
+- 6 项新增控制流及 14 项阶段回归通过；实际无 Torch 命令只得到 7 行 CONTRACT_ONLY。真实 CPU 类、NPU 数值、完整 0.8B/视觉/logits 和疑似 decode 布局问题均未验证，T12 仍须执行；T10 要传上述三个身份输入并消费每行验证层级。
+
 ## T05 配置子步接口冻结
 
 - P2 增加 `--config-role reference|candidate`，默认 `reference`。参考只使用独立参考模板；P0 的推荐优化必须显式选择 `candidate`。已知参考环境不匹配时保留诊断产物并返回 3，探测缺项记 `unknown`，不声明可运行。
