@@ -52,6 +52,13 @@ T03 应将本次实际消费的文件摘要、源码差异、上游复用与项�
 - P6 的 `--expected-gbs` 仅核对调用者提供的数值与日志一致；T10 负责把它绑定到 P5 已核验配置，不能仅凭该整数宣称外部配置身份已验证。
 - 已有 `_stage_state.code_digest()` 覆盖新脚本，但 P5 OUTPUTS 尚未绑定新增运行产物，主入口 P5/P6 仍有旧断言。T10 必须纳入当前运行 receipt/快照/完整性结果并消费新版状态，不能把本步独立入口验证说成主入口已集成。
 
+## T05 配置子步接口冻结
+
+- P2 增加 `--config-role reference|candidate`，默认 `reference`。参考只使用独立参考模板；P0 的推荐优化必须显式选择 `candidate`。已知参考环境不匹配时保留诊断产物并返回 3，探测缺项记 `unknown`，不声明可运行。
+- P2 新增 `reference_config.yaml`、`config_manifest.json`（`migrator_config.v1`），保存实际/参考配置 SHA-256、canonical baseline ID、来源模板和 P0 身份、GBS 几何、逐叶差异以及字段来源。差异有双方 `*_present`，缺失与 null/空映射不混同。
+- `verified_reference_fields` 仅描述已经核对的仓库存量日志字段，其他字段列入 `template_default_fields_unverified`；整份参考模板不等于完整官方配置。新提供的外部材料由 T01 补核后再更新来源状态。
+- P2 新产物、角色传参及配置到本次训练的绑定仍由 T10 接入 `_stage_state.OUTPUTS` 与主入口。T05 资产子步尚未冻结，消费方不得推测其字段。
+
 ## 验收结果语义
 
 | 字段层次 | 要回答的问题 | 不能替代 |
