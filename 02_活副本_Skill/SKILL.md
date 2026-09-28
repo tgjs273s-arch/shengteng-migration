@@ -87,6 +87,10 @@ python3 scripts/20_plan_migration.py --points out/analyze/migrate_points.json \
 - `out/plan/train_config.yaml`：**按环境档案自动选择配置档**（几何、显存开关、后端、并行度）
 **配置档选择逻辑**（冗余矩阵核心，见 §3）：按 `env.json` 的 die 数、HBM 容量、triton 可用性自动生成
 
+### 固定源码迁移执行（T03 独立入口）
+
+P1/P2 只识别迁移点并生成方案/配置；Qwen3.5-0.8B 固定版本源码原型入口为 `scripts/22_migrate_qwen35.py`。当前实现仍固定 `v26.0.0` 候选，2026-09-29 新提供官方材料所指定的 `26.1.0` 适配尚未完成。按 [源码迁移与复现](docs/源码迁移与复现.md) 将固定 GPU/目标源码与小型模型元数据放入 bundle，`apply` 生成可审查的 converter 补丁、上游模型差异和 `migration_manifest.json`；在隔离的 MindSpeed-MM 固定提交 checkout 中 `install`，依赖齐备时再运行 `runtime`。原始 GPU/目标源码保持可追溯。`STATIC_APPLIED_RUNTIME_PENDING` 只表示静态源码步骤完成，不能解释为模型加载、数值或 NPU 通过。P4 的 0.8B HF→DCP 路径使用 `Qwen35Converter` 和 tied `lm_head` 映射，并在转换前检查固定 metadata 与全部本地 safetensors 头部。
+
 ### P3 · verify —— 算子与契约验证
 
 ```bash

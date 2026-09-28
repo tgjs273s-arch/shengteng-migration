@@ -22,6 +22,11 @@ import subprocess
 import sys
 import time
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _qwen35_weights import (TIE_MAPPING, WeightContractError, metadata_contract,
+                             sha256, weight_headers_contract)
+from _qwen35_migration import TargetIdentityError, verify_target_checkout
+
 # 校验锚点（与官方一致；修改需有依据）
 ANCHORS = {
     "llava_json": {"name": "llava_instruct_150k.json", "bytes": 228941895},
@@ -41,6 +46,37 @@ def _dir_nonempty(p):
     try:
         return os.path.isdir(p) and bool(os.listdir(p))
     except Exception:
+        return False
+
+
+def _dcp_release_ready(path):
+    """A release tracker alone is written before conversion finishes."""
+    root = os.path.abspath(path)
+    tracker = os.path.join(root, "latest_checkpointed_iteration.txt")
+    metadata = os.path.join(root, "release", ".metadata")
+    try:
+        with open(tracker, encoding="utf-8") as handle:
+            return handle.read().strip() == "release" and os.path.isfile(metadata)
+    except OSError:
+        return False
+
+
+def _conversion_receipt(path, source, target):
+    return {"schema": "qwen35_0p8b_conversion.v1", "model_revision": source["model_revision"],
+            "config_sha256": source["config_sha256"], "index_sha256": source["index_sha256"],
+            "target_commit": target["target_commit"], "converter_sha256": target["converter_current_sha256"],
+            "dcp_metadata_sha256": sha256(os.path.join(path, "release", ".metadata"))}
+
+
+def _existing_conversion_verified(path, source, target):
+    receipt_path = os.path.join(path, "migration_conversion_receipt.json")
+    if not _dcp_release_ready(path) or not os.path.isfile(receipt_path):
+        return False
+    try:
+        with open(receipt_path, encoding="utf-8") as handle:
+            saved = json.load(handle)
+        return saved == _conversion_receipt(path, source, target)
+    except (OSError, ValueError, json.JSONDecodeError):
         return False
 
 
@@ -143,7 +179,6 @@ def ensure(p, dry=False):
 # =====================================================================
 # ★ 鲁棒下载：重试 + 退避 + 多源 + 字节校验 + 降级留痕（坑 10/29）
 # =====================================================================
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 try:
     # ★ 坑 153（pyflakes 静态扫描发现，2026-09-21）：`pip_install` 此前**从未被导入**，
     #   而第 362 行用到了它 —— 更要命的是那句调用被 `except Exception: pass` 包着，
@@ -365,10 +400,35 @@ def main():
     else:
         result["warnings"].append("hf 权重缺失且 --no-download：请先下载 Qwen/Qwen3.5-0.8B（modelscope）")
 
-    if not _dir_nonempty(model_dcp) and not args.no_download:
-        if _weights_ready(model_hf):
-            print("  转换 hf → DCP（带重试）...")
-            if _HAVE_COMPAT:
+    result["conversion"] = {"converter": "Qwen35Converter", "model_size": "0.8B",
+                            "tie_weight_mapping": TIE_MAPPING.copy(), "status": "not_run"}
+    if not _dcp_release_ready(model_dcp) and not args.no_download:
+        if _dir_nonempty(model_dcp):
+            result["conversion"]["status"] = "blocked_partial_dcp"
+            check("DCP 输出目录可安全写入", False, "已有不完整内容，使用新输出路径人工核查")
+        elif _weights_ready(model_hf):
+            try:
+                target_identity = verify_target_checkout(args.msmm_dir, require_patched=True)
+                header_report = weight_headers_contract(model_hf)
+            except (TargetIdentityError, WeightContractError, OSError) as exc:
+                result["conversion"].update(status="blocked", error=str(exc),
+                                            validation_level="source_target_or_headers_failed")
+                check("固定目标源码、0.8B 权重索引及全部分片头", False, str(exc))
+            else:
+                result["conversion"].update(status="headers_checked",
+                                            validation_level=header_report["validation_level"],
+                                            source_revision=header_report["model_revision"],
+                                            indexed_keys=header_report["indexed_keys"],
+                                            header_keys=header_report["header_keys"],
+                                            target_commit=target_identity["target_commit"],
+                                            converter_sha256=target_identity["converter_current_sha256"],
+                                            patch_identity=target_identity["patch_identity"],
+                                            payload_hashes_checked=False,
+                                            model_state_dict_checked=False)
+                check("固定目标源码、0.8B 权重索引及全部分片头", True,
+                      "仅校验头部，未验证 tensor payload 或模型数值")
+                print("  转换 hf → DCP（Qwen35Converter，带 tied lm_head 映射）...")
+            if result["conversion"]["status"] == "headers_checked" and _HAVE_COMPAT:
                 # ★ 坑 100：`convert_cli` 需要**两个**依赖，缺一不可 ——
                 #   `jsonargparse`（第 8 行 import）与 `docstring-parser`（jsonargparse 的
                 #   可选依赖，但在此路径上被强制要求）。
@@ -388,18 +448,65 @@ def main():
             #   而我们调用的是 **`convert_cli.py` 子命令包装**（用下划线）。
             #   ——**同名功能的不同入口可以有不同参数约定**；只有"实际入口的 --help"是权威。
             #   纪律：`<实际调用方式> --help` 的输出优先于任何源码阅读与旧脚本记忆。
-            cmd = conversion_command(args.msmm_dir, [
-                python_exe() if _HAVE_COMPAT else "python3", "-m", "checkpoint.convert_cli",
-                "GenericDCPConverter", "hf_to_dcp", "--hf_dir", model_hf, "--dcp_dir", model_dcp])
-            print("  命令: %s" % cmd)
-            if not args.dry_run:
-                _retry(lambda _i: subprocess.run(cmd, shell=True, timeout=3600).returncode == 0,
-                       tries=2, backoff=15, label="hf2dcp")
-                if not _dir_nonempty(model_dcp):
-                    _degrade("dcp_convert", "hf→dcp 转换未产出（P5 与 mock 冒烟都依赖它）",
-                             severity="blocked")
+            if result["conversion"]["status"] == "headers_checked":
+                argv = [
+                    python_exe() if _HAVE_COMPAT else "python3", "-m", "checkpoint.convert_cli",
+                    "Qwen35Converter", "hf_to_dcp", "--hf_dir", model_hf, "--dcp_dir", model_dcp,
+                    "--tie_weight_mapping", json.dumps(TIE_MAPPING, separators=(",", ":"))]
+                cmd = conversion_command(args.msmm_dir, argv)
+                result["conversion"]["argv"] = argv
+                print("  命令: %s" % cmd)
+                if args.dry_run:
+                    result["conversion"]["status"] = "planned_not_executed"
+                else:
+                    ok, attempts = _retry(lambda _i: subprocess.run(cmd, shell=True, timeout=3600).returncode == 0,
+                                          tries=2, backoff=15, label="hf2dcp")
+                    ready = _dcp_release_ready(model_dcp)
+                    result["conversion"].update(status="converted_structure_only" if ok and ready else "failed",
+                                                attempts=attempts, dcp_release_structure_ready=ready)
+                    if not ok or not ready:
+                        check("hf→DCP 转换返回码与 release 结构", False,
+                              "转换失败或缺少 tracker/release/.metadata")
+                        _degrade("dcp_convert", "hf→dcp 转换未有效产出（P5 依赖）", severity="blocked")
+                    else:
+                        receipt = _conversion_receipt(model_dcp, header_report, target_identity)
+                        receipt_path = os.path.join(model_dcp, "migration_conversion_receipt.json")
+                        try:
+                            with open(receipt_path, "x", encoding="utf-8") as handle:
+                                json.dump(receipt, handle, ensure_ascii=False, indent=2)
+                        except FileExistsError:
+                            if not _existing_conversion_verified(model_dcp, header_report, target_identity):
+                                result["conversion"]["status"] = "failed"
+                                check("转换身份收据", False, "已有收据与本次输入/目标不一致")
+                        except OSError as exc:
+                            result["conversion"]["status"] = "failed"
+                            check("转换身份收据", False, str(exc))
+                        if result["conversion"]["status"] != "failed":
+                            result["conversion"]["receipt_sha256"] = sha256(receipt_path)
+                            check("hf→DCP 转换返回码、release 结构与身份收据", True,
+                                  "完整权重重载待 T08")
+    elif _dcp_release_ready(model_dcp):
+        try:
+            target_identity = verify_target_checkout(args.msmm_dir, require_patched=True)
+            source_identity, _, _ = metadata_contract(model_hf)
+            verified = _existing_conversion_verified(model_dcp, source_identity, target_identity)
+        except (TargetIdentityError, WeightContractError, OSError) as exc:
+            verified = False
+            result["conversion"]["error"] = str(exc)
+        result["conversion"]["status"] = "existing_verified_receipt" if verified else "existing_unverified"
+        if verified:
+            result["conversion"].update(source_revision=source_identity["model_revision"],
+                                        target_commit=target_identity["target_commit"],
+                                        converter_sha256=target_identity["converter_current_sha256"],
+                                        receipt_sha256=sha256(os.path.join(model_dcp, "migration_conversion_receipt.json")))
+        check("既有 DCP 转换身份收据", verified,
+              "结构存在但无同源收据不得作为本轮可用 DCP" if not verified else "仅确认结构与转换身份")
+    result["weight_validation_level"] = (
+        "dcp_conversion_identity_and_structure_only"
+        if result["conversion"]["status"] in ("converted_structure_only", "existing_verified_receipt")
+        else "insufficient")
     record("weight_hf", model_hf, status="ok" if _weights_ready(model_hf) else "missing")
-    record("weight_dcp", model_dcp, status="ok" if _dir_nonempty(model_dcp) else "missing")
+    record("weight_dcp", model_dcp, status="structure_only" if _dcp_release_ready(model_dcp) else "missing")
 
     # ---------------- 数据下载 ----------------
     print("\n[2/3] 数据集")
@@ -504,7 +611,12 @@ def main():
                 miss = weights_missing_files(p)
                 if miss:
                     return False, "缺少必需文件: %s" % ",".join(miss)
-            return True, "%d 个文件" % len(files)
+            if key == "weight_dcp" and not _dcp_release_ready(p):
+                return False, "缺少有效 release tracker 或 .metadata"
+            if key == "weight_dcp" and result["conversion"]["status"] not in (
+                    "converted_structure_only", "existing_verified_receipt"):
+                return False, "DCP 仅有结构，缺少本次固定源码和转换身份"
+            return True, "%d 个文件（DCP 仅结构校验）" % len(files)
         if key == "llava_json":
             n = rec.get("bytes")
             if not n:
