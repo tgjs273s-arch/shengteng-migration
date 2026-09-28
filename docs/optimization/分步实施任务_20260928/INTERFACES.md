@@ -52,6 +52,7 @@ T03 应将本次实际消费的文件摘要、源码差异、上游复用与项�
 - 新目标 Qwen3.5 示例 README 仍指向 GPU Transformers `fc91372`，沿用已核完整 commit `fc9137225880a9d03f130634c20f9dbe36a7b8bf`。0.8B 元数据仍锁 `2fc06364715b967f1860aea9cf38778875588b17`，作为项目明确选择而非 PDF 指定 revision；PDF 的 4B 配置文件名不能改变本项目 0.8B 目标。
 - 新版注册器返回类，ModelHub 配置覆盖增加 feature_args，并有 MTP 和 causal-conv 实现变化。T03 需另存新 bundle、manifest、补丁和摘要，重放后才交接；不得覆盖旧版本证据。Triton 参考日志第 90–91 行明确 `mtp_num_layers: 0`、`mtp_loss_scaling_factor: 0.1`，参考与 runtime 检查按此显式记录 MTP 策略，不能静默启用 1 层。
 - T08 已核固定新目标仍用 DCP checkpointer 保存；`load_format` 只控制加载，未知 `save_format` 可被配置解析容纳但没有保存实现消费。P2/P5 不能凭该字段宣称 HF 保存或规避 DCP；所需 HF 产物走版本匹配的显式导出。`no_save_optim`、`no_save_rng`、`load_rank0_and_broadcast` 是真实受支持字段，不能混同为无效参数。
+- 原件目录 `D:/JS/官方资料/` 的七件材料摘要见 T01 记录。Triton CRLF 原件与仓库 LF 副本已实际核对为仅行尾不同；后续来源可同时绑定两种字节摘要。PDF 第 2 页已核实前 200 条取后 100 条的均值口径。精度模板示例未定义正式通过条件，RULE_PENDING 不因原件到位自动解除。
 
 ## T06 本地接口冻结与后续集成
 
