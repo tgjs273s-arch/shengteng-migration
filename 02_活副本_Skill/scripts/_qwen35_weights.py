@@ -56,6 +56,7 @@ def metadata_contract(hf_dir):
             config.get("tie_word_embeddings") is not True or
             text.get("num_hidden_layers") != 24 or
             text.get("hidden_size") != 1024 or
+            text.get("mtp_num_hidden_layers") != 1 or
             text.get("vocab_size") != 248320 or
             "linear_attention" not in text.get("layer_types", []) or
             "full_attention" not in text.get("layer_types", [])):
@@ -65,6 +66,9 @@ def metadata_contract(hf_dir):
         raise WeightContractError("invalid 0.8B weight index")
     if EMBED_KEY not in weight_map or HEAD_KEY in weight_map:
         raise WeightContractError("unexpected tied embedding/head keys")
+    mtp_keys = sorted(key for key in weight_map if key.startswith("mtp."))
+    if len(mtp_keys) != 15 or any(".mlp.experts." in key for key in mtp_keys):
+        raise WeightContractError("unexpected 0.8B MTP index keys")
     shards = set(weight_map.values())
     if not shards or any(not isinstance(name, str) or Path(name).name != name or
                          not name.endswith(".safetensors") for name in shards):
@@ -72,7 +76,8 @@ def metadata_contract(hf_dir):
     return {"model_revision": MODEL_REVISION, "config_sha256": CONFIG_SHA256,
             "index_sha256": INDEX_SHA256, "indexed_keys": len(weight_map),
             "shards": sorted(shards), "tie_mapping": TIE_MAPPING.copy(),
-            "mtp_keys": sum(key.startswith("mtp.") for key in weight_map),
+            "mtp_keys": len(mtp_keys), "mtp_source_keys": mtp_keys,
+            "mtp_configured_source_layers": 1,
             "validation_level": "metadata_only"}, config, weight_map
 
 

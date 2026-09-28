@@ -44,6 +44,9 @@ class FixedSourceMigrationTests(unittest.TestCase):
         manifest = json.loads(first)
         self.assertEqual(manifest["source"]["commit"], migrate.GPU_COMMIT)
         self.assertEqual(manifest["target"]["commit"], migrate.TARGET_COMMIT)
+        self.assertEqual(manifest["reference_training_policy"]["mtp_num_layers"], 0)
+        self.assertEqual(len(manifest["model_metadata"]["mtp_source_keys"]), 15)
+        self.assertEqual(manifest["target"]["source_files_sha256"], migrate.TARGET_FILES_SHA256)
         self.assertEqual(manifest["execution_state"], "STATIC_APPLIED_RUNTIME_PENDING")
         self.assertFalse(manifest["complete_weights_verified"])
         self.assertIn("missing tied source weight", (out / "overlay" / migrate.CONVERTER).read_text(encoding="utf-8"))
@@ -58,6 +61,14 @@ class FixedSourceMigrationTests(unittest.TestCase):
         with self.assertRaises(migrate.MigrationError):
             migrate.apply(bundle, out)
         self.assertFalse((out / "migration_manifest.json").exists())
+
+    def test_new_target_dependency_tamper_rejected(self):
+        bundle = self.work / "tampered_bundle"
+        shutil.copytree(self.bundle, bundle)
+        path = bundle / "target/mindspeed_mm/fsdp/utils/register.py"
+        path.write_bytes(path.read_bytes() + b"\n# tampered\n")
+        with self.assertRaisesRegex(migrate.MigrationError, "source or target identity mismatch"):
+            migrate.apply(bundle, self.work / "out")
 
     def test_tampered_overlay_and_manifest_rejected(self):
         out = self.work / "out"
@@ -159,6 +170,21 @@ class FixedSourceMigrationTests(unittest.TestCase):
 
 
 class MainExitCodeTests(unittest.TestCase):
+    def test_new_target_registry_decorator_returns_class(self):
+        module_name = "pinned_target.modeling_qwen3_5"
+        model_module = types.ModuleType(module_name)
+        model_cls = type("Qwen3_5ForConditionalGeneration", (), {"__module__": module_name})
+
+        class Register:
+            def get(self, key):
+                if key != "qwen3_5":
+                    raise KeyError(key)
+                return model_cls
+
+        model_module.Qwen3_5ForConditionalGeneration = model_cls
+        with mock.patch.dict(sys.modules, {module_name: model_module}):
+            self.assertIs(migrate._registered_model_class(model_module, Register()), model_cls)
+
     def test_registry_class_used_when_decorator_erases_module_attribute(self):
         module_name = "pinned_target.modeling_qwen3_5"
         model_module = types.ModuleType(module_name)

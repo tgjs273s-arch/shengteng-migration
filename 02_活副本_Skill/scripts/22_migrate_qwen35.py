@@ -19,11 +19,17 @@ from urllib.error import URLError
 from _qwen35_weights import (HEAD_KEY, metadata_contract, sha256,
                              weight_headers_contract, WeightContractError)
 from _qwen35_migration import (CONVERTER, GPU_COMMIT, TARGET_COMMIT, BASE_CONVERTER_SHA256,
+                               TARGET_FILES_SHA256,
                                TargetIdentityError, digest, patched_converter_bytes,
                                verify_target_checkout)
 
 
 MODEL_REVISION = "2fc06364715b967f1860aea9cf38778875588b17"
+REQUIREMENTS_DOC_SHA256 = "59dcb02f76b7f8cd068d8d188204e2bfbf4c2a44b8846efeb6e4bfaf674b554f"
+REFERENCE_TRAINING_POLICY = {
+    "mtp_num_layers": 0, "mtp_loss_scaling_factor": 0.1,
+    "source_log_sha256": "f64ec7c38213d9a2e3bc7041f0423fff867a71920c8fd9c32ae6919ccd3e2e26",
+    "source_log_lines": [90, 91], "scope": "reference_log_not_this_run"}
 GPU_BASE = "https://raw.githubusercontent.com/huggingface/transformers/" + GPU_COMMIT + "/"
 TARGET_BASE = "https://raw.githubusercontent.com/Ascend/MindSpeed-MM/" + TARGET_COMMIT + "/"
 MODEL_BASE = "https://huggingface.co/Qwen/Qwen3.5-0.8B/resolve/" + MODEL_REVISION + "/"
@@ -35,11 +41,11 @@ FILES = {
     "gpu/src/transformers/models/qwen3_5/modular_qwen3_5.py":
         (GPU_BASE + "src/transformers/models/qwen3_5/modular_qwen3_5.py", "3ef5bf5c0c7606e638f56aaeeb6cdc7bb6b8e4860a59c68f330da0a7f9601022"),
     "target/mindspeed_mm/fsdp/models/qwen3_5/modeling_qwen3_5.py":
-        (TARGET_BASE + "mindspeed_mm/fsdp/models/qwen3_5/modeling_qwen3_5.py", "40049ef6476d1e2e178e3633f8e46eacd5e2ca621d851bc1dae3339712c4ef89"),
+        (TARGET_BASE + "mindspeed_mm/fsdp/models/qwen3_5/modeling_qwen3_5.py", TARGET_FILES_SHA256["mindspeed_mm/fsdp/models/qwen3_5/modeling_qwen3_5.py"]),
     "target/mindspeed_mm/fsdp/models/modelhub.py":
-        (TARGET_BASE + "mindspeed_mm/fsdp/models/modelhub.py", "8a2a17190c81ca200ad17c4759c878fd0c272a5f930636f5f141e87203bcc676"),
+        (TARGET_BASE + "mindspeed_mm/fsdp/models/modelhub.py", TARGET_FILES_SHA256["mindspeed_mm/fsdp/models/modelhub.py"]),
     "target/checkpoint/vlm_model/converters/qwen3_5.py":
-        (TARGET_BASE + "checkpoint/vlm_model/converters/qwen3_5.py", "d10f742ba9a4281dbaa40ef22ab4085a3ea0cacb4e52ec7f83de476999ca91cb"),
+        (TARGET_BASE + "checkpoint/vlm_model/converters/qwen3_5.py", BASE_CONVERTER_SHA256),
     "model/config.json": (MODEL_BASE + "config.json", "b90b86f35c8e6925ef74ee04d0e758f0a845c83a42089ad82bbaa948de9b4204"),
     "model/model.safetensors.index.json":
         (MODEL_BASE + "model.safetensors.index.json", "d8a08838a613b025eb7952ed9db11696213e57e76a375661ef5c12f9dd5dcf4e"),
@@ -48,6 +54,9 @@ FILES = {
     "model/tokenizer_config.json":
         (MODEL_BASE + "tokenizer_config.json", "49e2b6e395f959f077f1e992b338919c0d4a9732fc6e613995e06557f843500c"),
 }
+FILES.update({"target/" + relative: (TARGET_BASE + relative, expected)
+              for relative, expected in TARGET_FILES_SHA256.items()
+              if "target/" + relative not in FILES})
 
 class MigrationError(ValueError):
     pass
@@ -113,7 +122,7 @@ def apply(bundle, out):
     target_model = (bundle / "target/mindspeed_mm/fsdp/models/qwen3_5/modeling_qwen3_5.py").read_text(encoding="utf-8")
     upstream_diff = "".join(difflib.unified_diff(gpu_model.splitlines(True), target_model.splitlines(True),
                                                   fromfile="gpu/fc91372/modeling_qwen3_5.py",
-                                                  tofile="mindspeed-mm/6c45b48/modeling_qwen3_5.py"))
+                                                  tofile="mindspeed-mm/5b55053/modeling_qwen3_5.py"))
     patch_sha = _sha_bytes(diff.encode("utf-8"))
     migration_id = "qwen35-0p8b-" + _sha_bytes((GPU_COMMIT + TARGET_COMMIT + MODEL_REVISION + patch_sha).encode())[:16]
     manifest = {
@@ -124,10 +133,16 @@ def apply(bundle, out):
         "target": {"repository": "Ascend/MindSpeed-MM", "commit": TARGET_COMMIT,
                    "modeling_sha256": FILES["target/mindspeed_mm/fsdp/models/qwen3_5/modeling_qwen3_5.py"][1],
                    "modelhub_sha256": FILES["target/mindspeed_mm/fsdp/models/modelhub.py"][1],
+                   "source_files_sha256": TARGET_FILES_SHA256.copy(),
                    "converter_before_sha256": _sha_bytes(original),
                    "converter_after_sha256": _sha_bytes(patched),
                    "converter_path": str(CONVERTER).replace("\\", "/")},
         "model_metadata": metadata,
+        "reference_training_policy": REFERENCE_TRAINING_POLICY.copy(),
+        "requirements_reference": {"pdf_sha256": REQUIREMENTS_DOC_SHA256,
+                                   "requested_ref": "26.1.0 branch",
+                                   "engineering_locked_commit": TARGET_COMMIT,
+                                   "original_material_commit_known": False},
         "project_delta": {"patch_file": "qwen35_converter.patch", "patch_sha256": patch_sha,
                           "reason": "reject missing tied embedding before per-shard HF-to-DCP conversion"},
         "upstream_reuse": ["Qwen3_5ForConditionalGeneration model/forward/registration",
@@ -161,7 +176,14 @@ def validate_overlay(bundle, overlay):
                 FILES["target/mindspeed_mm/fsdp/models/qwen3_5/modeling_qwen3_5.py"][1] or
             manifest.get("target", {}).get("modelhub_sha256") !=
                 FILES["target/mindspeed_mm/fsdp/models/modelhub.py"][1] or
+            manifest.get("target", {}).get("source_files_sha256") != TARGET_FILES_SHA256 or
             manifest.get("model_metadata") != metadata or
+            manifest.get("reference_training_policy") != REFERENCE_TRAINING_POLICY or
+            manifest.get("requirements_reference") != {
+                "pdf_sha256": REQUIREMENTS_DOC_SHA256,
+                "requested_ref": "26.1.0 branch",
+                "engineering_locked_commit": TARGET_COMMIT,
+                "original_material_commit_known": False} or
             manifest.get("input_files_sha256") !=
                 {name: expected for name, (_, expected) in sorted(FILES.items())} or
             manifest.get("execution_state") != "STATIC_APPLIED_RUNTIME_PENDING" or
@@ -189,7 +211,7 @@ def validate_overlay(bundle, overlay):
     target_model = (Path(bundle) / "target/mindspeed_mm/fsdp/models/qwen3_5/modeling_qwen3_5.py").read_text(encoding="utf-8")
     upstream_diff = "".join(difflib.unified_diff(gpu_model.splitlines(True), target_model.splitlines(True),
                                                   fromfile="gpu/fc91372/modeling_qwen3_5.py",
-                                                  tofile="mindspeed-mm/6c45b48/modeling_qwen3_5.py"))
+                                                  tofile="mindspeed-mm/5b55053/modeling_qwen3_5.py"))
     if ((overlay / "upstream_model_diff.patch").read_bytes() != upstream_diff.encode("utf-8") or
             manifest.get("upstream_model_diff", {}).get("sha256") != digest(upstream_diff.encode("utf-8"))):
         raise MigrationError("upstream comparison diff identity mismatch")
@@ -224,7 +246,7 @@ def _checked_module_path(module, expected):
 
 
 def _registered_model_class(model_module, model_register):
-    # The pinned Register.register decorator stores the class but returns None.
+    # ModelHub resolves the registered class with get(), regardless of decorator return.
     try:
         model_cls = model_register.get("qwen3_5")
     except KeyError as exc:
@@ -248,7 +270,10 @@ def runtime(bundle, overlay, checkout, out, hf_dir=None, processor_dir=None):
         from transformers import AutoConfig, AutoProcessor
         sys.path.insert(0, str(Path(checkout).resolve()))
         model_module = importlib.import_module("mindspeed_mm.fsdp.models.qwen3_5.modeling_qwen3_5")
+        modelhub_module = importlib.import_module("mindspeed_mm.fsdp.models.modelhub")
         from mindspeed_mm.fsdp.utils.register import model_register
+        from mindspeed_mm.fsdp.params.model_args import ModelArguments
+        from mindspeed_mm.fsdp.params.feature_args import FeatureArguments
     except (ImportError, ModuleNotFoundError) as exc:
         raise DependencyUnavailable("target model dependencies unavailable: %s" % exc) from exc
     register_module = sys.modules[model_register.__class__.__module__]
@@ -256,14 +281,31 @@ def runtime(bundle, overlay, checkout, out, hf_dir=None, processor_dir=None):
     import_paths = {
         "modeling": _checked_module_path(
             model_module, target_root / "mindspeed_mm/fsdp/models/qwen3_5/modeling_qwen3_5.py"),
+        "modelhub": _checked_module_path(
+            modelhub_module, target_root / "mindspeed_mm/fsdp/models/modelhub.py"),
         "register": _checked_module_path(
-            register_module, target_root / "mindspeed_mm/fsdp/utils/register.py")}
+            register_module, target_root / "mindspeed_mm/fsdp/utils/register.py"),
+        "model_args": _checked_module_path(
+            sys.modules[ModelArguments.__module__], target_root / "mindspeed_mm/fsdp/params/model_args.py"),
+        "feature_args": _checked_module_path(
+            sys.modules[FeatureArguments.__module__], target_root / "mindspeed_mm/fsdp/params/feature_args.py")}
     model_cls = _registered_model_class(model_module, model_register)
     config = AutoConfig.from_pretrained(str(Path(bundle) / "model"), local_files_only=True)
-    config.text_config.use_triton_gdn = False
+    # Match ModelHub's config override API; the reference loss log uses mtp_num_layers=0.
+    model_args = ModelArguments(model_id="qwen3_5", mtp_num_layers=0, mtp_loss_scaling_factor=0.1,
+                                gdn_implementation="eager", causal_conv1d_implementation="eager",
+                                skip_gdn_recompute=False, skip_flash_attn_recompute=False)
+    feature_args = FeatureArguments(enable_chunk_loss=False, enable_dynamic_chunk_loss=False)
+    config = model_cls.overwrite_transformer_config(config, model_args, feature_args)
+    if (config.text_config.mtp_num_layers != 0 or
+            config.text_config.gdn_implementation != "eager" or
+            config.text_config.causal_conv1d_implementation != "eager"):
+        raise MigrationError("meta model config overrides differ from reference policy")
     with init_empty_weights():
         model = model_cls._from_config(config)
     state = model.state_dict()
+    if any(key.startswith("mtp.") for key in state):
+        raise MigrationError("meta model unexpectedly enabled MTP parameters")
     required_inputs = {"input_ids", "attention_mask", "position_ids", "labels",
                        "pixel_values", "image_grid_thw"}
     import inspect
@@ -271,8 +313,15 @@ def runtime(bundle, overlay, checkout, out, hf_dir=None, processor_dir=None):
         raise MigrationError("target forward interface mismatch")
     result = {"schema": "qwen35_runtime_validation.v1", "migration_id": manifest["migration_id"],
               "import_paths": import_paths,
-              "meta_overrides": {"use_triton_gdn": False, "scope": "meta_instantiation_only",
+              "meta_overrides": {"gdn_implementation": "eager", "causal_conv1d_implementation": "eager",
+                                 "mtp_num_layers": 0, "mtp_loss_scaling_factor": 0.1,
+                                 "scope": "meta_instantiation_only",
                                  "target_triton_executed": False},
+              "mtp_policy": {"reference_log_mtp_num_layers": 0,
+                             "indexed_source_keys": manifest["model_metadata"]["mtp_source_keys"],
+                             "source_weight_headers_checked": False,
+                             "target_meta_parameters": "disabled",
+                             "dcp_mtp_reload_verified": False},
               "model_registration": "verified", "meta_instantiation": "verified",
               "forward_signature": "verified", "state_dict_shapes": "pending",
               "processor": "pending", "npu_numeric_verified": False,
@@ -298,6 +347,7 @@ def runtime(bundle, overlay, checkout, out, hf_dir=None, processor_dir=None):
         result["state_dict_shapes"] = "verified_excluding_listed_mtp_and_tied_head"
         result["ignored_checkpoint_keys"] = {"rule": "^mtp.*", "keys": ignored_mtp,
                                               "status": "listed_from_local_weight_headers"}
+        result["mtp_policy"]["source_weight_headers_checked"] = True
         result["tensor_payload_hashes_verified"] = False
     if processor_dir:
         metadata_contract(processor_dir)

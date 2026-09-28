@@ -69,6 +69,10 @@ T03 应将本次实际消费的文件摘要、源码差异、上游复用与项�
 - runtime 通过固定框架注册表取类，核对实际导入路径；仅确认依赖缺失返回 4，运行/身份错误返回 3。meta 构造关闭 Triton，结果必须注明未执行目标 kernel。
 - 13 项离线回归及旧候选补丁重放已通过；新官方材料的 `26.1.0` 尚未接线，因此不以此放行正式下游验收。新版本更新必须另有源码身份与重放记录，不覆盖旧证据。
 
+## T03 新版静态接口复核结果（2026-09-29）
+
+固定新目标的实际 migration_id 为 `qwen35-0p8b-a69b4e66be0ab549`，converter patch SHA-256 为 `2bda81ad2c3f7ccdaba6dec8d5de4e7a0898c73f37e2f6d9bbcc4027633773cb`。真实 16 文件 bundle、安装幂等/漂移拒绝与 15 项离线回归已验证，输出仍为 `STATIC_APPLIED_RUNTIME_PENDING`。P4 转换收据升级 `qwen35_0p8b_conversion.v2`，包含新目标源码与补丁身份、15 个 MTP 源键及 `dcp_mtp_reload_verified=false`；此收据仍只覆盖结构与元数据，完整 payload/资产由 T05 补齐。T04 可消费已冻结源/目标及实际后端定义；runtime 实例化、decode/cache 疑点和 NPU 数值仍未解决。
+
 ## T05 配置子步接口冻结
 
 - P2 增加 `--config-role reference|candidate`，默认 `reference`。参考只使用独立参考模板；P0 的推荐优化必须显式选择 `candidate`。已知参考环境不匹配时保留诊断产物并返回 3，探测缺项记 `unknown`，不声明可运行。

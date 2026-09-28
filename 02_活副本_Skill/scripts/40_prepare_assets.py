@@ -62,9 +62,13 @@ def _dcp_release_ready(path):
 
 
 def _conversion_receipt(path, source, target):
-    return {"schema": "qwen35_0p8b_conversion.v1", "model_revision": source["model_revision"],
+    return {"schema": "qwen35_0p8b_conversion.v2", "model_revision": source["model_revision"],
             "config_sha256": source["config_sha256"], "index_sha256": source["index_sha256"],
             "target_commit": target["target_commit"], "converter_sha256": target["converter_current_sha256"],
+            "patch_identity": target["patch_identity"],
+            "target_source_files_sha256": target["target_files_sha256"],
+            "mtp_source_keys": source["mtp_source_keys"],
+            "reference_training_mtp_num_layers": 0, "dcp_mtp_reload_verified": False,
             "dcp_metadata_sha256": sha256(os.path.join(path, "release", ".metadata"))}
 
 
@@ -420,6 +424,9 @@ def main():
                                             source_revision=header_report["model_revision"],
                                             indexed_keys=header_report["indexed_keys"],
                                             header_keys=header_report["header_keys"],
+                                            mtp_source_keys=header_report["mtp_source_keys"],
+                                            reference_training_mtp_num_layers=0,
+                                            dcp_mtp_reload_verified=False,
                                             target_commit=target_identity["target_commit"],
                                             converter_sha256=target_identity["converter_current_sha256"],
                                             patch_identity=target_identity["patch_identity"],
@@ -496,6 +503,9 @@ def main():
         result["conversion"]["status"] = "existing_verified_receipt" if verified else "existing_unverified"
         if verified:
             result["conversion"].update(source_revision=source_identity["model_revision"],
+                                        mtp_source_keys=source_identity["mtp_source_keys"],
+                                        reference_training_mtp_num_layers=0,
+                                        dcp_mtp_reload_verified=False,
                                         target_commit=target_identity["target_commit"],
                                         converter_sha256=target_identity["converter_current_sha256"],
                                         receipt_sha256=sha256(os.path.join(model_dcp, "migration_conversion_receipt.json")))
