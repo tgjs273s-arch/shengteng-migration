@@ -103,6 +103,15 @@ T03 应将本次实际消费的文件摘要、源码差异、上游复用与项�
 - 固定目标没有 HF 训练保存开关。P5 拒绝非 DCP 的 `save_format` 声明；显式 `dcp` 仅作兼容声明，不负责选择 checkpointer。P2 仍拒绝该无效字段。
 - 这些字段只证明启动配置与本次保存意图，不证明 checkpoint 已写完整或能加载。完整 `model_artifact`、导出与重载等待 T05 资产交接；T10 需纳入上述实际快照与运行收据，T07 消费配置时必须区分源配置和按次变化的保存路径。
 
+## T08 完整导出与重载接口（离线已复核）
+
+- 独立入口 `66_export_model.py --train-run-dir --assets-json --target-checkout --iteration --out` 每次创建 `attempt-*/model_artifact.json`，schema 为 `model_artifact.v1`。`--inspect-only` 为 `PREFLIGHT_ONLY`；转换及文件检查通过为 `EXPORTED_RELOAD_UNVERIFIED`；只有显式 `--verify-reload` 的实际输出比较通过且末尾身份重验一致，才为 `RELOAD_VERIFIED`、`reload_verified=true`、`post_export_identity_rechecked=true`。失败为 `FAILED`、rc=3，保留日志、错误和部分文件。rc=0 本身不能证明重载通过。
+- 输入绑定本次 P5 run/integrity/配置/日志、`p5_asset_binding.v1` 前后快照及当前重采集。所选 checkpoint 必须属于该次保存目录、训练范围和 tracker，核对 DCP 元数据存储区间、全部分片及各 rank extra_state。使用固定目标转换器，显式关闭 dtype 转换与原 HF MTP 回填。
+- 派生配置/索引仅在新 attempt 内生成 MTP0 视图，保留原 HF；导出必须对应 473 个非 MTP 键及 DCP 实际 shape/dtype。`export_hf.path` 与 `export_hf.inventory` 是推理的本地模型/processor 目录及完整清单。`model_artifact_id` 由 migration ID、train run ID、checkpoint 清单和导出清单摘要生成，不能用路径或布尔值代替。
+- `train_run` 记录 run ID、run/integrity/config/log 摘要及原资产快照；`checkpoint` 记录迭代、DCP 路径/清单/张量结构；`assets_json`、`migration_manifest` 和 `target` 保留来源身份。`derived_origin`、`converter`、`origin_hf` 区分派生视图、实际命令日志及原始资产，完整上游 payload 同字节仍未证实。
+- 重载分支以固定目标 API 读取本次 DCP，构造 CPU eager/MTP0 模型并严格加载；另一侧重载本地导出 HF。两侧 CPU FP32 文本 logits、输入 JSON、差异、存储与执行 dtype、真实类/源码、原始张量文件 SHA 写入 `round_trip` 及 `round_trip_files`。工程容差不代表官方精度规则，文本比较不覆盖视觉或 NPU。
+- 10 项离线测试通过，包含合成入口状态转换和真实文件留存；converter、模型重载等由替身模拟。当前没有实际 `RELOAD_VERIFIED` 模型。T09 必须重新核对收据、全部导出文件和比较证据，不把离线模拟用于推理验收；T12 负责真实重载。
+
 ## T07 独立数值核心接口
 
 - `judge_summary.json` 增加 `baseline_identity`、`candidate_log_sha256`、`candidate_integrity`、`comparability`、`numeric_metrics`、`numeric_validity`、`rule_status`、`numeric_acceptance`、`alignment_evidence` 和 `numeric_open_gates`。`VALID_MEASUREMENT` 只表示所选日志可计算，当前规则仍 RULE_PENDING、数值验收 NOT_DETERMINED。
