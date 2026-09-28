@@ -107,6 +107,7 @@ T03 应将本次实际消费的文件摘要、源码差异、上游复用与项�
 
 - `judge_summary.json` 增加 `baseline_identity`、`candidate_log_sha256`、`candidate_integrity`、`comparability`、`numeric_metrics`、`numeric_validity`、`rule_status`、`numeric_acceptance`、`alignment_evidence` 和 `numeric_open_gates`。`VALID_MEASUREMENT` 只表示所选日志可计算，当前规则仍 RULE_PENDING、数值验收 NOT_DETERMINED。
 - canonical Triton ID 和旧 `officialB` 兼容，但以登记 YAML/日志 hash 配对；旧 `officialA` 继续保留独立身份。原件补核、配置/资产身份与当前训练绑定尚须后继消费，不能以别名替代证据。
+- CSV 与 JSON 共用逐步误差数据，零/近零参考的相对误差为 null。SK04 观测增加 `iteration_integrity`；不完整序列不提供有效 step1 证据或支持绿色结果。默认/`--gate` 返回码定义不变。
 
 ### T07 本地配置、资产与训练身份接线
 
@@ -122,7 +123,6 @@ T03 应将本次实际消费的文件摘要、源码差异、上游复用与项�
 - 启动前在同日志锁内复用 T03/T05 检查器，核对实际配置的 HF、DCP、单元素数据集及图片根目录。失败写 `PRECHECK_FAILED` 与本次完整性收据，`train_rc=null`，不启动 runner、不清空旧日志。运行中为 `PRECHECK_OK`，前后内容和运行收据一致才为 `VERIFIED`；漂移或坏结构写 `DRIFTED` 并使训练 `INCOMPLETE`。
 - `train_integrity.json.asset_binding` 记录 `run_record` 实际路径及 `run_record_sha256`、状态、P4 摘要、migration ID、问题；run.json 不反向引用 integrity，避免循环摘要。旧源/有效配置、日志、保存、run ID 和退出码字段原义不变。
 - `VERIFIED` 只证明纳入范围的本地内容在两次观察时一致，不证明实际导入类、逐 batch 输入、官方同字节或 NPU 正确。消费者必须核对运行路径/摘要、前后快照与当前来源，不可只读取状态字符串；T07/T08 的消费者接线另行复核。
-- CSV 与 JSON 共用逐步误差数据，零/近零参考的相对误差为 null。SK04 观测增加 `iteration_integrity`；不完整序列不提供有效 step1 证据或支持绿色结果。默认/`--gate` 返回码定义不变。
 
 ## 验收结果语义
 
