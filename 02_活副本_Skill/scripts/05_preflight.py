@@ -27,12 +27,14 @@
 import argparse
 import json
 import os
+import re
 import shutil
+import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _envcompat import (  # noqa: E402
-    SOURCES, cann_root, cann_version, default_data_dir, default_msmm_dir,
+    SOURCES, cann_root, cann_version, davinci_nodes, default_data_dir, default_msmm_dir,
     degrade, driver_version, has_python_h, install_hint, is_prerelease,
     missing_commands, npu_info, pkg_manager, python_exe, python_version,
     safe_hostname, torch_npu_info, which,
@@ -63,6 +65,43 @@ def _http_ok(url, timeout=8):
         return (r.stdout or "").strip()
     except Exception:
         return "000"
+
+
+def msmm_source_info(path):
+    """检查实际训练入口和 checkout 身份；目录存在本身不是可运行证据。"""
+    entry = os.path.join(path, "mindspeed_mm", "fsdp", "train", "trainer.py")
+    info = {"path": path, "train_entry": entry, "entry_present": os.path.isfile(entry),
+            "git_commit": None, "git_dirty": None}
+    if not info["entry_present"]:
+        return info
+    try:
+        root = subprocess.run(["git", "-C", path, "rev-parse", "--show-toplevel"],
+                              capture_output=True, text=True, timeout=10)
+        if root.returncode != 0 or os.path.normcase(os.path.realpath(root.stdout.strip())) != \
+                os.path.normcase(os.path.realpath(path)):
+            return info
+        r = subprocess.run(["git", "-C", path, "rev-parse", "HEAD"],
+                           capture_output=True, text=True, timeout=10)
+        if r.returncode == 0 and re.fullmatch(r"[0-9a-fA-F]{40}", r.stdout.strip()):
+            info["git_commit"] = r.stdout.strip().lower()
+            dirty = subprocess.run(["git", "-C", path, "status", "--porcelain"],
+                                   capture_output=True, text=True, timeout=10)
+            if dirty.returncode == 0:
+                info["git_dirty"] = bool(dirty.stdout.strip())
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    return info
+
+
+def torch_pair_status(torch_version, npu_version):
+    """只检查同一 torch/torch_npu 核心版本，不推断 CANN 或目标 API 兼容。"""
+    def core(value):
+        match = re.match(r"^(\d+)\.(\d+)\.(\d+)", str(value or ""))
+        return match.groups() if match else None
+    torch_core, npu_core = core(torch_version), core(npu_version)
+    if not torch_core or not npu_core:
+        return "UNKNOWN"
+    return "MATCH" if torch_core == npu_core else "MISMATCH"
 
 
 def main():
@@ -97,7 +136,7 @@ def main():
     #     ① npu-smi（原路径）② torch_npu 设备数 + 真机分配/计算自证 ③ /dev/davinci* 节点存在
     tn_ok = bool((tn or {}).get("available")) and int((tn or {}).get("count") or 0) > 0
     tn_name = ((tn or {}).get("names") or ["?"])[0]
-    devs = sorted(d for d in os.listdir("/dev") if d.startswith("davinci"))
+    devs = [os.path.basename(path) for path in davinci_nodes()]
     if ni.get("visible"):
         row("npu_visible", "OK", "npu-smi 可见, Chip Count=%s（路径 ①）" % ni.get("chip_count"))
     elif tn_ok:
@@ -200,6 +239,12 @@ def main():
     if tn and tn.get("available"):
         row("torch_npu", "OK", "torch %s / torch_npu %s, %d device"
             % (tn.get("torch"), tn.get("torch_npu"), tn.get("count")))
+        pair = torch_pair_status(tn.get("torch"), tn.get("torch_npu"))
+        pair_status = {"MATCH": "OK", "MISMATCH": "DEGRADED", "UNKNOWN": "SKIP"}[pair]
+        row("torch_torch_npu_pair", pair_status,
+            "torch=%s torch_npu=%s pair=%s" % (tn.get("torch"), tn.get("torch_npu"), pair),
+            "仅数字诊断；实际配对须核对目标官方依赖并运行验证" if pair != "MATCH" else "")
+        profile["torch_torch_npu_pair"] = pair
     else:
         row("torch_npu", "BLOCKED", "torch_npu 不可用",
             "P5/P6 无法执行；修复: bash scripts/bringup.sh --stage=1")
@@ -233,17 +278,26 @@ def main():
     elif not (tn and tn.get("available")):
         tri_status, tri_ev = "SKIP", "torch_npu 不可用，无法实测 kernel"
     row("triton_ascend_kernel", tri_status, tri_ev,
-        "triton 不可用 → 后端降级 triton→ascendc→eager（数值等价已验证 Δ<0.2%），"
-        "性能会显著下降" if tri_status == "DEGRADED" else "")
+        "triton kernel 未通过 → 后端选择需另行确认；替代后端数值等价尚未在本次验证"
+        if tri_status == "DEGRADED" else "")
     if tri_status == "DEGRADED":
         degrade(DEG_FILE, "triton_backend", "triton kernel 实测未通过，降级后端链")
 
     # ---------------- 4. 资产 ----------------
     print("\n[框架与资产]")
     msmm = default_msmm_dir()
-    msmm_ok = os.path.isdir(msmm)
-    row("mindspeed_mm", "OK" if msmm_ok else "BLOCKED", msmm,
-        "P5 无法执行；修复: bash scripts/bringup.sh --stage=2" if not msmm_ok else "")
+    source = msmm_source_info(msmm)
+    profile["mindspeed_mm_source"] = source
+    if not source["entry_present"]:
+        row("mindspeed_mm", "BLOCKED", "训练入口缺失: %s" % source["train_entry"],
+            "P5 无法执行；需核对目标源码，bringup.sh --stage=2 会安装/克隆，不是只读修复")
+    elif not source["git_commit"] or source["git_dirty"] is not False:
+        row("mindspeed_mm", "DEGRADED", "训练入口存在；commit=%s dirty=%s" %
+            (source["git_commit"] or "未知", source["git_dirty"]),
+            "目标版本/补丁身份未确认，不能宣称与目标 API 对齐")
+    else:
+        row("mindspeed_mm", "DEGRADED", "训练入口存在；commit=%s clean" % source["git_commit"],
+            "指定目标 commit 未取得；当前源码身份可追溯，但 API 配对及运行均未验证")
 
     dd = default_data_dir()
     hf = os.path.join(os.path.dirname(dd.rstrip("/")), "Qwen3.5-0.8B-hf")

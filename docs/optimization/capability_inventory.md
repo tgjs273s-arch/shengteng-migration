@@ -183,3 +183,10 @@ F01 的失败传播、依赖阻断和旧产物来源校验已实现；F03 的阶
 - 两处 officialA/B 配置分别一致，但旧 B 引用的 `docs/official/triton精度日志.txt` 缺失；A 的旧帖子/CSV 亦缺失。规范基线 ID 与别名仅完成方案，T07 仍需核验实际配置/日志绑定，规则不得由旧注释升级为官方通过。
 - refs 仍为固定静态分析副本，POC 目标模型仍为占位。用户已指定目标仓库 [Ascend/MindSpeed-MM](https://github.com/Ascend/MindSpeed-MM)，T03 正在只读核查不可变源码版本；仓库 URL 不代表迁移完成。
 - 本次验证限于路径、源码边界、哈希和日志统计，未执行完整代码回归、NPU、训练或业务评测。T02/T05/T06/T07 的独立离线工作可以继续，正式迁移及验收按各自依赖放行。
+
+## 2026-09-28 T02 离线环境检查修复与复核
+
+- PRE 复用 `_envcompat.davinci_nodes()`，无 `/dev` 的平台可正常报告无 NPU；MindSpeed-MM 检查要求真实 trainer 文件并记录独立 checkout 的 commit/dirty 状态。Torch/torch_npu 的前三段版本比较仅为数字诊断，不充当兼容证明；移除 Triton 回退提示中未经本次验证的数值等价声明。
+- 新增离线 PyYAML 依赖清单与环境分层文档，区分 Windows、Linux 编排和 NPU 训练/推理。上游代码核查后，工程源/目标已由主管固定，见 [INTERFACES](分步实施任务_20260928/INTERFACES.md)；这更新了 T01 盘点时的 SOURCE_PENDING/TARGET_PENDING，正式来源适用性、运行配对和规则仍待确认。
+- [独立复核](分步实施任务_20260928/records/T02_测试复核.md)：新增环境测试 5/5 通过，P0 档位 5 项及 Triton 规则 6 项通过。初次自检因系统 Python 缺 PyYAML 跳过 YAML 用例，后在仓库忽略的 `tmp/qa-venv` 安装 PyYAML 6.0.3，完整 `_envcompat --selftest` 23/23 通过；未更改全局或 NPU 环境。
+- 主管接收此离线修复范围，T02 整体仍 WAITING_EXTERNAL：没有当前 NPU/驱动/CANN/框架配对快照，没有真实 kernel、模型加载、训练或推理结果。P0 的部分裸 `python3` 子探测仍是已披露待处理项。回退限本步环境脚本、依赖说明及测试，不改历史证据。

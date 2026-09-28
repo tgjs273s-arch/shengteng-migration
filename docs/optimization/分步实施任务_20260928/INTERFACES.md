@@ -28,6 +28,22 @@
 
 上述名称是逻辑产物，实际路径由生产任务在 handoff 中冻结。代码样例可以使用临时夹具，不得把建议路径或尚不存在的 schema 当成已运行产物。
 
+## 本轮工程源码版本（2026-09-28）
+
+T03 已对不可变上游提交进行只读源码核查，主管采纳下列版本作为工程输入。此决定不代替比赛指定来源确认，也不证明本机已经安装或运行对应环境。
+
+| 身份 | 固定值与出处 |
+| --- | --- |
+| GPU 输入 | [Transformers fc9137225880a9d03f130634c20f9dbe36a7b8bf](https://github.com/huggingface/transformers/tree/fc9137225880a9d03f130634c20f9dbe36a7b8bf)，目标 Qwen3.5 示例指定的源码版本 |
+| 目标框架 | [MindSpeed-MM 6c45b4869f9938892b982a203cc121803c345db2](https://github.com/Ascend/MindSpeed-MM/tree/6c45b4869f9938892b982a203cc121803c345db2)，tag v26.0.0；不可用同名移动分支代替 |
+| 模型元数据 | [Qwen/Qwen3.5-0.8B 2fc06364715b967f1860aea9cf38778875588b17](https://huggingface.co/Qwen/Qwen3.5-0.8B/tree/2fc06364715b967f1860aea9cf38778875588b17)；当前仅核实配置及索引，未下载或验证完整权重 |
+
+T03 应将本次实际消费的文件摘要、源码差异、上游复用与项目增量写入 migration_manifest；仓库旧 `refs/` 仍为 AST 参考，不冒充上述 GPU 输入。
+
+目标 [train_engine.py](https://github.com/Ascend/MindSpeed-MM/blob/6c45b4869f9938892b982a203cc121803c345db2/mindspeed_mm/fsdp/train/train_engine.py) 使用 `training.load` 加载 checkpoint；[tracker 解析](https://github.com/Ascend/MindSpeed-MM/blob/6c45b4869f9938892b982a203cc121803c345db2/mindspeed_mm/fsdp/checkpoint/utils.py) 区分 `release` 初始权重和整数续训步数。恢复真实起点还需对应 checkpoint 的元数据，不能从目录存在或旧 `load_checkpoint_path` 字段猜测。
+
+配置、注册架构和权重索引的静态吻合不证明模型可实例化、权重数值完整或 NPU 正确；相关验证分别由 T03/T04/T08/T12 留存。当前运行环境与正式精度规则仍待补齐。
+
 ## 验收结果语义
 
 | 字段层次 | 要回答的问题 | 不能替代 |

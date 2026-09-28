@@ -306,12 +306,17 @@ def npu_info():
             break
         except Exception:
             continue
-    try:
-        import glob as _g
-        out["devices"] = len(_g.glob("/dev/davinci[0-9]*"))
-    except Exception:
-        pass
+    out["devices"] = len(davinci_nodes())
     return out
+
+
+def davinci_nodes():
+    """列出 NPU 设备节点；Windows 等没有 /dev 的平台返回空列表。"""
+    try:
+        import glob
+        return sorted(glob.glob("/dev/davinci[0-9]*"))
+    except OSError:
+        return []
 
 
 def torch_npu_info(exe=None):
