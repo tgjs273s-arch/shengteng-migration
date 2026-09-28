@@ -112,6 +112,15 @@ T03 应将本次实际消费的文件摘要、源码差异、上游复用与项�
 - 重载分支以固定目标 API 读取本次 DCP，构造 CPU eager/MTP0 模型并严格加载；另一侧重载本地导出 HF。两侧 CPU FP32 文本 logits、输入 JSON、差异、存储与执行 dtype、真实类/源码、原始张量文件 SHA 写入 `round_trip` 及 `round_trip_files`。工程容差不代表官方精度规则，文本比较不覆盖视觉或 NPU。
 - 10 项离线测试通过，包含合成入口状态转换和真实文件留存；converter、模型重载等由替身模拟。当前没有实际 `RELOAD_VERIFIED` 模型。T09 必须重新核对收据、全部导出文件和比较证据，不把离线模拟用于推理验收；T12 负责真实重载。
 
+## T09 场景推理接口
+
+- `65_scene.py --model-artifact --model-dir --processor-dir --image --sop --device --attention --max-new-tokens --out` 仅加载已有本地导出；模型与 processor 必须为同一 T08 attempt 的 `export_hf.path`。`--device cpu` 必须显式配 `--cpu-diagnostic`，默认 NPU，不自动回退或下载模型。
+- 消费方重新核 `model_artifact.v1` 的 `RELOAD_VERIFIED`、两个验证布尔值、完整导出文件集合/字节/摘要、模型 ID、P5/DCP/P4/迁移引用及原始 round-trip 证据；推理前后核模型、媒体/SOP 和实际模型源码身份。
+- 每次在新 `attempt-*` 写 `inference_result.v1`，保留模型 ID、训练/迁移来源、输入摘要、生成参数、实际加载类/框架/设备/attention 及分段耗时。NPU 显式导入 `torch_npu` 并核模型/输入张量的实际卡号，生成计时前后同步。此 HF 推理不能证明 MindSpeed-MM 训练算子数值。
+- 原始完整/新增 token 写 `generated_ids.json`，仅新增 token 解码文本写 `raw_generation.txt`；严格 JSON 解析成功另写 `parsed_result.json`。是/否需要图内有效框；无法判断需要 `bbox=null` 和原因，标 `EVIDENCE_INSUFFICIENT`。无示例答案兜底。
+- 退出 0 表示 `EXECUTED_PARSED` 或 `EVIDENCE_INSUFFICIENT`；解析失败 `PARSE_FAILED`、前置或运行失败 `FAILED` 返回 3，参数错误返回 2。`execution_state=NPU_EXECUTED|CPU_DIAGNOSTIC` 与 `real_inference_verified` 单独记录；`business_validity=NOT_EVALUATED` 始终保留，任何合法 JSON 都不自动成为业务通过。
+- 离线回归使用合成文件和模型/设备替身；真实完整模型、图片推理和 NPU 执行须由 T12 留证，场景标签评测由 T14 完成。
+
 ## T07 独立数值核心接口
 
 - `judge_summary.json` 增加 `baseline_identity`、`candidate_log_sha256`、`candidate_integrity`、`comparability`、`numeric_metrics`、`numeric_validity`、`rule_status`、`numeric_acceptance`、`alignment_evidence` 和 `numeric_open_gates`。`VALID_MEASUREMENT` 只表示所选日志可计算，当前规则仍 RULE_PENDING、数值验收 NOT_DETERMINED。
