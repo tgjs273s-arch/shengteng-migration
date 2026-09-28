@@ -113,7 +113,15 @@ T03 应将本次实际消费的文件摘要、源码差异、上游复用与项�
 - P7 新增可选 `--config-manifest`、`--assets-json`、`--train-integrity`；三项齐全才尝试完整本地绑定。无新参数保留旧调用，部分缺件或错配写 `source_binding.state=REJECTED` 及具体门；旧默认/gate 退出码仍表示原执行/颜色语义，总验收不能只读取退出码。
 - `source_binding.state=LOCAL_BINDING_VERIFIED` 要求 P2 有效配置对应 P5 原输入、P5 快照与保存目录隔离差异相符，并核对本次 run/log/配置摘要和基线身份。此模式的 `--config` 及 SK04 指纹使用已核对的 P5 快照。
 - 消费者复用 T05 检查器，从实际索引、DCP 元数据和 JSON 图片引用重建完整清单，复算当前内容并交叉核对 HF/processor、DCP、数据 JSON 和图片根目录；删掉清单行并重算清单自身摘要不能伪装完整。缺少检查依赖时不宣称绑定通过。
-- 本子步仅核查当前本地来源，`runtime_asset_binding` 与 `official_asset_identity` 继续 `UNVERIFIED`；T10 的运行前后生产收据尚待复核接入。正式规则仍 `RULE_PENDING`，数值测量、可比性和正式验收保持独立。
+- 本子步仅核查当前本地来源，`runtime_asset_binding` 与 `official_asset_identity` 继续 `UNVERIFIED`；T10 的运行前后生产收据已在后节冻结，其消费者接线另行复核。正式规则仍 `RULE_PENDING`，数值测量、可比性和正式验收保持独立。
+
+### T10 P5 运行前后资产收据（独立子步）
+
+- P5 可选成组 `--assets-json`、`--migration-bundle`、`--migration-overlay`，目标目录仍是 `--workdir`。未给参数保留旧独立 CLI 并记录 `UNBOUND`；部分参数 rc=2。此子步尚未接入主入口。
+- `run.json.asset_binding` 为 `p5_asset_binding.v1`，包含 `state`、`prelaunch`、`postrun`、`problems` 和限定范围 `scope`。前后快照记录 P4 路径/摘要/attempt、migration ID/bundle/overlay/manifest、目标源码、转换收据、实际资产路径，以及 HF/DCP/JSON 顺序和图片清单摘要。
+- 启动前在同日志锁内复用 T03/T05 检查器，核对实际配置的 HF、DCP、单元素数据集及图片根目录。失败写 `PRECHECK_FAILED` 与本次完整性收据，`train_rc=null`，不启动 runner、不清空旧日志。运行中为 `PRECHECK_OK`，前后内容和运行收据一致才为 `VERIFIED`；漂移或坏结构写 `DRIFTED` 并使训练 `INCOMPLETE`。
+- `train_integrity.json.asset_binding` 记录 `run_record` 实际路径及 `run_record_sha256`、状态、P4 摘要、migration ID、问题；run.json 不反向引用 integrity，避免循环摘要。旧源/有效配置、日志、保存、run ID 和退出码字段原义不变。
+- `VERIFIED` 只证明纳入范围的本地内容在两次观察时一致，不证明实际导入类、逐 batch 输入、官方同字节或 NPU 正确。消费者必须核对运行路径/摘要、前后快照与当前来源，不可只读取状态字符串；T07/T08 的消费者接线另行复核。
 - CSV 与 JSON 共用逐步误差数据，零/近零参考的相对误差为 null。SK04 观测增加 `iteration_integrity`；不完整序列不提供有效 step1 证据或支持绿色结果。默认/`--gate` 返回码定义不变。
 
 ## 验收结果语义

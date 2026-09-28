@@ -434,7 +434,13 @@ def snapshot_config_for_run(config_bytes, run_dir):
     }
 
 
-def launch_training(body, log_path, detached=True, config_bytes=None):
+class AssetPrecheckError(ValueError):
+    def __init__(self, run_dir, reason):
+        super().__init__(reason)
+        self.run_dir = run_dir
+
+
+def launch_training(body, log_path, detached=True, config_bytes=None, asset_inputs=None):
     """Linux runner; the child retains the advisory log lock after SSH disconnects."""
     import fcntl
     lock = open(log_path + ".lock", "a")
@@ -467,6 +473,40 @@ def launch_training(body, log_path, detached=True, config_bytes=None):
         run_record_path = os.path.join(run_dir, "run.json")
         with open(run_record_path, "w", encoding="utf-8") as f:
             json.dump(run_record, f, ensure_ascii=False, indent=2)
+        if asset_inputs is not None:
+            from _runtime_asset_binding import capture, new_binding
+            binding = new_binding()
+            try:
+                binding["prelaunch"] = capture(*asset_inputs, effective_bytes)
+                binding["state"] = "PRECHECK_OK"
+            except Exception as exc:
+                binding["state"] = "PRECHECK_FAILED"
+                binding["problems"].append("%s: %s" % (type(exc).__name__, exc))
+            run_record["asset_binding"] = binding
+            with open(run_record_path, "w", encoding="utf-8") as f:
+                json.dump(run_record, f, ensure_ascii=False, indent=2)
+            if binding["state"] == "PRECHECK_FAILED":
+                with open(run_record_path, "rb") as record_stream:
+                    record_sha = hashlib.sha256(record_stream.read()).hexdigest()
+                failure = {"schema": "train_integrity.v1", "state": "INCOMPLETE",
+                           "problems": ["asset_binding_precheck_failed"], "train_rc": None,
+                           "run_id": run_record["run_id"], "log": log_path,
+                           "source_config_sha256": run_record["source_config_sha256"],
+                           "config": config_snapshot,
+                           "config_sha256": effective_sha256,
+                           "asset_binding": {"schema": binding["schema"],
+                                             "state": binding["state"],
+                                             "run_record": run_record_path,
+                                             "run_record_sha256": record_sha}}
+                with open(os.path.join(run_dir, "train_integrity.json"), "w", encoding="utf-8") as f:
+                    json.dump(failure, f, ensure_ascii=False, indent=2)
+                raise AssetPrecheckError(run_dir, "; ".join(binding["problems"]))
+        else:
+            run_record["asset_binding"] = {"schema": "p5_asset_binding.v1", "state": "UNBOUND",
+                                           "prelaunch": None, "postrun": None, "problems": [],
+                                           "scope": "local_disk_identity_only; runtime_import_and_npu_unverified"}
+            with open(run_record_path, "w", encoding="utf-8") as f:
+                json.dump(run_record, f, ensure_ascii=False, indent=2)
         command = (["nohup"] if detached else []) + ["bash", "-l", runner]
         with open(os.path.join(run_dir, "runner.log"), "wb") as output:
             proc = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=output,
@@ -487,6 +527,9 @@ def main():
     ap.add_argument("--env", default="out/probe/env.json")
     ap.add_argument("--log", default="out/train/train.log")
     ap.add_argument("--workdir", default="/root/MindSpeed-MM", help="MindSpeed-MM 目录")
+    ap.add_argument("--assets-json", default=None, help="本次 P4 assets.json；与迁移 bundle/overlay 成组")
+    ap.add_argument("--migration-bundle", default=None, help="T03 固定输入 bundle")
+    ap.add_argument("--migration-overlay", default=None, help="T03 apply 输出目录")
     ap.add_argument("--port", type=int, default=6111)
     ap.add_argument("--steps", type=int, default=None,
                     help="仅提示；实际步数由配置 training.train_iters 决定")
@@ -506,6 +549,12 @@ def main():
     # ★ INV-2：诊断规则也是判据，必须可证伪（含坑 107 的"健康日志 0 命中"守卫）
     if args.diag_selftest:
         return diag_selftest()
+
+    binding_args = (args.assets_json, args.migration_bundle, args.migration_overlay)
+    if any(binding_args) and not all(binding_args):
+        print("FATAL --assets-json、--migration-bundle、--migration-overlay 必须成组提供",
+              file=sys.stderr)
+        return 2
 
     if not os.path.isfile(args.config):
         print("FATAL 配置不存在：%s（先跑 scripts/20_plan_migration.py）" % args.config, file=sys.stderr)
@@ -728,8 +777,14 @@ def main():
 
     t0 = time.time()
     try:
-        proc, run_dir = launch_training(body, log_path, detached=not args.foreground,
-                                        config_bytes=_cfg_bytes)
+        launch_kwargs = {"detached": not args.foreground, "config_bytes": _cfg_bytes}
+        if all(binding_args):
+            launch_kwargs["asset_inputs"] = (*binding_args, args.workdir)
+        proc, run_dir = launch_training(body, log_path, **launch_kwargs)
+    except AssetPrecheckError as exc:
+        print("TRAIN_FAIL 资产启动前身份检查失败；本次证据: %s: %s" %
+              (exc.run_dir, exc), file=sys.stderr)
+        return 3
     except (OSError, ImportError, ValueError) as exc:
         print("TRAIN_FAIL 启动失败或日志正在被其他任务使用: %s" % exc, file=sys.stderr)
         return 2
@@ -844,6 +899,80 @@ def main():
     if rc != 0 or failure_markers:
         check["state"] = "INCOMPLETE"
         check.setdefault("problems", []).append("runner_failure")
+    run_record_path = os.path.join(run_dir, "run.json")
+    try:
+        with open(run_record_path, encoding="utf-8") as record_stream:
+            binding_record = json.load(record_stream)
+        if not isinstance(binding_record, dict):
+            raise ValueError("run receipt must be a JSON object")
+        binding = binding_record["asset_binding"]
+        if not isinstance(binding, dict):
+            raise ValueError("asset binding must be a JSON object")
+        if not isinstance(binding.get("problems"), list):
+            raise ValueError("asset binding problems must be a list")
+        if binding.get("schema") != "p5_asset_binding.v1":
+            raise ValueError("asset binding schema missing")
+        if all(binding_args):
+            if not isinstance(binding.get("prelaunch"), dict) or binding.get("postrun") is not None:
+                raise ValueError("asset binding prelaunch/postrun structure invalid")
+            from _runtime_asset_binding import capture
+            try:
+                after = capture(*binding_args, args.workdir, expected_snapshot_bytes)
+                if not isinstance(after, dict):
+                    raise ValueError("postrun asset capture must be a JSON object")
+                binding["postrun"] = after
+                receipt_intact = (
+                    binding_record.get("run_id") == os.path.basename(run_dir) and
+                    binding_record.get("source_config_sha256") == _cfg_sha256 and
+                    binding_record.get("effective_config_sha256") == expected_snapshot_sha256 and
+                    binding_record.get("checkpoint_save") == save_intent)
+                if (binding.get("state") != "PRECHECK_OK" or
+                        after != binding.get("prelaunch") or not receipt_intact):
+                    binding["state"] = "DRIFTED"
+                    binding.setdefault("problems", []).append("asset_or_run_receipt_changed_during_run")
+                else:
+                    binding["state"] = "VERIFIED"
+            except Exception as exc:
+                binding["state"] = "DRIFTED"
+                binding.setdefault("problems", []).append(
+                    "postrun_%s: %s" % (type(exc).__name__, exc))
+            if binding["state"] != "VERIFIED":
+                check["state"] = "INCOMPLETE"
+                check.setdefault("problems", []).append("asset_binding_drifted")
+            binding_record["asset_binding"] = binding
+            with open(run_record_path, "w", encoding="utf-8") as record_output:
+                json.dump(binding_record, record_output, ensure_ascii=False, indent=2)
+        with open(run_record_path, "rb") as record_stream:
+            run_sha = hashlib.sha256(record_stream.read()).hexdigest()
+        check["asset_binding"] = {"schema": binding["schema"],
+                                  "state": binding["state"],
+                                  "run_record": run_record_path,
+                                  "run_record_sha256": run_sha,
+                                  "assets_json_sha256": (binding.get("prelaunch") or {}).get(
+                                      "assets_json_sha256"),
+                                  "migration_id": (binding.get("prelaunch") or {}).get(
+                                      "migration_id"),
+                                  "problems": binding.get("problems", [])}
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        if all(binding_args):
+            check["state"] = "INCOMPLETE"
+            check.setdefault("problems", []).append("asset_binding_receipt_missing_or_invalid")
+            try:
+                with open(run_record_path, "rb") as record_stream:
+                    bad_record_sha = hashlib.sha256(record_stream.read()).hexdigest()
+            except OSError:
+                bad_record_sha = None
+            check["asset_binding"] = {"schema": "p5_asset_binding.v1", "state": "DRIFTED",
+                                      "run_record": run_record_path,
+                                      "run_record_sha256": bad_record_sha,
+                                      "problems": ["asset_binding_receipt_missing_or_invalid"],
+                                      "error": str(exc)}
+        else:
+            # Old callers can synthesize a runner without run.json. Preserve
+            # their training verdict, while making the absent binding explicit.
+            check["asset_binding"] = {"schema": "p5_asset_binding.v1", "state": "UNBOUND",
+                                      "run_record": run_record_path,
+                                      "run_record_sha256": None, "note": str(exc)}
     integrity_path = os.path.join(run_dir, "train_integrity.json")
     with open(integrity_path, "w", encoding="utf-8") as output:
         json.dump(check, output, ensure_ascii=False, indent=2)
