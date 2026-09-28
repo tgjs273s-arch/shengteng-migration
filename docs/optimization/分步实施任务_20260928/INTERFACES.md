@@ -44,6 +44,14 @@ T03 应将本次实际消费的文件摘要、源码差异、上游复用与项�
 
 配置、注册架构和权重索引的静态吻合不证明模型可实例化、权重数值完整或 NPU 正确；相关验证分别由 T03/T04/T08/T12 留存。当前运行环境与正式精度规则仍待补齐。
 
+## T06 本地接口冻结与后续集成
+
+- 共享解析器为 `scripts/_train_log.py`：`read_log(path)` 返回保留文件顺序的 rows、坏记录、日志 SHA-256/字节数；`integrity(parsed, expected_end, start_step, expected_gbs, rank)` 返回 `train_integrity.v1`，状态为 COMPLETE、INCOMPLETE 或 UNKNOWN。重复、乱序、缺/多步、rank/total/GBS 冲突和非有限数不允许静默丢弃。
+- P5 每次 `<log parent>/runs/p5-*/` 增加 `effective_config.yaml` 与 `train_integrity.json`，绑定解析/执行配置快照、实际返回码、日志身份、预期/实际范围、起点与诊断范围。只有 COMPLETE 允许独立 P5 成功；不信任未知的数字续训起点。
+- P6 CSV 为 `train_series.v2`，保留旧前五列；JSON 为 `train_performance.v2`。`official_selection` 保留历史字段名但显式标注当前官方适用性未验证，按前 200 条中的末 100 条取算术均值；`window_selection` 保存含端点区间，50–100 须为 51 点。均值吞吐与中位步时折算速度分列，旧 `samples_per_s` 仍表示后者。
+- P6 的 `--expected-gbs` 仅核对调用者提供的数值与日志一致；T10 负责把它绑定到 P5 已核验配置，不能仅凭该整数宣称外部配置身份已验证。
+- 已有 `_stage_state.code_digest()` 覆盖新脚本，但 P5 OUTPUTS 尚未绑定新增运行产物，主入口 P5/P6 仍有旧断言。T10 必须纳入当前运行 receipt/快照/完整性结果并消费新版状态，不能把本步独立入口验证说成主入口已集成。
+
 ## 验收结果语义
 
 | 字段层次 | 要回答的问题 | 不能替代 |

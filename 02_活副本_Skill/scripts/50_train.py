@@ -18,6 +18,7 @@
 """
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -361,7 +362,33 @@ def count_iters(log_path):
         return 0
 
 
-def launch_training(body, log_path, detached=True):
+def configured_start(training, workdir):
+    """Conservative start inferred from target checkpointer's text tracker.
+
+    A numeric tracker identifies a candidate resumed checkpoint, but the
+    actual iteration comes from extra_state after load; do not guess it here.
+    """
+    legacy = training.get("load_checkpoint_path")
+    if legacy not in (None, "", "None", "none", "null"):
+        return None, "legacy_load_checkpoint_path_unverified", str(legacy)
+    load = training.get("load")
+    if load in (None, "", "None", "none", "null"):
+        return 1, "no_training_load", None
+    load_dir = os.path.abspath(os.path.join(workdir, str(load)))
+    tracker = os.path.join(load_dir, "latest_checkpointed_iteration.txt")
+    try:
+        with open(tracker, encoding="utf-8") as tracker_stream:
+            value = tracker_stream.read().strip()
+    except OSError:
+        return None, "load_tracker_missing_or_unreadable", tracker
+    if value == "release":
+        return 1, "release_tracker_initial_weights", tracker
+    if value.isdecimal():
+        return None, "numeric_tracker_requires_extra_state", tracker
+    return None, "invalid_load_tracker", tracker
+
+
+def launch_training(body, log_path, detached=True, config_bytes=None):
     """Linux runner; the child retains the advisory log lock after SSH disconnects."""
     import fcntl
     lock = open(log_path + ".lock", "a")
@@ -370,6 +397,12 @@ def launch_training(body, log_path, detached=True):
         runs = os.path.join(os.path.dirname(log_path), "runs")
         os.makedirs(runs, exist_ok=True)
         run_dir = tempfile.mkdtemp(prefix="p5-", dir=runs)
+        config_snapshot = None
+        if config_bytes is not None:
+            config_snapshot = os.path.join(run_dir, "effective_config.yaml")
+            with open(config_snapshot, "wb") as config_output:
+                config_output.write(config_bytes)
+            body = body.replace("__P5_CONFIG_SNAPSHOT__", shlex.quote(config_snapshot))
         runner = os.path.join(run_dir, "runner.sh")
         with open(runner, "w", encoding="utf-8", newline="\n") as f:
             # Clear old training output even when cd/setup fails before torchrun.
@@ -380,7 +413,8 @@ def launch_training(body, log_path, detached=True):
                                     stderr=subprocess.STDOUT, start_new_session=detached,
                                     pass_fds=(lock.fileno(),))
         with open(os.path.join(run_dir, "run.json"), "w", encoding="utf-8") as f:
-            json.dump({"pid": proc.pid, "log": log_path, "runner": runner}, f, indent=2)
+            json.dump({"pid": proc.pid, "log": log_path, "runner": runner,
+                       "config_snapshot": config_snapshot}, f, indent=2)
         return proc, run_dir
     finally:
         # Do not LOCK_UN: the runner owns the same open file description.
@@ -394,7 +428,8 @@ def main():
     ap.add_argument("--log", default="out/train/train.log")
     ap.add_argument("--workdir", default="/root/MindSpeed-MM", help="MindSpeed-MM 目录")
     ap.add_argument("--port", type=int, default=6111)
-    ap.add_argument("--steps", type=int, default=None, help="覆盖配置中的 train_iters")
+    ap.add_argument("--steps", type=int, default=None,
+                    help="仅提示；实际步数由配置 training.train_iters 决定")
     ap.add_argument("--timeout", type=int, default=5400, help="训练超时（秒）")
     ap.add_argument("--foreground", action="store_true", help="前台执行（本地/短任务）")
     ap.add_argument("--dry-run", action="store_true", help="只打印将执行的命令")
@@ -448,7 +483,12 @@ def main():
         import yaml as _yaml
     except ImportError:
         _yaml = None
-    _cfg_txt = open(args.config, encoding="utf-8", errors="replace").read()
+    # Freeze the identity of the exact bytes used for preflight parsing and
+    # passed by path to the runner. A later change invalidates this attempt.
+    with open(args.config, "rb") as config_stream:
+        _cfg_bytes = config_stream.read()
+    _cfg_sha256 = hashlib.sha256(_cfg_bytes).hexdigest()
+    _cfg_txt = _cfg_bytes.decode("utf-8", errors="replace")
     _cfg_doc, _parse_err = None, None
     if _yaml is not None:
         try:
@@ -508,6 +548,12 @@ def main():
         gbs_info["gas"] = _g("gradient_accumulation_steps")
         gbs_info["source"] = "regex_fallback(no_pyyaml)"
         print("⚠ 未安装 pyyaml → GBS 自检降级为正则行扫描（不等价于解析校验）")
+
+    # Formal completion requires a parsed effective configuration, not the
+    # command-line hint or a regex approximation of YAML.
+    expected_end = _as_int(_tr.get("train_iters")) if _cfg_doc is not None else None
+    resume_start, resume_source, resume_tracker = (configured_start(_tr, args.workdir)
+        if _cfg_doc is not None else (None, "unparsed_config", None))
 
     if gbs_info["mbs"] and gbs_info["gas"]:
         gbs_info["gbs"] = gbs_info["mbs"] * gbs_info["gas"] * max(1, world)
@@ -590,7 +636,7 @@ def main():
                  "--master_addr localhost --master_port %d "
                  "mindspeed_mm/fsdp/train/trainer.py %s > %s 2>&1"
                  % (shlex.quote(args.workdir), shlex.quote(args.workdir), args.timeout, world, port,
-                    shlex.quote(cfg_arg), shlex.quote(log_path)))
+                    "__P5_CONFIG_SNAPSHOT__", shlex.quote(log_path)))
     # ★ 坑 167（真机实测 2026-09-21）：原写法末尾是 `; echo train_rc=$?` ——
     #   **最后一条命令是 echo，它永远成功** ⇒ `subprocess.call` 返回的 `rc` **恒为 0**，
     #   于是下面 `if rc == 0 and n > 0` 把一次以 `ChildFailedError` 收尾的运行判成 `TRAIN_OK`
@@ -603,12 +649,14 @@ def main():
     print("训练命令 : %s" % train_cmd)
     print("日志     : %s %s" % (log_path, steps_note))
     if args.dry_run:
-        print("\n[dry-run] 将执行：\n%s" % full)
+        print("\n[dry-run] 将执行（配置占位符为本次快照）:\n%s" %
+              full.replace("__P5_CONFIG_SNAPSHOT__", shlex.quote(cfg_arg)))
         return 0
 
     t0 = time.time()
     try:
-        proc, run_dir = launch_training(body, log_path, detached=not args.foreground)
+        proc, run_dir = launch_training(body, log_path, detached=not args.foreground,
+                                        config_bytes=_cfg_bytes)
     except (OSError, ImportError) as exc:
         print("TRAIN_FAIL 启动失败或日志正在被其他任务使用: %s" % exc, file=sys.stderr)
         return 2
@@ -630,7 +678,52 @@ def main():
                 break
     print("train_rc=%s" % rc)
 
-    n = count_iters(log_path)
+    from _train_log import read_log, integrity
+    try:
+        parsed = read_log(log_path)
+        check = integrity(parsed, expected_end=expected_end,
+                          start_step=resume_start,
+                          expected_gbs=gbs_info["gbs"])
+    except OSError as exc:
+        parsed = None
+        check = {"schema": "train_integrity.v1", "state": "INCOMPLETE",
+                 "problems": ["log_unreadable"], "error": str(exc)}
+    if gbs_info["gbs"] is None or gbs_info["source"] != "yaml":
+        check["state"] = "UNKNOWN"
+        check.setdefault("problems", []).append("unverified_config_geometry")
+    check.update({"train_rc": rc, "failure_markers": [],
+                  "config_input": cfg_arg,
+                  "config": os.path.join(run_dir, "effective_config.yaml"),
+                  "config_sha256": _cfg_sha256,
+                  "log": log_path, "world_size": world,
+                  "config_train_iters": expected_end,
+                  "scope": "SHORT_DIAGNOSTIC" if expected_end is not None and expected_end < 100
+                           else "FULL_CONFIGURED_TRAINING",
+                  "resume_start": resume_start,
+                  "resume_source": resume_source,
+                  "resume_tracker": resume_tracker,
+                  "resume_field": "training.load",
+                  "resume_field_value": str(_tr.get("load")) if _cfg_doc is not None else None})
+    try:
+        with open(check["config"], "rb") as snapshot_stream:
+            check["config_snapshot_sha256_after_run"] = hashlib.sha256(
+                snapshot_stream.read()).hexdigest()
+    except OSError as exc:
+        check["config_snapshot_sha256_after_run"] = None
+        check["config_snapshot_read_error"] = str(exc)
+    if check["config_snapshot_sha256_after_run"] != _cfg_sha256:
+        check["state"] = "INCOMPLETE"
+        check.setdefault("problems", []).append("config_snapshot_changed")
+    try:
+        with open(cfg_arg, "rb") as config_stream:
+            check["config_sha256_after_run"] = hashlib.sha256(config_stream.read()).hexdigest()
+    except OSError as exc:
+        check["config_sha256_after_run"] = None
+        check["config_read_error_after_run"] = str(exc)
+    if check["config_sha256_after_run"] != _cfg_sha256:
+        check["state"] = "INCOMPLETE"
+        check.setdefault("problems", []).append("config_changed_during_run")
+    n = check.get("selected_count", 0)
     print("\n=== 训练结果 ===")
     print("iteration 行数 : %d" % n)
     print("耗时           : %ds" % int(time.time() - t0))
@@ -650,8 +743,16 @@ def main():
                        if m in _ltext]
     if failure_markers:
         print("日志含失败标志：%s" % failure_markers)
+    check["failure_markers"] = failure_markers
+    if rc != 0 or failure_markers:
+        check["state"] = "INCOMPLETE"
+        check.setdefault("problems", []).append("runner_failure")
+    integrity_path = os.path.join(run_dir, "train_integrity.json")
+    with open(integrity_path, "w", encoding="utf-8") as output:
+        json.dump(check, output, ensure_ascii=False, indent=2)
+    print("本次完整性: %s (%s)" % (integrity_path, check["state"]))
 
-    if rc == 0 and n > 0 and not failure_markers:
+    if check["state"] == "COMPLETE":
         # 输出末尾几行供快速确认
         try:
             tail = [l for l in open(log_path, encoding="utf-8", errors="replace") if "iteration" in l][-2:]
