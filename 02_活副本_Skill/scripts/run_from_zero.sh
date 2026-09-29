@@ -25,8 +25,30 @@ SKILL_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$SKILL_ROOT" || exit 2
 
 MODE=quick
+FLOW=diagnostic    # diagnostic | reference | candidate | inference
 DATA_DIR=/root/data
+ASSET_MODEL_DIR=/root
+INFER_MODEL_DIR=
+PROCESSOR_DIR=
+MODEL_ARTIFACT=
+IMAGE=
+SOP=
+DEVICE=npu:0
+ATTENTION=sdpa
+MAX_NEW_TOKENS=160
+CPU_DIAGNOSTIC=0
+EXPORT_MODEL=0
+RUN_INFERENCE=0
 MSMM_DIR=/root/MindSpeed-MM
+MIGRATION_BUNDLE=
+MIGRATION_OVERLAY=
+BASELINE=officialB
+BASELINE_LOG=examples/train/official_baseline.log
+AB_SUMMARY=
+NOISE_SUMMARY=
+BASELINE_VARIANT=
+CANDIDATE_VARIANT=
+EXPORT_ITERATION=
 FROM=PRE
 STEPS=100
 NODL=0            # ★ --no-download：只验证机制不下载（可与后台资产下载并行）
@@ -34,11 +56,54 @@ RESUME=0          # --resume：仅复用有成功记录且哈希/配置/依赖�
 
 while [ $# -gt 0 ]; do
   case "$1" in
+    -h|--help)
+      cat <<'HELP'
+Usage: bash scripts/run_from_zero.sh [--flow diagnostic|reference|candidate|inference] [options]
+  diagnostic (default): PRE–P7 short diagnosis; no model export or inference.
+  reference/candidate: require --migration-bundle and --migration-overlay.
+    --export-model --export-iteration N enables P9 verified local export.
+    --run-inference --image FILE --sop FILE enables P10.
+    With --export-model, P10 consumes this run's verified export.
+    Existing verified exports use the separate inference flow below.
+  inference: P10 only, requires --model-artifact, --model-dir,
+    --processor-dir, --image and --sop; no training or downloads.
+  --device npu:0 (default) | cpu --cpu-diagnostic
+  --attention sdpa|eager  --max-new-tokens 1..4096
+  --asset-model-dir DIR is the P2/P4 weights parent (default /root).
+  --from STAGE and --resume require matching current stage receipts.
+HELP
+      exit 0 ;;
+    --flow|--from|--data-dir|--asset-model-dir|--model-dir|--processor-dir|--model-artifact|--image|--sop|--device|--attention|--max-new-tokens|--msmm-dir|--migration-bundle|--migration-overlay|--baseline|--baseline-log|--ab-summary|--noise-summary|--baseline-variant|--candidate-variant|--export-iteration|--steps)
+      [ $# -ge 2 ] && [ -n "$2" ] || { echo "参数 $1 缺少值"; exit 2; } ;;
+  esac
+  case "$1" in
     --quick)     MODE=quick ;;
     --full)      MODE=full ;;
+    --flow)      FLOW="$2"; shift ;;
     --from)      FROM="$2"; shift ;;
     --data-dir)  DATA_DIR="$2"; shift ;;
+    --asset-model-dir) ASSET_MODEL_DIR="$2"; shift ;;
+    --model-dir) INFER_MODEL_DIR="$2"; shift ;;
+    --processor-dir) PROCESSOR_DIR="$2"; shift ;;
+    --model-artifact) MODEL_ARTIFACT="$2"; shift ;;
+    --image) IMAGE="$2"; shift ;;
+    --sop) SOP="$2"; shift ;;
+    --device) DEVICE="$2"; shift ;;
+    --attention) ATTENTION="$2"; shift ;;
+    --max-new-tokens) MAX_NEW_TOKENS="$2"; shift ;;
     --msmm-dir)  MSMM_DIR="$2"; shift ;;
+    --migration-bundle) MIGRATION_BUNDLE="$2"; shift ;;
+    --migration-overlay) MIGRATION_OVERLAY="$2"; shift ;;
+    --baseline) BASELINE="$2"; shift ;;
+    --baseline-log) BASELINE_LOG="$2"; shift ;;
+    --ab-summary) AB_SUMMARY="$2"; shift ;;
+    --noise-summary) NOISE_SUMMARY="$2"; shift ;;
+    --baseline-variant) BASELINE_VARIANT="$2"; shift ;;
+    --candidate-variant) CANDIDATE_VARIANT="$2"; shift ;;
+    --export-iteration) EXPORT_ITERATION="$2"; shift ;;
+    --export-model) EXPORT_MODEL=1 ;;
+    --run-inference) RUN_INFERENCE=1 ;;
+    --cpu-diagnostic) CPU_DIAGNOSTIC=1 ;;
     --steps)     STEPS="$2"; shift ;;
     --resume)    RESUME=1 ;;
     --force)     RESUME=0 ;;
@@ -48,31 +113,141 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-case " PRE P0 P1 P2 P3 P4 P5 P6 P7 " in
+case "$FLOW" in diagnostic|reference|candidate|inference) ;; *) echo "无效 --flow: $FLOW"; exit 2 ;; esac
+if [ "$FLOW" = inference ] && [ "$FROM" = PRE ]; then FROM=P10; fi
+case " PRE P0 P1 P2 P3 P4 P5 P6 P7 P8 P9 P10 " in
   *" $FROM "*) ;;
   *) echo "无效 --from: $FROM"; exit 2 ;;
 esac
 # Resolve paths before training changes its working directory; shell-quote each
 # user-controlled value before embedding it into a stage command string.
 DATA_DIR=$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "$DATA_DIR") || exit 2
+ASSET_MODEL_DIR=$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "$ASSET_MODEL_DIR") || exit 2
 MSMM_DIR=$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "$MSMM_DIR") || exit 2
+for field in INFER_MODEL_DIR PROCESSOR_DIR MODEL_ARTIFACT IMAGE SOP; do
+  if [ -n "${!field}" ]; then
+    printf -v "$field" '%s' "$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "${!field}")" || exit 2
+  fi
+done
+if [ -n "$MIGRATION_BUNDLE" ]; then
+  MIGRATION_BUNDLE=$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "$MIGRATION_BUNDLE") || exit 2
+fi
+if [ -n "$MIGRATION_OVERLAY" ]; then
+  MIGRATION_OVERLAY=$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "$MIGRATION_OVERLAY") || exit 2
+fi
+if [ -n "$AB_SUMMARY" ]; then
+  AB_SUMMARY=$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "$AB_SUMMARY") || exit 2
+fi
+if [ -n "$NOISE_SUMMARY" ]; then
+  NOISE_SUMMARY=$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "$NOISE_SUMMARY") || exit 2
+fi
+if [ -n "$BASELINE_LOG" ]; then
+  BASELINE_LOG=$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "$BASELINE_LOG") || exit 2
+fi
+if [ -n "$BASELINE" ] && [ -f "$BASELINE" ]; then
+  BASELINE=$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "$BASELINE") || exit 2
+fi
+if { [ -n "$MIGRATION_BUNDLE" ] && [ -z "$MIGRATION_OVERLAY" ]; } || \
+   { [ -z "$MIGRATION_BUNDLE" ] && [ -n "$MIGRATION_OVERLAY" ]; }; then
+  echo "--migration-bundle 与 --migration-overlay 必须成对提供"; exit 2
+fi
+if [[ "$FLOW" = reference || "$FLOW" = candidate ]] && [ -z "$MIGRATION_BUNDLE" ]; then
+  echo "$FLOW 必须提供已安装目标的 --migration-bundle/--migration-overlay"; exit 2
+fi
+if [ "$FLOW" = candidate ] && { [ -z "$AB_SUMMARY" ] || [ -z "$NOISE_SUMMARY" ] || [ -z "$BASELINE_VARIANT" ] || [ -z "$CANDIDATE_VARIANT" ]; }; then
+  echo "candidate 必须提供 --ab-summary/--noise-summary 和显式基线/候选 variant"; exit 2
+fi
+if [ "$FLOW" != candidate ] && [ "$FROM" = P8 ]; then
+  echo "--from P8 仅适用于 candidate"; exit 2
+fi
+if [ "$FLOW" = diagnostic ] && [ "$FROM" = P9 ]; then
+  echo "--from P9 仅适用于 reference/candidate"; exit 2
+fi
+if [ "$FLOW" = inference ] && { [ "$FROM" != P10 ] || [ "$EXPORT_MODEL" = 1 ] || [ "$RUN_INFERENCE" = 1 ]; }; then
+  echo "inference 仅运行 P10，不能请求训练/导出"; exit 2
+fi
+if [ "$FLOW" = diagnostic ] && { [ "$EXPORT_MODEL" = 1 ] || [ "$RUN_INFERENCE" = 1 ]; }; then
+  echo "diagnostic 不隐式导出或推理；请选择 reference/candidate/inference"; exit 2
+fi
+if [ "$FROM" = P9 ] && [ "$EXPORT_MODEL" != 1 ]; then echo "--from P9 需要 --export-model"; exit 2; fi
+if [ "$FROM" = P10 ] && [ "$FLOW" != inference ]; then
+  echo "单独从 P10 运行请使用 --flow inference 和显式模型产物"; exit 2
+fi
+if [ "$EXPORT_MODEL" = 1 ]; then
+  case "$EXPORT_ITERATION" in ''|*[!0-9]*) echo "reference/candidate 必须提供正整数 --export-iteration"; exit 2 ;; esac
+  [ "$EXPORT_ITERATION" -gt 0 ] || { echo "--export-iteration 必须大于 0"; exit 2; }
+fi
+if [ "$FLOW" = inference ] || [ "$RUN_INFERENCE" = 1 ]; then
+  [ -n "$IMAGE" ] && [ -n "$SOP" ] || { echo "推理需要 --image 和 --sop"; exit 2; }
+  if [ "$FLOW" = inference ]; then
+    [ -n "$MODEL_ARTIFACT" ] && [ -n "$INFER_MODEL_DIR" ] && [ -n "$PROCESSOR_DIR" ] || {
+      echo "独立推理需要 --model-artifact/--model-dir/--processor-dir"; exit 2; }
+  fi
+fi
+if [[ "$FLOW" = reference || "$FLOW" = candidate ]] && [ "$RUN_INFERENCE" = 1 ] && [ "$EXPORT_MODEL" != 1 ]; then
+  echo "训练流程的推理必须同次 --export-model；已有模型请使用 --flow inference"; exit 2
+fi
+if [ "$EXPORT_MODEL" = 1 ] && { [ -n "$MODEL_ARTIFACT" ] || [ -n "$INFER_MODEL_DIR" ] || [ -n "$PROCESSOR_DIR" ]; }; then
+  echo "--export-model 使用本次导出；不要同时提供外部模型产物路径"; exit 2
+fi
+case "$MAX_NEW_TOKENS" in ''|*[!0-9]*) echo "--max-new-tokens 必须为 1..4096"; exit 2 ;; esac
+[ "$MAX_NEW_TOKENS" -ge 1 ] && [ "$MAX_NEW_TOKENS" -le 4096 ] || { echo "--max-new-tokens 必须为 1..4096"; exit 2; }
+case "$ATTENTION" in sdpa|eager) ;; *) echo "无效 --attention"; exit 2 ;; esac
+if [ "$DEVICE" = cpu ] && [ "$CPU_DIAGNOSTIC" != 1 ]; then echo "CPU 需要 --cpu-diagnostic"; exit 2; fi
 printf -v DATA_DIR_Q '%q' "$DATA_DIR"
 printf -v DATA_JSON_Q '%q' "$DATA_DIR/output_llava_coco_data.json"
 printf -v COCO_DIR_Q '%q' "$DATA_DIR/coco"
+printf -v ASSET_MODEL_DIR_Q '%q' "$ASSET_MODEL_DIR"
+printf -v WEIGHT_HF_Q '%q' "$ASSET_MODEL_DIR/Qwen3.5-0.8B-hf"
+printf -v WEIGHT_DCP_Q '%q' "$ASSET_MODEL_DIR/Qwen3.5-0.8B-dcp"
 printf -v MSMM_DIR_Q '%q' "$MSMM_DIR"
+printf -v BASELINE_Q '%q' "$BASELINE"
+printf -v BASELINE_LOG_Q '%q' "$BASELINE_LOG"
+printf -v AB_SUMMARY_Q '%q' "$AB_SUMMARY"
+printf -v NOISE_SUMMARY_Q '%q' "$NOISE_SUMMARY"
+printf -v BASELINE_VARIANT_Q '%q' "$BASELINE_VARIANT"
+printf -v CANDIDATE_VARIANT_Q '%q' "$CANDIDATE_VARIANT"
+P3_IDENT_ARGS= P4_IDENT_ARGS= P5_IDENT_ARGS=
+if [ -n "$MIGRATION_BUNDLE" ]; then
+  MIGRATION_MANIFEST="$MIGRATION_OVERLAY/migration_manifest.json"
+  printf -v MIGRATION_MANIFEST_Q '%q' "$MIGRATION_MANIFEST"
+  printf -v MIGRATION_BUNDLE_Q '%q' "$MIGRATION_BUNDLE"
+  printf -v MIGRATION_OVERLAY_Q '%q' "$MIGRATION_OVERLAY"
+  P3_IDENT_ARGS="--migration-manifest $MIGRATION_MANIFEST_Q --migration-bundle $MIGRATION_BUNDLE_Q --target-checkout $MSMM_DIR_Q"
+  P4_IDENT_ARGS="--migration-bundle $MIGRATION_BUNDLE_Q --migration-overlay $MIGRATION_OVERLAY_Q"
+  P5_IDENT_ARGS="--assets-json out/assets/assets.json $P4_IDENT_ARGS"
+fi
 case "$STEPS" in ''|*[!0-9]*) echo "--steps 必须为正整数"; exit 2 ;; esac
 [ "$STEPS" -gt 0 ] || { echo "--steps 必须大于 0"; exit 2; }
 
 # Include every execution option, but not resume/from (which only select stages).
-export PIPELINE_CONTEXT
-PIPELINE_CONTEXT=$(printf '%s\n' "$MODE" "$DATA_DIR" "$MSMM_DIR" "$STEPS" "$NODL")
+export PIPELINE_CONTEXT PIPELINE_FLOW PIPELINE_EXPORT_MODEL PIPELINE_MODEL_ARTIFACT PIPELINE_INFER_MODEL_DIR PIPELINE_PROCESSOR_DIR
+PIPELINE_FLOW="$FLOW"
+PIPELINE_EXPORT_MODEL="$EXPORT_MODEL"
+PIPELINE_MODEL_ARTIFACT="$MODEL_ARTIFACT"
+PIPELINE_INFER_MODEL_DIR="$INFER_MODEL_DIR"
+PIPELINE_PROCESSOR_DIR="$PROCESSOR_DIR"
+CONTEXT_DL=
+[ "$NODL" = 1 ] && CONTEXT_DL=--no-download
+PIPELINE_CONTEXT=$(python3 scripts/_pipeline_integration.py context \
+  --flow "$FLOW" --mode "$MODE" --steps "$STEPS" --data-dir "$DATA_DIR" \
+  --asset-model-dir "$ASSET_MODEL_DIR" --msmm-dir "$MSMM_DIR" --baseline "$BASELINE" \
+  --baseline-log "$BASELINE_LOG" --migration-bundle "$MIGRATION_BUNDLE" \
+  --migration-overlay "$MIGRATION_OVERLAY" --ab-summary "$AB_SUMMARY" \
+  --noise-summary "$NOISE_SUMMARY" --baseline-variant "$BASELINE_VARIANT" \
+  --candidate-variant "$CANDIDATE_VARIANT" --export-iteration "$EXPORT_ITERATION" \
+  --model-artifact "$MODEL_ARTIFACT" --model-dir "$INFER_MODEL_DIR" \
+  --processor-dir "$PROCESSOR_DIR" --image "$IMAGE" --sop "$SOP" \
+  --device "$DEVICE" --attention "$ATTENTION" --max-new-tokens "$MAX_NEW_TOKENS" \
+  --export-model "$EXPORT_MODEL" --run-inference "$RUN_INFERENCE" \
+  --cpu-diagnostic "$CPU_DIAGNOSTIC" $CONTEXT_DL) || exit 2
 
-mkdir -p out/logs out/probe out/analyze out/plan out/verify out/assets out/train out/bench out/judge
+mkdir -p out/logs out/probe out/analyze out/plan out/verify out/assets out/train out/bench out/judge out/reportability out/model out/scene
 TSV=out/logs/_verdicts.tsv
 : > "$TSV"
 REPORT=out/from_zero_report.md
 START_TS=$(date '+%Y-%m-%d %H:%M:%S')
-STAGE_ORDER="PRE P0 P1 P2 P3 P4 P5 P6 P7"
+STAGE_ORDER="PRE P0 P1 P2 P3 P4 P5 P6 P7 P8 P9 P10"
 REACHED=0
 
 say() { echo; echo "################ $* ################"; }
@@ -86,6 +261,9 @@ dependencies() {
     P5) echo "PRE P2 P3 P4" ;;
     P6) echo "P5" ;;
     P7) echo "P2 P4 P5" ;;
+    P8) echo "P5 P6 P7" ;;
+    P9) echo "P4 P5" ;;
+    P10) [ "$FLOW" != inference ] && echo "P9" ;;
   esac
 }
 stage_usable() {
@@ -116,6 +294,8 @@ should_run() {
       fi
       return 1
     fi
+    if [ "$s" = P8 ] && [ "$FLOW" != candidate ]; then continue; fi
+    if [ "$s" = P9 ] && [ "$EXPORT_MODEL" != 1 ]; then continue; fi
   done
   return 1
 }
@@ -163,7 +343,12 @@ run_stage() {
     python3 scripts/_stage_state.py invalidate "$id"
     return 1
   fi
-  if [ "$rc" -eq 0 ] && eval "$judge"       && result=$(python3 scripts/_stage_state.py finish "$id"); then
+  local accepted=0
+  if [ "$rc" -eq 0 ] || { [ "$id" = P6 ] && [ "$FLOW" = diagnostic ] && [ "$rc" -eq 3 ]; } || \
+     { [ "$id" = P8 ] && [[ "$rc" = 3 || "$rc" = 4 || "$rc" = 5 ]]; }; then
+    accepted=1
+  fi
+  if [ "$accepted" -eq 1 ] && eval "$judge"       && result=$(python3 scripts/_stage_state.py finish "$id"); then
     echo "[$result] $id ${dur}s —— $log"; tail -5 "$log"
     record_stage "$id" "$name" "$result" "$dur" "$log"
     return 0
@@ -182,11 +367,12 @@ skip_stage() {
 
 echo "=================================================================="
 echo " qwen35-ascend-migrator · 从零环境端到端验证"
-echo " 时间: $START_TS  模式: $MODE  起始阶段: $FROM  步数: $STEPS"
+echo " 时间: $START_TS  流程: $FLOW  模式: $MODE  起始阶段: $FROM  步数: $STEPS"
 echo " Skill 根: $SKILL_ROOT"
 echo " 数据目录: $DATA_DIR   MSMM: $MSMM_DIR"
 echo "=================================================================="
 
+if [ "$FLOW" != inference ]; then
 # ---------------------------------------------------------------- PRE 预检能力矩阵
 # ★ 鲁棒性第一道闸门：**开工前**就导出"哪些能跑 / 哪些会降级 / 哪些被阻塞"，
 #   并把降级写入 out/degradations.json。避免"跑到一半才发现环境不支持"。
@@ -233,10 +419,12 @@ fi
 # ---------------------------------------------------------------- P2 方案与配置
 if should_run P2; then
   REACHED=1
+  CONFIG_ROLE=reference
+  [ "$FLOW" = candidate ] && CONFIG_ROLE=candidate
   run_stage P2 "迁移方案与配置生成" 600 \
     "out/plan/train_config.yaml 存在" \
     "[ -s out/plan/train_config.yaml ]" \
-    -- "python3 scripts/20_plan_migration.py --env out/probe/env.json --points out/analyze/migrate_points.json --out out/plan --steps $STEPS --data-json $DATA_JSON_Q --data-dir $COCO_DIR_Q"
+    -- "python3 scripts/20_plan_migration.py --env out/probe/env.json --points out/analyze/migrate_points.json --out out/plan --steps $STEPS --config-role $CONFIG_ROLE --data-json $DATA_JSON_Q --data-dir $COCO_DIR_Q --weight-hf $WEIGHT_HF_Q --weight-dcp $WEIGHT_DCP_Q"
   # ★ 红线自检：GBS 必须 = 8
   if stage_usable P2 && [ -s out/plan/train_config.yaml ]; then
     python3 - <<'PY'
@@ -265,7 +453,7 @@ if should_run P3; then
   run_stage P3 "算子与契约验证" 900 \
     "out/verify/ops_matrix.json 存在（且日志无 argparse 接口错）" \
     "[ -s out/verify/ops_matrix.json ] && ! grep -q \"unrecognized arguments\\|error: \" out/logs/P3.log" \
-    -- "python3 scripts/30_verify_ops.py --env out/probe/env.json --out out/verify"
+    -- "python3 scripts/30_verify_ops.py --env out/probe/env.json --out out/verify $P3_IDENT_ARGS"
 fi
 
 # ---------------------------------------------------------------- P4 资产准备
@@ -273,11 +461,11 @@ if should_run P4; then
   REACHED=1
   [ "${NODL:-0}" = "1" ] && P4DL="--no-download" || P4DL=""
   if [ "$MODE" = "full" ]; then
-    P4ARGS="--data-dir $DATA_DIR_Q --msmm-dir $MSMM_DIR_Q"
+    P4ARGS="--data-dir $DATA_DIR_Q --model-dir $ASSET_MODEL_DIR_Q --msmm-dir $MSMM_DIR_Q $P4_IDENT_ARGS"
     P4TMO=14400      # 全量 COCO 约 19GB，给 4 小时
     echo "(full 模式：将下载全量 COCO train2017，耗时较长)"
   else
-    P4ARGS="--data-dir $DATA_DIR_Q --msmm-dir $MSMM_DIR_Q --skip-coco"
+    P4ARGS="--data-dir $DATA_DIR_Q --model-dir $ASSET_MODEL_DIR_Q --msmm-dir $MSMM_DIR_Q --skip-coco $P4_IDENT_ARGS"
     P4TMO=3600
     echo "(quick 模式：跳过 COCO 19GB 下载 → 数据可比性将降级，属预期)"
   fi
@@ -299,7 +487,7 @@ if should_run P5; then
   run_stage P5 "训练执行($STEPS 步)" 10800 \
     "out/train/train.log 含 iteration 记录" \
     "[ -s out/train/train.log ] && grep -q 'iteration' out/train/train.log" \
-    -- "python3 scripts/50_train.py --config out/plan/train_config.yaml --env out/probe/env.json --log out/train/train.log --workdir $MSMM_DIR_Q --steps $STEPS --timeout 10000"
+    -- "python3 scripts/50_train.py --config out/plan/train_config.yaml --env out/probe/env.json --log out/train/train.log --workdir $MSMM_DIR_Q --steps $STEPS --timeout 10000 $P5_IDENT_ARGS"
   # 打印 step1 loss（与官方 1.924621 比对的第一个锚点）
   if stage_usable P5 && [ -s out/train/train.log ]; then
     echo "  >>> 首步 loss（官方基线 step1 = 1.924621）："
@@ -310,6 +498,10 @@ fi
 # ---------------------------------------------------------------- P6 性能基准
 if should_run P6; then
   REACHED=1
+  P5_INTEGRITY=$(python3 scripts/_stage_state.py artifact P5 train_integrity.json 2>/dev/null) || P5_INTEGRITY=
+  printf -v P5_INTEGRITY_Q '%q' "$P5_INTEGRITY"
+  P6_GBS=$(python3 scripts/_pipeline_integration.py gbs --train-integrity "$P5_INTEGRITY" 2>/dev/null) || P6_GBS=INVALID
+  printf -v P6_GBS_Q '%q' "$P6_GBS"
   # ★ 坑 117：产物名以**产出脚本**为准。`60_bench.py:81` 写的是
   #   `round_{round}_{tag}.json`，本驱动传 `--round 1 --tag baseline`
   #   → 真实产物是 `round_1_baseline.json`。旧判据写死 `round_1.json`
@@ -325,10 +517,10 @@ if should_run P6; then
   #   有该能力但从未接线）→ 判据弱于其问题：文件在=PASS，性能有没有测出来没人管。
   #   修法：算子微基准 + 窗口指标**两件产物都产出**，判据断言窗口指标的可证伪字段。
   run_stage P6 "性能基准(算子微基准 + 50-100 窗口口径)" 600 \
-    "微基准 $BENCH_ART 存在，且 $WINDOW_ART 的 steps_used≥1 / median_ms / samples_per_s 均非空" \
-    "[ -s $BENCH_ART ] && python3 -c \"import json;d=json.load(open('$WINDOW_ART'));assert d.get('steps_used',0)>=1 and d.get('median_ms') and d.get('samples_per_s')\"" \
+    "微基准与 train_performance.v2 本次产物存在；完整性、GBS 和统计选择由阶段收据核验" \
+    "[ -s $BENCH_ART ] && [ -s $SERIES_ART ] && [ -s $WINDOW_ART ]" \
     -- "python3 scripts/60_bench.py --round 1 --tag baseline --out out/bench --note 'from_zero $MODE'
-python3 scripts/95_extract_series.py --log out/train/train.log --out $SERIES_ART --window 50,100 --summary-json $WINDOW_ART"
+python3 scripts/95_extract_series.py --log out/train/train.log --out $SERIES_ART --window 50,100 --expected-gbs $P6_GBS_Q --summary-json $WINDOW_ART"
   stage_usable P6 && [ -f "$WINDOW_ART" ] && python3 -c "
 import json;d=json.load(open('$WINDOW_ART'))
 print('  >>> bench(window %s): steps_used=%s median_ms=%s mean_ms=%s samples_per_s=%s'
@@ -343,6 +535,10 @@ fi
 # ---------------------------------------------------------------- P7 精度判定
 if should_run P7; then
   REACHED=1
+  P5_INTEGRITY=$(python3 scripts/_stage_state.py artifact P5 train_integrity.json 2>/dev/null) || P5_INTEGRITY=
+  P5_CONFIG=$(python3 scripts/_stage_state.py artifact P5 effective_config.yaml 2>/dev/null) || P5_CONFIG=
+  printf -v P5_INTEGRITY_Q '%q' "$P5_INTEGRITY"
+  printf -v P5_CONFIG_Q '%q' "$P5_CONFIG"
   TAG="fromzero_$(date +%Y%m%d_%H%M%S)"
   # ★ 坑 116：`judge_comparable.py` 的 `verdict.json` **按设计只含证据字段**
   #   （verdict_id / reachability.level / open_gates …），**不含结论名**；
@@ -354,7 +550,7 @@ if should_run P7; then
   run_stage P7 "精度判定(P7)" 900 \
     "verdict.json 有 verdict_id（证据非空壳）且 judge_summary.json 有 verdict/level/verdict_id（结论非空壳）" \
     "python3 -c \"import json;v=json.load(open('out/judge/verdict.json'));s=json.load(open('out/judge/judge_summary.json'));assert v.get('verdict_id') and s.get('verdict') and s.get('level') and s.get('verdict_id')\"" \
-    -- "python3 scripts/70_judge.py --log out/train/train.log --config out/plan/train_config.yaml --data-json $DATA_JSON_Q --baseline officialB --baseline-log examples/train/official_baseline.log --out out/judge --registry sk04_judge/evidence/registry.json --tag $TAG"
+    -- "python3 scripts/70_judge.py --log out/train/train.log --config $P5_CONFIG_Q --config-manifest out/plan/config_manifest.json --assets-json out/assets/assets.json --train-integrity $P5_INTEGRITY_Q --data-json $DATA_JSON_Q --baseline $BASELINE_Q --baseline-log $BASELINE_LOG_Q --out out/judge --registry sk04_judge/evidence/registry.json --tag $TAG"
   stage_usable P7 && [ -f out/judge/judge_summary.json ] && python3 -c "
 import json
 s=json.load(open('out/judge/judge_summary.json'))
@@ -368,6 +564,58 @@ print('  >>> open gates:', og)
 "
 fi
 
+# ---------------------------------------------------------------- P8 候选 A/B 可报告性（纯参考/短诊断不构造比较）
+if [ "$FLOW" = candidate ] && should_run P8; then
+  REACHED=1
+  run_stage P8 "候选配对性能与采纳门" 600 \
+    "62 产出本次可报告性 JSON；整组 A/B 缺 P5/P7 逐运行来源时 run/accuracy 保持 UNVERIFIED" \
+    "[ -s out/reportability/reportability.json ]" \
+    -- "python3 scripts/_pipeline_integration.py candidate --summary $AB_SUMMARY_Q --noise $NOISE_SUMMARY_Q --baseline-variant $BASELINE_VARIANT_Q --candidate-variant $CANDIDATE_VARIANT_Q
+python3 scripts/62_reportability.py --summary $AB_SUMMARY_Q --noise $NOISE_SUMMARY_Q --baseline-variant $BASELINE_VARIANT_Q --candidate-variant $CANDIDATE_VARIANT_Q --run-validity UNVERIFIED --accuracy-validity UNVERIFIED --out out/reportability/reportability.json"
+elif [ "$FLOW" != candidate ]; then
+  skip_stage P8 "参考或短诊断无 A/B 比较"
+fi
+
+# ---------------------------------------------------------------- P9 模型导出与真实重载（推理前置）
+if [ "$EXPORT_MODEL" = 1 ] && should_run P9; then
+  REACHED=1
+  P5_RUN_DIR=$(python3 scripts/_stage_state.py artifact P5 run_dir 2>/dev/null) || P5_RUN_DIR=
+  printf -v P5_RUN_DIR_Q '%q' "$P5_RUN_DIR"
+  run_stage P9 "本次模型导出与重载" 10800 \
+    "新 attempt 的 model_artifact.v1 必须为 RELOAD_VERIFIED，训练/迁移身份由阶段收据核验" \
+    "[ -s out/logs/P9.log ]" \
+    -- "python3 scripts/66_export_model.py --train-run-dir $P5_RUN_DIR_Q --assets-json out/assets/assets.json --target-checkout $MSMM_DIR_Q --iteration $EXPORT_ITERATION --verify-reload --out out/model"
+else
+  skip_stage P9 "本次未请求模型导出"
+fi
+fi # inference flow skips PRE–P9
+
+# ---------------------------------------------------------------- P10 本地模型场景推理
+if { [ "$FLOW" = inference ] || [ "$RUN_INFERENCE" = 1 ]; } && should_run P10; then
+  REACHED=1
+  if [ "$EXPORT_MODEL" = 1 ]; then
+    MODEL_ARTIFACT=$(python3 scripts/_stage_state.py artifact P9 model_artifact.json 2>/dev/null) || MODEL_ARTIFACT=
+    INFER_MODEL_DIR=$(python3 scripts/_pipeline_integration.py export-dir --model-artifact "$MODEL_ARTIFACT" 2>/dev/null) || INFER_MODEL_DIR=
+    PROCESSOR_DIR="$INFER_MODEL_DIR"
+  fi
+  export PIPELINE_MODEL_ARTIFACT="$MODEL_ARTIFACT" PIPELINE_INFER_MODEL_DIR="$INFER_MODEL_DIR" PIPELINE_PROCESSOR_DIR="$PROCESSOR_DIR"
+  printf -v MODEL_ARTIFACT_Q '%q' "$MODEL_ARTIFACT"
+  printf -v INFER_MODEL_DIR_Q '%q' "$INFER_MODEL_DIR"
+  printf -v PROCESSOR_DIR_Q '%q' "$PROCESSOR_DIR"
+  printf -v IMAGE_Q '%q' "$IMAGE"
+  printf -v SOP_Q '%q' "$SOP"
+  printf -v DEVICE_Q '%q' "$DEVICE"
+  printf -v ATTENTION_Q '%q' "$ATTENTION"
+  CPU_ARG=
+  [ "$CPU_DIAGNOSTIC" = 1 ] && CPU_ARG=--cpu-diagnostic
+  run_stage P10 "场景推理" 3600 \
+    "本次 inference_result.v1 与原始 token/文本、解析结果、T08 模型身份和输入哈希一致" \
+    "[ -s out/logs/P10.log ]" \
+    -- "python3 scripts/65_scene.py --model-artifact $MODEL_ARTIFACT_Q --model-dir $INFER_MODEL_DIR_Q --processor-dir $PROCESSOR_DIR_Q --image $IMAGE_Q --sop $SOP_Q --device $DEVICE_Q --attention $ATTENTION_Q --max-new-tokens $MAX_NEW_TOKENS $CPU_ARG --out out/scene"
+elif [ "$FLOW" != inference ]; then
+  skip_stage P10 "本次未请求场景推理"
+fi
+
 # ---------------------------------------------------------------- 汇总报告
 END_TS=$(date '+%Y-%m-%d %H:%M:%S')
 FAILED=$(awk -F'\t' '$3=="FAIL"' "$TSV" | wc -l)
@@ -379,6 +627,9 @@ for state in "${STAGE_STATUS[@]}"; do
   [[ "$state" == PARTIAL* ]] && PARTIAL=$((PARTIAL + 1))
 done
 RESUMED=$(awk -F'\t' '$3=="RESUMED"' "$TSV" | wc -l)
+ACCEPTANCE=out/acceptance/summary.json
+AGG_OVERALL=FAIL
+ACCEPTANCE_CURRENT=0
 
 # ★ 降级账本一致性检查（鲁棒性要求：**不许悄悄降级**）
 #   规则：任一阶段日志出现 DEGRADED 标记，则 out/degradations.json 必须非空。
@@ -435,13 +686,21 @@ if [ "${LOG_DEG:-0}" -gt 0 ] && [ "${DEG_N:-0}" -eq 0 ]; then
   echo "[FAIL] 降级账本不一致：${LOG_DEG} 个阶段日志提到 DEGRADED，但 ${DEG_JSON} 为空"
   FAILED=$((FAILED + 1))
 fi
+if AGG_OVERALL=$(python3 scripts/_pipeline_integration.py aggregate --flow "$FLOW" \
+    --verdicts "$TSV" --out "$ACCEPTANCE" --ledger-bad "$LEDGER_BAD"); then
+  ACCEPTANCE_CURRENT=1
+else
+  echo "[FAIL] 分层验收汇总未能绑定本次阶段 receipt；旧汇总不可用于本轮"
+  FAILED=$((FAILED + 1))
+  AGG_OVERALL=FAIL
+fi
 
 {
   echo "# 从零环境端到端验证报告"
   echo
   echo "- 开始: $START_TS"
   echo "- 结束: $END_TS"
-  echo "- 模式: **$MODE**   起始阶段: $FROM   训练步数: $STEPS"
+  echo "- 流程: **$FLOW**   模式: **$MODE**   起始阶段: $FROM   训练步数: $STEPS"
   echo "- Skill 根: \`$SKILL_ROOT\`"
   echo "- 数据目录: \`$DATA_DIR\`   MindSpeed-MM: \`$MSMM_DIR\`"
   echo
@@ -454,6 +713,27 @@ fi
   done < "$TSV"
   echo
   echo "**通过 $PASSED · 失败 $FAILED · 超时 $TIMEOUTS · 阻塞 $BLOCKED · 部分验证 $PARTIAL · 复用已有产物 $RESUMED**"
+  echo
+  echo "## 分层验收"
+  echo
+  if [ "$ACCEPTANCE_CURRENT" = 1 ]; then
+    echo "机器可读结果: [$ACCEPTANCE]($ACCEPTANCE)。执行、训练完整性、可比性、数值、性能、模型与推理按独立层记录。"
+  else
+    echo "本轮机器可读汇总不可用；旧 $ACCEPTANCE 不能作为本轮结论。"
+  fi
+  echo
+  if [ "$ACCEPTANCE_CURRENT" = 1 ] && [ -s "$ACCEPTANCE" ]; then
+    python3 - "$ACCEPTANCE" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1], encoding='utf-8'))
+print('- 总状态:', d.get('overall'))
+for key, value in d.get('layers', {}).items():
+    print('- %s: %s' % (key, value))
+print('- 未关闭证据门:', ', '.join(d.get('open_gates') or []))
+PY
+  else
+    echo "本次汇总不可用；已计为失败。"
+  fi
   echo
   echo "## ★ 降级登记（不许悄悄降级）"
   echo
@@ -507,7 +787,9 @@ PYD
   echo
   echo "## 数据可比性声明（诚实红线）"
   echo
-  if [ "$MODE" = "quick" ]; then
+  if [ "$FLOW" = inference ]; then
+    echo "> 本轮只执行独立推理；训练与数据可比性须查模型产物的来源收据。"
+  elif [ "$MODE" = "quick" ]; then
     echo "> ⚠️ **本次为 quick 模式（\`--skip-coco\`）：COCO 图片未全量下载，数据可比性降级。**"
     echo "> 是否连通以阶段结果为准；FAIL/BLOCKED/PARTIAL 均不能宣称全链路通过，更不能宣称精度已对齐官方。"
     echo "> 需改用 \`--full\` 重跑 P4 及之后阶段。"
@@ -525,5 +807,5 @@ echo "=================================================================="
 sed 's/^/  /' "$TSV"
 [ "$REACHED" = "1" ] || { echo "!! 未执行任何阶段（--from=$FROM 无效？）"; exit 2; }
 [ $((FAILED + TIMEOUTS + BLOCKED)) -eq 0 ] || exit 1
-[ "$PARTIAL" -eq 0 ] || exit 3
+[ "$PARTIAL" -eq 0 ] && [ "$AGG_OVERALL" != PARTIAL ] || exit 3
 exit 0

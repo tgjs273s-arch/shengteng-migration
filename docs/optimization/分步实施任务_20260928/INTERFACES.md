@@ -101,7 +101,7 @@ T03 应将本次实际消费的文件摘要、源码差异、上游复用与项�
 - P5 的 `effective_config.yaml` 是本次实际输入快照。启用保存时，`training.save` 改为本次 `runs/p5-*/checkpoints` 绝对路径；源配置不修改。显式 null/false/空串的关闭意图保留在收据，有效快照省略 `save` 键以兼容固定目标参数类。未提供该键时保留原字节。
 - `run.json` 记录 `run_id`、`source_config_sha256`、`effective_config_sha256` 和 `checkpoint_save`（源值、启用状态、实际路径、实际 DCP 格式）。`train_integrity.json` 的 `source_config`/`source_config_sha256` 绑定源文件，`config`/`config_sha256` 绑定有效快照；旧 `config_input` 仍指源路径，不可把它与快照摘要配对。运行后分别检查两份配置，启用保存时还检查收据一致性。
 - 固定目标没有 HF 训练保存开关。P5 拒绝非 DCP 的 `save_format` 声明；显式 `dcp` 仅作兼容声明，不负责选择 checkpointer。P2 仍拒绝该无效字段。
-- 这些字段只证明启动配置与本次保存意图，不证明 checkpoint 已写完整或能加载。完整 `model_artifact`、导出与重载等待 T05 资产交接；T10 需纳入上述实际快照与运行收据，T07 消费配置时必须区分源配置和按次变化的保存路径。
+- 这些字段只证明启动配置与本次保存意图，不证明 checkpoint 已写完整或能加载。完整 `model_artifact`、导出与重载见下节；T10 纳入上述实际快照与运行收据，T07 区分源配置和按次变化的保存路径。
 
 ## T08 完整导出与重载接口（离线已复核）
 
@@ -136,11 +136,20 @@ T03 应将本次实际消费的文件摘要、源码差异、上游复用与项�
 
 ### T10 P5 运行前后资产收据（独立子步）
 
-- P5 可选成组 `--assets-json`、`--migration-bundle`、`--migration-overlay`，目标目录仍是 `--workdir`。未给参数保留旧独立 CLI 并记录 `UNBOUND`；部分参数 rc=2。此子步尚未接入主入口。
+- P5 可选成组 `--assets-json`、`--migration-bundle`、`--migration-overlay`，目标目录仍是 `--workdir`。未给参数保留旧独立 CLI 并记录 `UNBOUND`；部分参数 rc=2。主入口接线见下文 T10 四模式接口。
 - `run.json.asset_binding` 为 `p5_asset_binding.v1`，包含 `state`、`prelaunch`、`postrun`、`problems` 和限定范围 `scope`。前后快照记录 P4 路径/摘要/attempt、migration ID/bundle/overlay/manifest、目标源码、转换收据、实际资产路径，以及 HF/DCP/JSON 顺序和图片清单摘要。
 - 启动前在同日志锁内复用 T03/T05 检查器，核对实际配置的 HF、DCP、单元素数据集及图片根目录。失败写 `PRECHECK_FAILED` 与本次完整性收据，`train_rc=null`，不启动 runner、不清空旧日志。运行中为 `PRECHECK_OK`，前后内容和运行收据一致才为 `VERIFIED`；漂移或坏结构写 `DRIFTED` 并使训练 `INCOMPLETE`。
 - `train_integrity.json.asset_binding` 记录 `run_record` 实际路径及 `run_record_sha256`、状态、P4 摘要、migration ID、问题；run.json 不反向引用 integrity，避免循环摘要。旧源/有效配置、日志、保存、run ID 和退出码字段原义不变。
-- `VERIFIED` 只证明纳入范围的本地内容在两次观察时一致，不证明实际导入类、逐 batch 输入、官方同字节或 NPU 正确。消费者必须核对运行路径/摘要、前后快照与当前来源，不可只读取状态字符串；T07/T08 的消费者接线另行复核。
+- `VERIFIED` 只证明纳入范围的本地内容在两次观察时一致，不证明实际导入类、逐 batch 输入、官方同字节或 NPU 正确。消费者必须核对运行路径/摘要、前后快照与当前来源，不可只读取状态字符串；T07/T08 的消费者已分别完成限定离线复核，真实资产验证仍待实机。
+
+## T10 四模式主入口与阶段收据
+
+- `run_from_zero.sh --flow diagnostic|reference|candidate|inference`：旧调用默认为 diagnostic；reference/candidate 需要已安装目标 checkout 和成组迁移 bundle/overlay。`--asset-model-dir` 是 P2/P4 权重父目录，`--data-dir` 是数据总根，P2 图片目录由其 `coco` 子目录取得。P2 固定 officialB 对应参考身份，切换 P7 基线参数不会改变 P2 来源契约。
+- P8 仅在 candidate 消费已有 59/63 A/B 与底噪摘要及显式 A/B 角色，调用 62。它们缺逐运行 P5/P7 来源，整组 `run_validity/accuracy_validity` 保持 `UNVERIFIED`，不能将当前单次 P7 结果推广为整组精度或采纳通过。
+- P9 由 `--export-model --export-iteration N` 显式启用，依赖 P4/P5，只接受本次 T08 `RELOAD_VERIFIED` attempt。训练流程的 `--run-inference --image --sop` 必须同时请求本次 P9，P10 依赖该模型；独立 inference 只验证显式 `--model-artifact/--model-dir/--processor-dir` 和图像/SOP，不运行 PRE–P9。未请求的模型/推理层为 `NOT_RUN`。
+- `OUTPUTS/DEPS` 增加 P2 manifest/参考配置与 P8–P10；P5/P7/P9/P10 动态记录本次新 run/attempt 目录并哈希必要证据，旧目录不能冒充新运行。复用校验代码、入口内容身份、依赖 attempt 和全部输出，严格 P5 还复验当前资产/目标；P10 再验模型产物、当前图像/SOP 和原始 token/文本/解析文件。
+- P6 从实际 P5 快照及 world 核 GBS，严格区分官方脚本的 100 点选择与 50–100 的 51 点诊断窗口。`pipeline_acceptance.v1` 将迁移、算子、资产、训练、统计、可比性、数值、采纳、模型及推理分层；正式规则和业务缺口使当前完整验收保持 PARTIAL。CLI 为 1 失败/超时/阻断、2 用法错误、3 部分验证；0 仅保留无失败且无部分验证的语义。
+- 汇总只展示本次成功写出的结果；聚合失败写当前 FAIL 标记，不能在 Markdown 中链接或展示旧汇总。降级账本失败同时进入机器可读总状态。公共 out、P7 目录及账本继续单写入，不因模型 attempt 隔离就支持并发主入口。
 
 ## 验收结果语义
 
